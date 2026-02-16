@@ -1,1 +1,0 @@
-# backend_linkedin_blue_collar
