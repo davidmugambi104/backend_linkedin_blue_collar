@@ -1,6 +1,5 @@
 # ----- FILE: backend/app/schemas/verification_schema.py -----
-from marshmallow import Schema, fields, validate, validates, ValidationError
-from ..models.verification import VerificationStatus
+from marshmallow import Schema, fields, validate
 
 
 class VerificationSchema(Schema):
@@ -10,27 +9,20 @@ class VerificationSchema(Schema):
         required=True, validate=validate.Length(min=2, max=100)
     )
     document_url = fields.Str(required=True, validate=validate.Length(min=1, max=500))
-    status = fields.Str(dump_only=True)  # Only admin can update status
+    status = fields.Str(dump_only=True)
     reviewed_by = fields.Int(dump_only=True)
     review_notes = fields.Str(dump_only=True)
     created_at = fields.DateTime(dump_only=True)
     updated_at = fields.DateTime(dump_only=True)
 
-    @validates("worker_id")
-    def validate_worker_id(self, value):
-        from ..models import Worker
-
-        if not Worker.query.get(value):
-            raise ValidationError("Worker does not exist.")
-
 
 class VerificationCreateSchema(VerificationSchema):
-    pass  # Same as VerificationSchema
+    pass
 
 
 class VerificationUpdateSchema(Schema):
     status = fields.Str(
         required=True,
-        validate=validate.OneOf([status.value for status in VerificationStatus]),
+        validate=validate.OneOf(["pending", "approved", "rejected"]),
     )
     review_notes = fields.Str()

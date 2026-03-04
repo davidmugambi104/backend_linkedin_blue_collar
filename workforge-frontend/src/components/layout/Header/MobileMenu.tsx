@@ -99,16 +99,16 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({
               </>
             ) : (
               <>
-                <Link to="/auth/login" onClick={onClose} className="w-full block">
-                  <Button variant="outline" size="sm" className="w-full">
+                <Button variant="outline" size="sm" className="w-full" asChild>
+                  <Link to="/auth/login" onClick={onClose}>
                     Sign in
-                  </Button>
-                </Link>
-                <Link to="/auth/register" onClick={onClose} className="w-full block">
-                  <Button size="sm" className="w-full">
+                  </Link>
+                </Button>
+                <Button size="sm" className="w-full" asChild>
+                  <Link to="/auth/register" onClick={onClose}>
                     Sign up
-                  </Button>
-                </Link>
+                  </Link>
+                </Button>
               </>
             )}
           </div>

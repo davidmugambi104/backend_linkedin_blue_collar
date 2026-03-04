@@ -1,7 +1,11 @@
-import React, { useState } from 'react';
-import { ArrowUpRightIcon, ArrowDownLeftIcon } from '@heroicons/react/24/outline';
-import { Card } from '@components/ui/Card';
-import { Badge } from '@components/ui/Badge';
+import React, { useState, useMemo } from 'react';
+import { ArrowUpRightIcon, ArrowDownLeftIcon, CurrencyDollarIcon } from '@heroicons/react/24/outline';
+import { AdminLayout } from '@components/admin/layout/AdminLayout';
+import { StatCard } from '@components/admin/cards/StatCard/StatCard';
+import { AdminTable } from '@components/admin/tables/AdminTable/AdminTable';
+import { StatusBadge } from '@components/admin/common/StatusBadge/StatusBadge';
+import type { Column } from '@components/admin/tables/AdminTable/AdminTable.types';
+import { formatCurrency } from '@lib/utils/format';
 
 interface Transaction {
   id: number;
@@ -15,125 +19,51 @@ interface Transaction {
 
 const Payments: React.FC = () => {
   const [transactions] = useState<Transaction[]>([
-    {
-      id: 1,
-      type: 'income',
-      amount: 150.00,
-      description: 'Plumbing Service',
-      user: 'ABC Corp → John Smith',
-      date: '2024-01-18',
-      status: 'completed',
-    },
-    {
-      id: 2,
-      type: 'payout',
-      amount: 145.00,
-      description: 'Worker Payout',
-      user: 'John Smith',
-      date: '2024-01-17',
-      status: 'completed',
-    },
-    {
-      id: 3,
-      type: 'income',
-      amount: 200.00,
-      description: 'Electrical Service',
-      user: 'XYZ Services → Sarah Johnson',
-      date: '2024-01-17',
-      status: 'completed',
-    },
-    {
-      id: 4,
-      type: 'payout',
-      amount: 190.00,
-      description: 'Worker Payout',
-      user: 'Sarah Johnson',
-      date: '2024-01-16',
-      status: 'pending',
-    },
+    { id: 1, type: 'income', amount: 150.00, description: 'Plumbing Service', user: 'ABC Corp → John Smith', date: '2024-01-18', status: 'completed' },
+    { id: 2, type: 'payout', amount: 145.00, description: 'Worker Payout', user: 'John Smith', date: '2024-01-17', status: 'completed' },
+    { id: 3, type: 'income', amount: 200.00, description: 'Electrical Service', user: 'XYZ Services → Sarah Johnson', date: '2024-01-17', status: 'completed' },
+    { id: 4, type: 'payout', amount: 190.00, description: 'Worker Payout', user: 'Sarah Johnson', date: '2024-01-16', status: 'pending' },
   ]);
-
-  const totalIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
-  const totalPayouts = transactions.filter(t => t.type === 'payout').reduce((sum, t) => sum + t.amount, 0);
-  const revenue = totalIncome - totalPayouts;
-
-  const statusBadge = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return <Badge variant="success">Completed</Badge>;
-      case 'pending':
-        return <Badge variant="warning">Pending</Badge>;
-      case 'failed':
-        return <Badge variant="error">Failed</Badge>;
-      default:
-        return null;
-    }
-  };
-
+  const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' }>({ key: 'date', direction: 'desc' });
+  const stats = useMemo(() => {
+    const income = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+    const payouts = transactions.filter(t => t.type === 'payout').reduce((sum, t) => sum + t.amount, 0);
+    return { totalIncome: income, totalPayouts: payouts, revenue: income - payouts, pending: transactions.filter(t => t.status === 'pending').reduce((sum, t) => sum + t.amount, 0) };
+  }, [transactions]);
+  const columns: Column<Transaction>[] = [
+    {
+      key: 'description',
+      header: 'Description',
+      sortable: true,
+      accessor: (tx) => (
+        <div className="flex items-center gap-2">
+          {tx.type === 'income' ? <ArrowDownLeftIcon className="w-5 h-5 text-emerald-600" /> : <ArrowUpRightIcon className="w-5 h-5 text-blue-600" />}
+          <div><div className="font-medium text-gray-900 dark:text-white">{tx.description}</div><div className="text-sm text-gray-500 dark:text-gray-400">{tx.user}</div></div>
+        </div>
+      ),
+    },
+    { key: 'amount', header: 'Amount', accessor: (tx) => formatCurrency(tx.amount), sortable: true },
+    {
+      key: 'status',
+      header: 'Status',
+      accessor: (tx) => <StatusBadge status={tx.status}>{tx.status.charAt(0).toUpperCase() + tx.status.slice(1)}</StatusBadge>,
+    },
+    { key: 'date', header: 'Date', accessor: (tx) => tx.date, sortable: true },
+  ];
   return (
-    <div className="space-y-6">
-      <div>
+    <AdminLayout>
+      <div className="space-y-2">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Payments & Revenue</h1>
-        <p className="mt-2 text-gray-600 dark:text-gray-400">Monitor financial transactions</p>
+        <p className="text-gray-600 dark:text-gray-400">Monitor financial transactions and payments</p>
       </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="p-6">
-          <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Total Income</p>
-          <p className="text-3xl font-bold text-green-600 mb-1">${totalIncome.toFixed(2)}</p>
-          <p className="text-xs text-gray-600 dark:text-gray-400">From {transactions.filter(t => t.type === 'income').length} transactions</p>
-        </Card>
-        <Card className="p-6">
-          <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Total Payouts</p>
-          <p className="text-3xl font-bold text-orange-600 mb-1">${totalPayouts.toFixed(2)}</p>
-          <p className="text-xs text-gray-600 dark:text-gray-400">To {transactions.filter(t => t.type === 'payout').length} workers</p>
-        </Card>
-        <Card className="p-6">
-          <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Platform Revenue</p>
-          <p className="text-3xl font-bold text-blue-600 mb-1">${revenue.toFixed(2)}</p>
-          <p className="text-xs text-gray-600 dark:text-gray-400">Commission earned</p>
-        </Card>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <StatCard title="Total Income" value={formatCurrency(stats.totalIncome)} trend="up" change={12} icon={CurrencyDollarIcon} />
+        <StatCard title="Total Payouts" value={formatCurrency(stats.totalPayouts)} trend="down" change={5} icon={CurrencyDollarIcon} />
+        <StatCard title="Net Revenue" value={formatCurrency(stats.revenue)} trend="up" change={18} icon={CurrencyDollarIcon} />
+        <StatCard title="Pending" value={formatCurrency(stats.pending)} icon={CurrencyDollarIcon} />
       </div>
-
-      {/* Transactions */}
-      <Card className="overflow-x-auto">
-        <table className="w-full">
-          <thead className="border-b border-gray-200 dark:border-gray-700">
-            <tr>
-              <th className="text-left px-6 py-3 font-semibold text-gray-900 dark:text-white">Type</th>
-              <th className="text-left px-6 py-3 font-semibold text-gray-900 dark:text-white">Amount</th>
-              <th className="text-left px-6 py-3 font-semibold text-gray-900 dark:text-white">Description</th>
-              <th className="text-left px-6 py-3 font-semibold text-gray-900 dark:text-white">User</th>
-              <th className="text-left px-6 py-3 font-semibold text-gray-900 dark:text-white">Date</th>
-              <th className="text-left px-6 py-3 font-semibold text-gray-900 dark:text-white">Status</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-            {transactions.map(tx => (
-              <tr key={tx.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                <td className="px-6 py-4">
-                  <div className="flex items-center">
-                    {tx.type === 'income' ? (
-                      <ArrowDownLeftIcon className="h-5 w-5 text-green-600 mr-2" />
-                    ) : (
-                      <ArrowUpRightIcon className="h-5 w-5 text-orange-600 mr-2" />
-                    )}
-                    <span className="capitalize font-medium text-gray-900 dark:text-white">{tx.type}</span>
-                  </div>
-                </td>
-                <td className="px-6 py-4 font-semibold text-gray-900 dark:text-white">${tx.amount.toFixed(2)}</td>
-                <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{tx.description}</td>
-                <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{tx.user}</td>
-                <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{tx.date}</td>
-                <td className="px-6 py-4">{statusBadge(tx.status)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </Card>
-    </div>
+      <AdminTable columns={columns} data={transactions} sortConfig={sortConfig} onSort={(config) => setSortConfig(config)} emptyState={<div className="text-center py-8 text-gray-500">No transactions found</div>} />
+    </AdminLayout>
   );
 };
-
 export default Payments;

@@ -1,3 +1,4 @@
+// workforge-frontend/src/pages/admin/Dashboard/components/UserGrowthChart.tsx
 import React from 'react';
 import {
   LineChart,

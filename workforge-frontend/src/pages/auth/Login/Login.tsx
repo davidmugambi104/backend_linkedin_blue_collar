@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Resolver, SubmitHandler, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { EnvelopeIcon, LockClosedIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
@@ -9,29 +9,12 @@ import { Button } from '@components/ui/Button';
 import { Input } from '@components/ui/Input';
 import { Card } from '@components/ui/Card';
 import { useAuth } from '@context/AuthContext';
-import { UserRole } from '@types';
 import { LoginFormData, loginSchema } from './Login.schema';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const { login, user } = useAuth();
+  const { login } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-
-  const from = (location.state as any)?.from?.pathname || null;
-
-  const redirectToDashboard = (userRole: UserRole) => {
-    switch (userRole) {
-      case UserRole.WORKER:
-        return '/worker/dashboard';
-      case UserRole.EMPLOYER:
-        return '/employer/dashboard';
-      case UserRole.ADMIN:
-        return '/admin/dashboard';
-      default:
-        return '/';
-    }
-  };
 
   const {
     register,
@@ -49,11 +32,8 @@ export const LoginPage: React.FC = () => {
   const onSubmit: SubmitHandler<LoginFormData> = async (data) => {
     setIsLoading(true);
     try {
-      const loggedInUser = await login(data.email, data.password);
+      const { redirectPath } = await login(data.email, data.password);
       toast.success('Welcome back!');
-      
-      // Use from if available, otherwise redirect based on user role
-      const redirectPath = from || redirectToDashboard(loggedInUser.role);
       navigate(redirectPath, { replace: true });
     } catch (error: any) {
       toast.error(error.response?.data?.error || 'Invalid email or password');

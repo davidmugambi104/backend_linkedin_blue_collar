@@ -8,7 +8,9 @@ from ..models import User, Job, Application, Skill, Employer, Worker, WorkerSkil
 from ..schemas import JobSearchSchema
 from ..utils.permissions import employer_required, worker_required, admin_required
 from ..utils.geo import calculate_distance
+from ..utils.helpers import get_current_user_id
 from ..models.job import JobStatus
+from ..services.matching_service import MatchingService
 
 jobs_bp = Blueprint("jobs", __name__)
 
@@ -105,7 +107,7 @@ def get_job(job_id):
 @worker_required
 def apply_to_job(job_id):
     """Worker applies to a job."""
-    current_user_id = get_jwt_identity()
+    current_user_id = get_current_user_id()
     worker = Worker.query.filter_by(user_id=current_user_id).first_or_404()
     job = Job.query.get_or_404(job_id)
 
@@ -136,7 +138,7 @@ def apply_to_job(job_id):
 @jwt_required()
 def get_job_applications(job_id):
     """Get applications for a job (employer/admin only)."""
-    current_user_id = get_jwt_identity()
+    current_user_id = get_current_user_id()
     current_user = User.query.get(current_user_id)
     job = Job.query.get_or_404(job_id)
 
@@ -182,7 +184,7 @@ def get_job_applications(job_id):
 @employer_required
 def mark_job_completed(job_id):
     """Employer marks a job as completed."""
-    current_user_id = get_jwt_identity()
+    current_user_id = get_current_user_id()
     employer = Employer.query.filter_by(user_id=current_user_id).first_or_404()
     job = Job.query.filter_by(id=job_id, employer_id=employer.id).first_or_404()
 
@@ -199,7 +201,7 @@ def mark_job_completed(job_id):
 @jwt_required()
 def cancel_job(job_id):
     """Cancel a job (employer/admin only)."""
-    current_user_id = get_jwt_identity()
+    current_user_id = get_current_user_id()
     current_user = User.query.get(current_user_id)
     job = Job.query.get_or_404(job_id)
 
@@ -237,6 +239,95 @@ def close_expired_jobs():
 
     db.session.commit()
     return jsonify({"message": f"Closed {len(expired_jobs)} expired jobs"}), 200
+
+
+@jobs_bp.route("/search", methods=["GET"])
+def search_jobs():
+    """Search jobs with advanced filters - Public endpoint."""
+    filters = {}
+    
+    # Parse query params
+    if request.args.get("skill_id"):
+        filters["skill_id"] = int(request.args.get("skill_id"))
+    if request.args.get("county"):
+        filters["county"] = request.args.get("county")
+    if request.args.get("pay_min"):
+        filters["pay_min"] = float(request.args.get("pay_min"))
+    if request.args.get("pay_max"):
+        filters["pay_max"] = float(request.args.get("pay_max"))
+    if request.args.get("min_experience"):
+        filters["min_experience"] = int(request.args.get("min_experience"))
+    if request.args.get("fundis_needed"):
+        filters["fundis_needed"] = int(request.args.get("fundis_needed"))
+    if request.args.get("location_lat") and request.args.get("location_lng"):
+        filters["location_lat"] = float(request.args.get("location_lat"))
+        filters["location_lng"] = float(request.args.get("location_lng"))
+    if request.args.get("radius_km"):
+        filters["radius_km"] = float(request.args.get("radius_km"))
+    
+    results = MatchingService.search_jobs(filters)
+    return jsonify(results), 200
+
+
+@jobs_bp.route("/match/workers/<int:job_id>", methods=["GET"])
+@jwt_required()
+@employer_required
+def match_job_to_workers(job_id):
+    """Get matched workers for a specific job."""
+    current_user_id = get_current_user_id()
+    employer = Employer.query.filter_by(user_id=current_user_id).first_or_404()
+    
+    job = Job.query.get(job_id)
+    if not job:
+        return jsonify({"error": "Job not found"}), 404
+    
+    if job.employer_id != employer.id:
+        return jsonify({"error": "Not authorized"}), 403
+    
+    # Get recommended workers with scores
+    limit = request.args.get("limit", 20, type=int)
+    max_distance = request.args.get("max_distance_km", 50, type=float)
+    
+    matched_workers = MatchingService.get_worker_recommendations_for_job(
+        job_id, limit=limit, max_distance_km=max_distance
+    )
+    
+    return jsonify({
+        "job": job.to_dict(),
+        "matched_workers": matched_workers
+    }), 200
+
+
+@jobs_bp.route("/<int:job_id>/shortlist/<int:worker_id>", methods=["POST"])
+@jwt_required()
+@employer_required
+def shortlist_worker(job_id, worker_id):
+    """Shortlist a worker for a job."""
+    current_user_id = get_current_user_id()
+    employer = Employer.query.filter_by(user_id=current_user_id).first_or_404()
+    
+    job = Job.query.get(job_id)
+    if not job:
+        return jsonify({"error": "Job not found"}), 404
+    
+    if job.employer_id != employer.id:
+        return jsonify({"error": "Not authorized"}), 403
+    
+    # Check if worker has applied
+    application = Application.query.filter_by(
+        job_id=job_id, worker_id=worker_id
+    ).first()
+    
+    if not application:
+        return jsonify({"error": "Worker has not applied to this job"}), 400
+    
+    # Add to shortlist (could create a new table, for now just update status)
+    # This is a placeholder - you'd typically create a Shortlist model
+    return jsonify({
+        "message": "Worker shortlisted",
+        "job": job.to_dict(),
+        "worker_id": worker_id
+    }), 200
 
 
 # ----- END FILE -----

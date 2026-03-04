@@ -33,6 +33,14 @@ class Job(db.Model):
     updated_at = db.Column(
         db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
     )
+    
+    # New fields from agenda
+    county = db.Column(db.String(100), index=True)
+    sub_county = db.Column(db.String(100))
+    start_date = db.Column(db.Date)
+    required_experience_years = db.Column(db.Integer)
+    number_of_fundis_needed = db.Column(db.Integer, default=1)
+    is_flexible_hours = db.Column(db.Boolean, default=True)
 
     # Relationships
     applications = db.relationship(
@@ -57,6 +65,12 @@ class Job(db.Model):
             "expiration_date": (
                 self.expiration_date.isoformat() if self.expiration_date else None
             ),
+            "county": self.county,
+            "sub_county": self.sub_county,
+            "start_date": self.start_date.isoformat() if self.start_date else None,
+            "required_experience_years": self.required_experience_years,
+            "number_of_fundis_needed": self.number_of_fundis_needed,
+            "is_flexible_hours": self.is_flexible_hours,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }

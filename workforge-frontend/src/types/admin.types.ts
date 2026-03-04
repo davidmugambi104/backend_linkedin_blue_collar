@@ -157,6 +157,17 @@ export interface UserAnalytics {
   geographic_distribution: Record<string, number>;
 }
 
+export interface UserGrowthPoint {
+  date: string;
+  workers: number;
+  employers: number;
+}
+
+export interface UserRetentionPoint {
+  date: string;
+  retention: number;
+}
+
 // System Health
 export interface SystemHealth {
   status: 'healthy' | 'degraded' | 'down';

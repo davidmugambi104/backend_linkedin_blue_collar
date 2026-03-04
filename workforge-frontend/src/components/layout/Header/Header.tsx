@@ -131,17 +131,17 @@ export const Header: React.FC<HeaderProps> = ({
             />
           ) : (
             <>
-              <Link to="/auth/login">
-                <Button variant="ghost" size="sm">
+              <Button variant="ghost" size="sm" asChild>
+                <Link to="/auth/login">
                   Sign in
-                </Button>
-              </Link>
+                </Link>
+              </Button>
 
-              <Link to="/auth/register">
-                <Button variant="default" size="sm">
+              <Button variant="default" size="sm" asChild>
+                <Link to="/auth/register">
                   Sign up
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             </>
           )}
         </div>

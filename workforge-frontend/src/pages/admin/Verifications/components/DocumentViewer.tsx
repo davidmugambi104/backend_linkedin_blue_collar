@@ -1,3 +1,4 @@
+// workforge-frontend/src/pages/admin/Verifications/components/DocumentViewer.tsx
 import React from 'react';
 import { Modal } from '@components/ui/Modal';
 

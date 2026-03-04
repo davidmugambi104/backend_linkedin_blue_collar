@@ -5,6 +5,7 @@ from sqlalchemy import or_
 from ..extensions import db
 from ..models import User, Message, Worker, Employer
 from ..schemas import MessageCreateSchema
+from ..utils.helpers import get_current_user_id
 
 messages_bp = Blueprint("messages", __name__)
 
@@ -18,7 +19,7 @@ def generate_conversation_id(user1_id, user2_id):
 @jwt_required()
 def get_conversations():
     """Get all conversations for the current user."""
-    current_user_id = get_jwt_identity()
+    current_user_id = get_current_user_id()
 
     messages = Message.query.filter(
         or_(
@@ -86,7 +87,7 @@ def get_conversations():
 @jwt_required()
 def get_conversation(other_user_id):
     """Get conversation between current user and another user."""
-    current_user_id = get_jwt_identity()
+    current_user_id = get_current_user_id()
     other_user = User.query.get_or_404(other_user_id)
 
     conversation_id = generate_conversation_id(current_user_id, other_user_id)
@@ -109,7 +110,7 @@ def get_conversation(other_user_id):
 @jwt_required()
 def send_message():
     """Send a message."""
-    current_user_id = get_jwt_identity()
+    current_user_id = get_current_user_id()
     schema = MessageCreateSchema()
     data = schema.load(request.json)
 
@@ -138,7 +139,7 @@ def send_message():
 @jwt_required()
 def mark_conversation_read(other_user_id):
     """Mark all messages in a conversation as read."""
-    current_user_id = get_jwt_identity()
+    current_user_id = get_current_user_id()
     conversation_id = generate_conversation_id(current_user_id, other_user_id)
 
     Message.query.filter(
@@ -155,7 +156,7 @@ def mark_conversation_read(other_user_id):
 @jwt_required()
 def get_unread_count():
     """Get total number of unread messages for the current user."""
-    current_user_id = get_jwt_identity()
+    current_user_id = get_current_user_id()
     count = Message.query.filter_by(receiver_id=current_user_id, is_read=False).count()
     return jsonify({"unread_count": count}), 200
 

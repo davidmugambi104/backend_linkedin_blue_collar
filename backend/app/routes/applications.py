@@ -6,6 +6,7 @@ from ..models import User, Application, Job, Worker, Employer, Skill, WorkerSkil
 from ..schemas import (
     ApplicationUpdateSchema,
 )
+from ..utils.helpers import get_current_user_id
 
 applications_bp = Blueprint("applications", __name__)
 
@@ -14,7 +15,7 @@ applications_bp = Blueprint("applications", __name__)
 @jwt_required()
 def get_applications():
     """Get applications (with filters based on role)."""
-    current_user_id = get_jwt_identity()
+    current_user_id = get_current_user_id()
     current_user = User.query.get(current_user_id)
 
     query = Application.query
@@ -83,7 +84,7 @@ def get_applications():
 @jwt_required()
 def get_application(application_id):
     """Get a specific application."""
-    current_user_id = get_jwt_identity()
+    current_user_id = get_current_user_id()
     current_user = User.query.get(current_user_id)
 
     application = Application.query.get_or_404(application_id)
@@ -146,7 +147,7 @@ def get_application(application_id):
 @jwt_required()
 def update_application(application_id):
     """Update an application (status update by employer or worker)."""
-    current_user_id = get_jwt_identity()
+    current_user_id = get_current_user_id()
     current_user = User.query.get(current_user_id)
 
     application = Application.query.get_or_404(application_id)
@@ -240,7 +241,7 @@ def update_application(application_id):
 @jwt_required()
 def delete_application(application_id):
     """Delete an application (worker or admin only)."""
-    current_user_id = get_jwt_identity()
+    current_user_id = get_current_user_id()
     current_user = User.query.get(current_user_id)
 
     application = Application.query.get_or_404(application_id)
@@ -271,7 +272,7 @@ def delete_application(application_id):
 @jwt_required()
 def get_application_stats():
     """Get application statistics for the current user."""
-    current_user_id = get_jwt_identity()
+    current_user_id = get_current_user_id()
     current_user = User.query.get(current_user_id)
 
     if current_user.role.value == "worker":

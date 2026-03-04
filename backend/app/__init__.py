@@ -8,8 +8,9 @@ from logging.handlers import RotatingFileHandler
 import os
 
 from .config import config_by_name
-from .extensions import db, jwt, migrate, socketio
+from .extensions import db, jwt, migrate, socketio, limiter
 from .routes import register_blueprints
+from flasgger import Swagger
 
 
 def create_app(config_name=None):
@@ -25,8 +26,36 @@ def create_app(config_name=None):
     db.init_app(app)
     jwt.init_app(app)
     migrate.init_app(app, db)
+    limiter.init_app(app)
     socketio.init_app(app, cors_allowed_origins=app.config["CORS_ORIGINS"])
-    CORS(app, resources={r"/api/*": {"origins": app.config["CORS_ORIGINS"]}})
+    
+    # Initialize Swagger
+    swagger = Swagger(app, template={
+        "info": {
+            "title": "WorkForge API",
+            "description": "WorkForge Workforce Platform API Documentation",
+            "version": "1.0.0"
+        },
+        "securityDefinitions": {
+            "Bearer": {
+                "type": "apiKey",
+                "name": "Authorization",
+                "in": "header",
+                "description": "JWT token. Example: Bearer <token>"
+            }
+        }
+    })
+    CORS(
+        app,
+        resources={
+            r"/api/*": {
+                "origins": app.config["CORS_ORIGINS"],
+                "allow_headers": ["Content-Type", "Authorization"],
+                "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+            }
+        },
+        supports_credentials=True,
+    )
 
     # Configure logging
     if not app.debug and not app.testing:
@@ -49,9 +78,10 @@ def create_app(config_name=None):
     register_blueprints(app)
 
     # Import and register socket events
-    from .sockets import chat
+    from .sockets import chat, notifications
 
     chat.register_socket_events()
+    notifications.register_notification_handlers()
 
     # Shell context for flask cli
     @app.shell_context_processor

@@ -101,12 +101,16 @@ class ApiClient {
 
         // Handle other errors with toast
         if (error.response?.status !== 401) {
-          const message =
-            (error.response?.data as any)?.message ||
-            (error.response?.data as any)?.error ||
-            error.message ||
-            'An error occurred';
-          toast.error(message);
+          // Allow silencing errors with a config flag
+          const silentError = (error.config as any)?.silentError;
+          if (!silentError) {
+            const message =
+              (error.response?.data as any)?.message ||
+              (error.response?.data as any)?.error ||
+              error.message ||
+              'An error occurred';
+            toast.error(message);
+          }
         }
 
         return Promise.reject(error);

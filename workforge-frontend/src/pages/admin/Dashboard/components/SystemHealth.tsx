@@ -1,3 +1,4 @@
+// workforge-frontend/src/pages/admin/Dashboard/components/SystemHealth.tsx
 import React from 'react';
 import {
   CheckCircleIcon,
@@ -13,6 +14,7 @@ import { Badge } from '@components/ui/Badge';
 import { Skeleton } from '@components/ui/Skeleton';
 import { useSystemHealth } from '@hooks/useAdmin';
 import { cn } from '@lib/utils/cn';
+
 
 export const SystemHealth: React.FC = () => {
   const { data: health, isLoading } = useSystemHealth();

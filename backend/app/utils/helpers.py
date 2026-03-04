@@ -2,6 +2,7 @@
 import json
 from datetime import datetime, date
 from flask import jsonify
+from flask_jwt_extended import get_jwt_identity
 
 
 class JSONEncoder(json.JSONEncoder):
@@ -107,3 +108,15 @@ def generate_username_from_email(email):
         username = "user"
 
     return username.lower()
+
+
+def get_current_user_id():
+    """Get the current user ID from JWT token as an integer.
+    
+    Since JWT tokens store the identity as a string, this helper
+    converts it back to an integer for database queries.
+    """
+    jwt_identity = get_jwt_identity()
+    if jwt_identity is None:
+        return None
+    return int(jwt_identity) if isinstance(jwt_identity, str) else jwt_identity

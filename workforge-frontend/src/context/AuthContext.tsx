@@ -7,7 +7,7 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<User>;
+  login: (email: string, password: string) => Promise<{ user: User; redirectPath: string }>;
   register: (username: string, email: string, password: string, role: UserRole) => Promise<void>;
   logout: () => Promise<void>;
   hasRole: (roles: UserRole | UserRole[]) => boolean;
@@ -38,12 +38,25 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     initializeAuth();
   }, []);
 
+  const getRedirectPath = (role: UserRole) => {
+    switch (role) {
+      case UserRole.WORKER:
+        return '/worker/dashboard';
+      case UserRole.EMPLOYER:
+        return '/employer/dashboard';
+      case UserRole.ADMIN:
+        return '/admin/dashboard';
+      default:
+        return '/';
+    }
+  };
+
   const login = async (email: string, password: string) => {
     setLoading(true);
     try {
       const response = await authService.login({ email, password });
       storeLogin(response.user, response.access_token, response.refresh_token);
-      return response.user;
+      return { user: response.user, redirectPath: getRedirectPath(response.user.role) };
     } finally {
       setLoading(false);
     }

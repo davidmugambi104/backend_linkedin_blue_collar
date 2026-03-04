@@ -1,3 +1,4 @@
+// workforge-frontend/src/pages/admin/Dashboard/components/RevenueChart.tsx
 import React from 'react';
 import {
   AreaChart,

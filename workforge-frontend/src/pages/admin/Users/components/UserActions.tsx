@@ -1,3 +1,4 @@
+// workforge-frontend/src/pages/admin/Users/components/UserActions.tsx
 import React from 'react';
 import { Button } from '@components/ui/Button';
 import { UserWithDetails } from '@types';

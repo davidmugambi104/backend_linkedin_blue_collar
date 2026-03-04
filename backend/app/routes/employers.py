@@ -71,6 +71,11 @@ def create_job():
     schema = JobCreateSchema()
     data = schema.load(request.json)
 
+    # Validate skill exists
+    from ..models import Skill
+    if not Skill.query.get(data["required_skill_id"]):
+        return jsonify({"error": "Skill does not exist"}), 400
+
     job = Job(
         employer_id=employer.id,
         title=data["title"],
@@ -121,6 +126,20 @@ def update_job(job_id):
 
     schema = JobUpdateSchema()
     data = schema.load(request.json, partial=True)
+
+    # Validate skill exists if provided
+    if "required_skill_id" in data:
+        from ..models import Skill
+        if not Skill.query.get(data["required_skill_id"]):
+            return jsonify({"error": "Skill does not exist"}), 400
+
+    # Convert status string to enum
+    if "status" in data:
+        from ..models.job import JobStatus
+        try:
+            data["status"] = JobStatus[data["status"].upper()]
+        except KeyError:
+            return jsonify({"error": f"Invalid status. Use: {[s.name.lower() for s in JobStatus]}"}), 400
 
     for key, value in data.items():
         setattr(job, key, value)

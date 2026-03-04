@@ -4,6 +4,7 @@ from ..extensions import db
 from ..models import User
 from ..schemas import UserUpdateSchema
 from ..utils.permissions import user_is_owner_or_admin
+from ..utils.helpers import get_current_user_id
 
 users_bp = Blueprint("users", __name__)
 
@@ -11,7 +12,7 @@ users_bp = Blueprint("users", __name__)
 @users_bp.route("/me", methods=["GET"])
 @jwt_required()
 def get_current_user():
-    current_user_id = get_jwt_identity()
+    current_user_id = get_current_user_id()
     user = User.query.get_or_404(current_user_id)
     return jsonify(user.to_dict()), 200
 
@@ -19,7 +20,7 @@ def get_current_user():
 @users_bp.route("/me", methods=["PUT"])
 @jwt_required()
 def update_current_user():
-    current_user_id = get_jwt_identity()
+    current_user_id = get_current_user_id()
     user = User.query.get_or_404(current_user_id)
 
     schema = UserUpdateSchema(context={"user": user})
@@ -35,7 +36,7 @@ def update_current_user():
 @users_bp.route("/<int:user_id>", methods=["GET"])
 @jwt_required()
 def get_user(user_id):
-    current_user_id = get_jwt_identity()
+    current_user_id = get_current_user_id()
     current_user = User.query.get(current_user_id)
     user = User.query.get_or_404(user_id)
 

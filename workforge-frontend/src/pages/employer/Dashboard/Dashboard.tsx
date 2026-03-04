@@ -58,13 +58,13 @@ const Dashboard: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Welcome Header */}
       <div>
-        <h1 className="text-3xl font-bold text-[#0F172A]">
+        <h1 className="text-3xl font-bold text-gray-900">
           Company Dashboard
         </h1>
-        <p className="mt-2 text-[#64748B]">
+        <p className="mt-2 text-gray-600">
           Manage your job postings and review applications
         </p>
       </div>
@@ -74,65 +74,65 @@ const Dashboard: React.FC = () => {
         {statsLoading ? (
           <>
             {[...Array(4)].map((_, i) => (
-              <Card key={i} className="bg-[#F8FAFC] rounded-2xl p-6">
-                <Skeleton className="h-20 bg-[#F1F5F9]" />
+              <Card key={i} className="p-6 bg-white/80 backdrop-blur-md border border-gray-100 shadow-md rounded-xl">
+                <Skeleton className="h-20" />
               </Card>
             ))}
           </>
         ) : (
           <>
-            <Card className="bg-[#F8FAFC] rounded-2xl p-6">
+            <Card className="p-6 bg-white/80 backdrop-blur-md border border-gray-100 shadow-md rounded-xl">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-[#64748B]">Active Jobs</p>
-                  <p className="mt-2 text-3xl font-bold text-[#0F172A]">
+                  <p className="text-sm font-medium text-gray-600">Active Jobs</p>
+                  <p className="mt-2 text-3xl font-bold text-gray-900">
                     {stats?.job_status_counts?.open || 0}
                   </p>
                 </div>
-                <div className="rounded-xl bg-[#2563EB]/10 p-3">
-                  <BriefcaseIcon className="h-8 w-8 text-[#2563EB]" />
+                <div className="rounded-xl bg-blue-100 p-3">
+                  <BriefcaseIcon className="h-8 w-8 text-blue-600" />
                 </div>
               </div>
             </Card>
 
-            <Card className="bg-[#F8FAFC] rounded-2xl p-6">
+            <Card className="p-6 bg-white/80 backdrop-blur-md border border-gray-100 shadow-md rounded-xl">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-[#64748B]">Total Applications</p>
-                  <p className="mt-2 text-3xl font-bold text-[#0F172A]">
+                  <p className="text-sm font-medium text-gray-600">Total Applications</p>
+                  <p className="mt-2 text-3xl font-bold text-gray-900">
                     {stats?.total_applications || 0}
                   </p>
                 </div>
-                <div className="rounded-xl bg-[#2563EB]/10 p-3">
-                  <UsersIcon className="h-8 w-8 text-[#2563EB]" />
+                <div className="rounded-xl bg-blue-100 p-3">
+                  <UsersIcon className="h-8 w-8 text-blue-600" />
                 </div>
               </div>
             </Card>
 
-            <Card className="bg-[#F8FAFC] rounded-2xl p-6">
+            <Card className="p-6 bg-white/80 backdrop-blur-md border border-gray-100 shadow-md rounded-xl">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-[#64748B]">Pending Review</p>
-                  <p className="mt-2 text-3xl font-bold text-[#0F172A]">
+                  <p className="text-sm font-medium text-gray-600">Pending Review</p>
+                  <p className="mt-2 text-3xl font-bold text-gray-900">
                     {pendingApplicationsCount}
                   </p>
                 </div>
-                <div className="rounded-xl bg-[#2563EB]/10 p-3">
-                  <ClockIcon className="h-8 w-8 text-[#2563EB]" />
+                <div className="rounded-xl bg-blue-100 p-3">
+                  <ClockIcon className="h-8 w-8 text-blue-600" />
                 </div>
               </div>
             </Card>
 
-            <Card className="bg-[#F8FAFC] rounded-2xl p-6">
+            <Card className="p-6 bg-white/80 backdrop-blur-md border border-gray-100 shadow-md rounded-xl">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-[#64748B]">Total Jobs Posted</p>
-                  <p className="mt-2 text-3xl font-bold text-[#0F172A]">
+                  <p className="text-sm font-medium text-gray-600">Total Jobs Posted</p>
+                  <p className="mt-2 text-3xl font-bold text-gray-900">
                     {stats?.total_jobs || 0}
                   </p>
                 </div>
-                <div className="rounded-xl bg-[#2563EB]/10 p-3">
-                  <ChartBarIcon className="h-8 w-8 text-[#2563EB]" />
+                <div className="rounded-xl bg-blue-100 p-3">
+                  <ChartBarIcon className="h-8 w-8 text-blue-600" />
                 </div>
               </div>
             </Card>
@@ -141,8 +141,8 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Quick Actions */}
-      <Card className="bg-white border border-[#E2E8F0] rounded-2xl p-6">
-        <h2 className="text-lg font-semibold text-[#0F172A] mb-4">Quick Actions</h2>
+      <Card className="p-6 bg-white/80 backdrop-blur-md border border-gray-100 shadow-md rounded-xl">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <Link to="/employer/jobs/new">
             <Button className="w-full justify-start rounded-xl bg-[#2563EB] text-white shadow-sm hover:bg-[#1E3A8A] active:scale-95">
@@ -173,11 +173,11 @@ const Dashboard: React.FC = () => {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Active Job Postings */}
-        <Card className="bg-white border border-[#E2E8F0] rounded-2xl p-6">
+        <Card className="p-6 bg-white/80 backdrop-blur-md border border-gray-100 shadow-md rounded-xl">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-[#0F172A]">Active Job Postings</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Active Job Postings</h2>
             <Link to="/employer/jobs">
-              <Button variant="ghost" size="sm" className="text-[#2563EB] hover:underline">
+              <Button variant="ghost" size="sm" className="text-blue-600 hover:underline">
                 View All
                 <ArrowRightIcon className="h-4 w-4 ml-2" />
               </Button>
@@ -229,11 +229,11 @@ const Dashboard: React.FC = () => {
         </Card>
 
         {/* Recent Applications */}
-        <Card className="bg-white border border-[#E2E8F0] rounded-2xl p-6">
+        <Card className="p-6 bg-white/80 backdrop-blur-md border border-gray-100 shadow-md rounded-xl">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-[#0F172A]">Recent Applications</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Recent Applications</h2>
             <Link to="/employer/applications">
-              <Button variant="ghost" size="sm" className="text-[#2563EB] hover:underline">
+              <Button variant="ghost" size="sm" className="text-blue-600 hover:underline">
                 View All
                 <ArrowRightIcon className="h-4 w-4 ml-2" />
               </Button>
@@ -248,9 +248,9 @@ const Dashboard: React.FC = () => {
             </div>
           ) : recentApplications.length === 0 ? (
             <div className="text-center py-12">
-              <UsersIcon className="h-12 w-12 mx-auto text-[#94A3B8] mb-4" />
-              <p className="text-[#64748B]">No applications yet</p>
-              <p className="text-sm text-[#64748B] mt-2">
+              <UsersIcon className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+              <p className="text-gray-600">No applications yet</p>
+              <p className="text-sm text-gray-500 mt-2">
                 Post a job to start receiving applications
               </p>
             </div>

@@ -1,14 +1,20 @@
-import React, { useMemo } from 'react';
-import { CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline';
-import { Card } from '@components/ui/Card';
-import { Button } from '@components/ui/Button';
-import { Badge } from '@components/ui/Badge';
-import { JobStatusBadge } from '@components/common/JobStatusBadge';
+// workforge-frontend/src/pages/admin/Jobs/Jobs.tsx
+import React, { useMemo, useState } from 'react';
+import { CheckCircleIcon, XCircleIcon, BriefcaseIcon } from '@heroicons/react/24/outline';
+import { AdminLayout } from '@components/admin/layout/AdminLayout';
+import { StatCard } from '@components/admin/cards/StatCard/StatCard';
+import { AdminTable } from '@components/admin/tables/AdminTable/AdminTable';
+import { StatusBadge } from '@components/admin/common/StatusBadge/StatusBadge';
 import { useModerationQueue, useModerateJob } from '@hooks/useAdmin';
+import { Button } from '@components/ui/Button';
+import { Input } from '@components/ui/Input';
 import type { JobModerationQueue } from '@types';
+import type { Column } from '@components/admin/tables/AdminTable/AdminTable.types';
 import { formatCurrency, formatDate } from '@lib/utils/format';
 
 const Jobs: React.FC = () => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' }>({ key: 'created_at', direction: 'desc' });
   const { data: queueData, isLoading, error } = useModerationQueue({ status: 'pending' });
   const moderateJobMutation = useModerateJob();
 
@@ -34,125 +40,123 @@ const Jobs: React.FC = () => {
     });
   };
 
-  const statusBadge = (status: JobModerationQueue['status']) => {
-    switch (status) {
-      case 'pending':
-        return <Badge variant="warning">Pending Review</Badge>;
-      case 'reviewed':
-        return <Badge variant="success">Reviewed</Badge>;
-      case 'action_taken':
-        return <Badge variant="info">Action Taken</Badge>;
-      case 'dismissed':
-        return <Badge variant="error">Dismissed</Badge>;
-      default:
-        return <Badge>{status}</Badge>;
-    }
-  };
-
-  if (error) {
-    return (
-      <Card className="p-6 border-red-200 bg-red-50">
-        <p className="text-red-600">Error loading jobs: {error instanceof Error ? error.message : 'Unknown error'}</p>
-      </Card>
-    );
-  }
+  const columns: Column<JobModerationQueue>[] = [
+    {
+      key: 'title',
+      header: 'Job Title',
+      sortable: true,
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      accessor: (job) => (
+        <StatusBadge status={job.status === 'pending' ? 'pending' : job.status === 'reviewed' ? 'completed' : 'active'}>
+          {job.status.charAt(0).toUpperCase() + job.status.slice(1)}
+        </StatusBadge>
+      ),
+    },
+    {
+      key: 'created_at',
+      header: 'Date Posted',
+      accessor: (job) => formatDate(job.created_at),
+      sortable: true,
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      accessor: (job) => (
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => handleApprove(job.id)}
+            disabled={moderateJobMutation.isPending}
+            className="text-emerald-600 hover:text-emerald-700"
+          >
+            <CheckCircleIcon className="w-4 h-4" />
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => handleReject(job.id)}
+            disabled={moderateJobMutation.isPending}
+            className="text-rose-600 hover:text-rose-700"
+          >
+            <XCircleIcon className="w-4 h-4" />
+          </Button>
+        </div>
+      ),
+    },
+  ];
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Jobs Moderation</h1>
-        <p className="mt-2 text-gray-600 dark:text-gray-400">Review and approve job postings</p>
+    <AdminLayout>
+      {/* Header */}
+      <div className="space-y-2">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          Jobs Moderation
+        </h1>
+        <p className="text-gray-600 dark:text-gray-400">
+          Review and approve job postings
+        </p>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="p-4">
-          <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Total Jobs</p>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total}</p>
-        </Card>
-        <Card className="p-4">
-          <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Pending Review</p>
-          <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
-        </Card>
-        <Card className="p-4">
-          <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Approved</p>
-          <p className="text-2xl font-bold text-green-600">{stats.reviewed}</p>
-        </Card>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <StatCard
+          title="Total Jobs"
+          value={stats.total}
+          icon={BriefcaseIcon}
+          loading={isLoading}
+        />
+        <StatCard
+          title="Pending Review"
+          value={stats.pending}
+          trend="up"
+          change={stats.pending > 0 ? 5 : 0}
+          icon={BriefcaseIcon}
+          loading={isLoading}
+        />
+        <StatCard
+          title="Reviewed"
+          value={stats.reviewed}
+          trend="up"
+          change={10}
+          icon={CheckCircleIcon}
+          loading={isLoading}
+        />
       </div>
 
-      {/* Loading State */}
-      {isLoading && (
-        <Card className="p-12 text-center">
-          <p className="text-gray-600 dark:text-gray-400">Loading jobs for review...</p>
-        </Card>
-      )}
+      {/* Search & Filter */}
+      <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 dark:border-gray-800/50 p-6">
+        <div className="max-w-md">
+          <Input
+            placeholder="Search jobs..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="rounded-xl"
+          />
+        </div>
+      </div>
 
-      {/* Jobs List */}
-      {!isLoading && (
-        <div className="space-y-4">
-          {jobs.length > 0 ? (
-            jobs.map((queueItem) => (
-              <Card key={queueItem.id} className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{queueItem.job.title}</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">by {queueItem.job.employer?.company_name || 'Unknown'}</p>
-                  </div>
-                  <div>{statusBadge(queueItem.status)}</div>
-                </div>
+      {/* Jobs Table */}
+      <AdminTable
+        columns={columns}
+        data={jobs}
+        loading={isLoading}
+        sortConfig={sortConfig}
+        onSort={(config) => setSortConfig(config)}
+        emptyState={<div className="text-center py-8 text-gray-500">No jobs to moderate</div>}
+      />
 
-                <div className="grid grid-cols-4 gap-4 mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
-                  <div>
-                    <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Budget</p>
-                    <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                      {formatCurrency(queueItem.job.pay_min)} - {formatCurrency(queueItem.job.pay_max)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Applications</p>
-                    <p className="text-sm font-semibold text-gray-900 dark:text-white">{queueItem.job.application_count || 0}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Job Status</p>
-                    <JobStatusBadge status={queueItem.job.status} size="sm" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Posted</p>
-                    <p className="text-sm font-semibold text-gray-900 dark:text-white">{formatDate(queueItem.created_at)}</p>
-                  </div>
-                </div>
-
-                {queueItem.status === 'pending' && (
-                  <div className="flex space-x-3">
-                    <Button 
-                      onClick={() => handleApprove(queueItem.job.id)} 
-                      disabled={moderateJobMutation.isPending}
-                      className="flex items-center space-x-2"
-                    >
-                      <CheckCircleIcon className="h-5 w-5" />
-                      <span>Approve</span>
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => handleReject(queueItem.job.id)}
-                      disabled={moderateJobMutation.isPending}
-                      className="flex items-center space-x-2"
-                    >
-                      <XCircleIcon className="h-5 w-5" />
-                      <span>Reject</span>
-                    </Button>
-                  </div>
-                )}
-              </Card>
-            ))
-          ) : (
-            <Card className="p-12 text-center">
-              <p className="text-gray-600 dark:text-gray-400">No jobs pending review</p>
-            </Card>
-          )}
+      {error && (
+        <div className="bg-rose-100/50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 rounded-2xl p-6">
+          <p className="text-rose-600 dark:text-rose-400">
+            Error loading jobs: {error instanceof Error ? error.message : 'Unknown error'}
+          </p>
         </div>
       )}
-    </div>
+    </AdminLayout>
   );
 };
 

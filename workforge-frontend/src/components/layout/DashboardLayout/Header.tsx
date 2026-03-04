@@ -1,34 +1,38 @@
-import React from 'react';
-import { Bars3Icon, BellIcon } from '@heroicons/react/24/outline';
+import React, { useState } from 'react';
+import { MagnifyingGlassIcon, BellIcon } from '@heroicons/react/24/outline';
 
 interface HeaderProps {
-  onMenuClick: () => void;
+  title?: string;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
+export const Header: React.FC<HeaderProps> = () => {
+  const [searchQuery, setSearchQuery] = useState('');
+
   return (
-    <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
-      <div className="flex items-center justify-between px-6 py-4">
-        <button
-          onClick={onMenuClick}
-          className="lg:hidden p-2 rounded-xl text-slate-600 hover:bg-slate-100 transition-colors"
-        >
-          <Bars3Icon className="w-6 h-6" />
-        </button>
-
-        <div className="flex items-center gap-3">
-          {/* Notifications */}
-          <button className="relative p-2 rounded-xl text-slate-600 hover:bg-slate-100 transition-colors">
-            <BellIcon className="w-6 h-6" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
-          </button>
-
-          {/* User Avatar */}
-          <div className="flex items-center gap-3 pl-3 border-l border-slate-200">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-sm">
-              <span className="text-sm font-bold text-white">U</span>
-            </div>
+    <header className="sticky top-0 z-20 px-6 py-4">
+      <div className="max-w-6xl mx-auto">
+        {/* Professional Glassmorphism Search & Notifications Bar */}
+        <div className="backdrop-blur-xl bg-white/70 border border-blue-100 rounded-2xl px-4 py-3 flex items-center gap-4 shadow-soft hover:shadow-lg hover:bg-white/80 transition-all duration-300">
+          {/* Search Bar */}
+          <div className="flex items-center gap-2 flex-1">
+            <MagnifyingGlassIcon className="w-5 h-5 text-primary-500 flex-shrink-0" />
+            <input
+              type="text"
+              placeholder="Search jobs, applications, messages..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="bg-transparent outline-none text-slate-700 placeholder-slate-500 w-full text-sm font-medium"
+            />
           </div>
+
+          {/* Divider */}
+          <div className="w-px h-6 bg-blue-100"></div>
+
+          {/* Notifications Button */}
+          <button className="relative p-2 rounded-xl hover:bg-primary-500/10 transition-all duration-200 group">
+            <BellIcon className="w-5 h-5 text-slate-600 group-hover:text-primary-500 transition-colors" />
+            <span className="absolute top-1 right-1 w-2 h-2 bg-error-500 rounded-full animate-pulse"></span>
+          </button>
         </div>
       </div>
     </header>

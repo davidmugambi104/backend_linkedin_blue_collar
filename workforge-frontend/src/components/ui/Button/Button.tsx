@@ -1,4 +1,5 @@
 import React, { forwardRef } from 'react';
+import { Slot } from '@radix-ui/react-slot';
 import { cn } from '@lib/utils/cn';
 import { ButtonProps } from './Button.types';
 import { Spinner } from '../Spinner/Spinner';
@@ -16,6 +17,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       children,
       disabled,
       type = 'button',
+      asChild = false,
       ...props
     },
     ref
@@ -109,11 +111,34 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       icon: 'h-10 w-10 p-0',
     };
 
+    const Comp = asChild ? Slot : 'button';
+    const componentProps = asChild
+      ? {}
+      : { type, disabled: disabled || isLoading };
+
+    if (asChild) {
+      return (
+        <Comp
+          ref={ref}
+          aria-busy={isLoading}
+          className={cn(
+            baseStyles,
+            variants[variant],
+            sizes[size],
+            fullWidth && 'w-full',
+            isLoading && 'cursor-wait',
+            className
+          )}
+          {...props}
+        >
+          {children}
+        </Comp>
+      );
+    }
+
     return (
-      <button
+      <Comp
         ref={ref}
-        type={type}
-        disabled={disabled || isLoading}
         aria-busy={isLoading}
         className={cn(
           baseStyles,
@@ -123,6 +148,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           isLoading && 'cursor-wait',
           className
         )}
+        {...componentProps}
         {...props}
       >
         {/* Loading Spinner */}
@@ -152,7 +178,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
             {rightIcon}
           </span>
         )}
-      </button>
+      </Comp>
     );
   }
 );

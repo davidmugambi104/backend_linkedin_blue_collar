@@ -5,9 +5,9 @@ export const ENDPOINTS = {
     REGISTER: '/auth/register',
     LOGOUT: '/auth/logout',
     REFRESH: '/auth/refresh',
-    FORGOT_PASSWORD: '/auth/forgot-password',
-    RESET_PASSWORD: '/auth/reset-password',
-    VERIFY_EMAIL: '/auth/verify-email',
+    PASSWORD_RESET_REQUEST: '/auth/password-reset/request',
+    PASSWORD_RESET_VERIFY: '/auth/password-reset/verify',
+    PASSWORD_CHANGE: '/auth/password/change',
   },
   
   // User endpoints
@@ -56,6 +56,14 @@ export const ENDPOINTS = {
     DELETE: (jobId: number) => `/jobs/${jobId}`,
     APPLY: (jobId: number) => `/jobs/${jobId}/apply`,
     APPLICATIONS: '/jobs/applications',
+    SEARCH: '/jobs/search',
+    MATCH_WORKERS: (jobId: number) => `/jobs/match/workers/${jobId}`,
+    SHORTLIST: (jobId: number, workerId: number) => `/jobs/${jobId}/shortlist/${workerId}`,
+  },
+  
+  // Matching endpoints
+  MATCHING: {
+    WORKER_TO_JOB: (jobId: number) => `/workers/match/jobs/${jobId}`,
   },
   
   // Application endpoints
@@ -104,5 +112,26 @@ export const ENDPOINTS = {
     VERIFICATIONS: '/admin/verifications',
     PAYMENTS: '/admin/payments',
     REPORTS: '/admin/reports',
+  },
+  
+  // Verification endpoints
+  VERIFICATION: {
+    SEND_CODE: '/verification/send-code',
+    VERIFY_CODE: '/verification/verify-code',
+    VERIFY_PHONE: '/verification/verify-phone',
+    RESEND_CODE: '/verification/resend-code',
+    UPLOAD_DOCUMENT: '/verification/document/upload',
+    MY_DOCUMENTS: '/verification/documents',
+    STATUS: '/verification/status',
+    ADMIN_QUEUE: '/verification/admin/queue',
+    ADMIN_REVIEW: (docId: number) => `/verification/admin/review/${docId}`,
+  },
+  
+  // Escrow endpoints
+  ESCROW: {
+    HOLD: '/escrow/hold',
+    RELEASE: '/escrow/release',
+    REFUND: '/escrow/refund',
+    JOB: (jobId: number) => `/escrow/job/${jobId}`,
   },
 };

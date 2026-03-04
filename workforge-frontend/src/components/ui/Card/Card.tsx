@@ -33,11 +33,26 @@ const Card = forwardRef<HTMLDivElement, CardProps>(
       <div
         ref={ref}
         className={cn(
-          'bg-white dark:bg-slate-900 rounded-2xl',
-          paddings[padding],
+          // Base glass styles
+          'relative rounded-2xl backdrop-blur-md transition-all duration-200',
+          'text-gray-900 dark:text-gray-100',
+          // Light mode glass
+          'bg-gradient-to-br from-white/30 to-white/10',
+          bordered && 'border border-white/30',
+          // Dark mode glass
+          'dark:bg-gradient-to-br dark:from-black/40 dark:to-black/20',
+          'dark:border-white/10',
+          // Shadows (with slight alpha for depth)
           shadows[shadow],
-          bordered && 'border border-slate-200 dark:border-slate-800',
-          hoverable && 'transition-all duration-200 hover:shadow-lg cursor-pointer',
+          'shadow-black/5 dark:shadow-white/5',
+          // Padding
+          paddings[padding],
+          // Hover effect when hoverable
+          hoverable && [
+            'cursor-pointer hover:shadow-lg',
+            'hover:bg-white/40 dark:hover:bg-black/30',
+            'hover:border-white/40 dark:hover:border-white/20',
+          ],
           className
         )}
         {...props}
@@ -55,7 +70,11 @@ const CardHeader = forwardRef<HTMLDivElement, CardHeaderProps>(
     return (
       <div
         ref={ref}
-        className={cn('flex items-center justify-between mb-4', className)}
+        className={cn(
+          'flex items-center justify-between mb-4',
+          'text-gray-900 dark:text-gray-100', // Ensure header text contrast
+          className
+        )}
         {...props}
       >
         {children}
@@ -69,7 +88,14 @@ CardHeader.displayName = 'CardHeader';
 const CardBody = forwardRef<HTMLDivElement, CardBodyProps>(
   ({ children, className, ...props }, ref) => {
     return (
-      <div ref={ref} className={cn('', className)} {...props}>
+      <div
+        ref={ref}
+        className={cn(
+          'text-gray-900 dark:text-gray-100', // Base text color for body content
+          className
+        )}
+        {...props}
+      >
         {children}
       </div>
     );
@@ -83,7 +109,12 @@ const CardFooter = forwardRef<HTMLDivElement, CardFooterProps>(
     return (
       <div
         ref={ref}
-        className={cn('flex items-center justify-between mt-4 pt-4 border-t border-gray-200 dark:border-gray-800', className)}
+        className={cn(
+          'flex items-center justify-between mt-4 pt-4',
+          'border-t border-gray-200/50 dark:border-gray-700/50', // Softer border for glass
+          'text-gray-900 dark:text-gray-100',
+          className
+        )}
         {...props}
       >
         {children}

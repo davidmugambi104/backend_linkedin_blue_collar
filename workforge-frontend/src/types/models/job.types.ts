@@ -37,6 +37,14 @@ export interface Job {
   required_skill?: Skill;
   application_count?: number;
   distance_km?: number;
+  match_score?: number;
+  // New fields from agenda
+  county?: string;
+  sub_county?: string;
+  start_date?: string;
+  required_experience_years?: number;
+  number_of_fundis_needed?: number;
+  is_flexible_hours?: boolean;
   // Additional optional properties for UI
   location?: string;
   employment_type?: string;
@@ -84,4 +92,9 @@ export interface JobSearchParams {
   pay_type?: PayType;
   status?: JobStatus;
   employer_id?: number;
+  county?: string;
+  sub_county?: string;
+  start_date?: string;
+  min_experience?: number;
+  fundis_needed?: number;
 }

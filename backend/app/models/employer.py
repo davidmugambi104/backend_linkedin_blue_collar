@@ -21,6 +21,15 @@ class Employer(db.Model):
     updated_at = db.Column(
         db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
     )
+    
+    # New fields from agenda
+    business_registration_number = db.Column(db.String(50))
+    company_type = db.Column(db.String(50))  # individual, small_business, corporation, ngo, government
+    kra_pin = db.Column(db.String(20))
+    county = db.Column(db.String(100), index=True)
+    sub_county = db.Column(db.String(100))
+    industry_sector = db.Column(db.String(100))
+    company_size = db.Column(db.String(50))
 
     # Relationships
     jobs = db.relationship("Job", backref="employer", cascade="all, delete-orphan")
@@ -66,6 +75,13 @@ class Employer(db.Model):
             "phone": self.phone,
             "website": self.website,
             "logo": self.logo,
+            "business_registration_number": self.business_registration_number,
+            "company_type": self.company_type,
+            "kra_pin": self.kra_pin,
+            "county": self.county,
+            "sub_county": self.sub_county,
+            "industry_sector": self.industry_sector,
+            "company_size": self.company_size,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }

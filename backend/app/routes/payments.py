@@ -1,248 +1,218 @@
 # ----- FILE: backend/app/routes/payments.py -----
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from datetime import datetime, timedelta
 from ..extensions import db
-from ..models import User, Payment, Job, Worker, Employer, Application
-from ..schemas import PaymentCreateSchema, PaymentUpdateSchema
-from ..utils.permissions import admin_required
+from ..models.payment import Payment, PaymentStatus
+from ..models.user import User
+from ..services.mpesa_service import mpesa_service
+import uuid
 
-payments_bp = Blueprint("payments", __name__)
-
-
-def calculate_payment_details(amount):
-    """Calculate platform fee (10%) and net amount."""
-    platform_fee = amount * 0.10
-    net_amount = amount - platform_fee
-    return platform_fee, net_amount
+payments_bp = Blueprint('payments', __name__, url_prefix='/api/payments')
 
 
-@payments_bp.route("/", methods=["POST"])
+@payments_bp.route('/deposit', methods=['POST'])
 @jwt_required()
-def create_payment():
-    """Create a payment record (employer or admin only)."""
+def initiate_deposit():
+    """Initiate STK Push for deposit to wallet"""
     current_user_id = get_jwt_identity()
-    current_user = User.query.get(current_user_id)
-
-    if current_user.role.value not in ["employer", "admin"]:
-        return jsonify({"error": "Only employers and admins can create payments"}), 403
-
-    schema = PaymentCreateSchema()
-    data = schema.load(request.json)
-
-    job_id = data["job_id"]
-    job = Job.query.get_or_404(job_id)
-
-    from ..models.job import JobStatus
-
-    if job.status != JobStatus.COMPLETED:
-        return (
-            jsonify({"error": "Payments can only be created for completed jobs"}),
-            400,
-        )
-
-    if current_user.role.value == "employer":
-        employer = Employer.query.filter_by(user_id=current_user_id).first()
-        if not employer or job.employer_id != employer.id:
-            return (
-                jsonify({"error": "You can only create payments for jobs you posted"}),
-                403,
-            )
-
-    application = Application.query.filter_by(job_id=job_id, status="accepted").first()
-    if not application:
-        return jsonify({"error": "No worker was hired for this job"}), 400
-
-    worker_id = application.worker_id
-    amount = data["amount"]
-
-    existing_payment = Payment.query.filter_by(job_id=job_id).first()
-    if existing_payment:
-        return jsonify({"error": "A payment already exists for this job"}), 400
-
-    platform_fee, net_amount = calculate_payment_details(amount)
-
-    payment = Payment(
-        job_id=job_id,
-        employer_id=job.employer_id,
-        worker_id=worker_id,
-        amount=amount,
-        platform_fee=platform_fee,
-        net_amount=net_amount,
-        payment_method=data.get("payment_method"),
-        transaction_id=data.get("transaction_id"),
+    data = request.get_json()
+    
+    phone = data.get('phone')
+    amount = data.get('amount')
+    reference = data.get('reference', f"deposit_{uuid.uuid4().hex[:8]}")
+    
+    if not phone or not amount:
+        return jsonify({'error': 'Phone and amount required'}), 400
+    
+    if amount < 1:
+        return jsonify({'error': 'Minimum amount is 1'}), 400
+    
+    # Initiate STK Push
+    result = mpesa_service.stk_push(
+        phone=phone,
+        amount=int(amount),
+        reference=reference,
+        description=f"Wallet deposit for user {current_user_id}"
     )
+    
+    if result.get('success'):
+        # Create pending payment record
+        payment = Payment(
+            user_id=current_user_id,
+            amount=amount,
+            payment_type='deposit',
+            reference=reference,
+            status=PaymentStatus.PENDING,
+            provider='mpesa',
+            provider_reference=result.get('checkout_request_id'),
+            phone=phone
+        )
+        db.session.add(payment)
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Payment initiated. Check your phone for STK prompt.',
+            'checkout_request_id': result.get('checkout_request_id'),
+            'payment_id': payment.id,
+            'mock': result.get('mock', False)
+        }), 200
+    else:
+        return jsonify({'error': result.get('error', 'Payment failed')}), 400
 
+
+@payments_bp.route('/withdraw', methods=['POST'])
+@jwt_required()
+def initiate_withdraw():
+    """Initiate B2C for withdrawal to phone"""
+    current_user_id = get_jwt_identity()
+    data = request.get_json()
+    
+    phone = data.get('phone')
+    amount = data.get('amount')
+    
+    if not phone or not amount:
+        return jsonify({'error': 'Phone and amount required'}), 400
+    
+    if amount < 10:
+        return jsonify({'error': 'Minimum withdrawal is 10'}), 400
+    
+    # Create payment record first
+    reference = f"withdraw_{uuid.uuid4().hex[:8]}"
+    payment = Payment(
+        user_id=current_user_id,
+        amount=amount,
+        payment_type='withdrawal',
+        reference=reference,
+        status=PaymentStatus.PENDING,
+        provider='mpesa',
+        phone=phone
+    )
     db.session.add(payment)
     db.session.commit()
-    return jsonify(payment.to_dict()), 201
+    
+    # Initiate B2C payment
+    result = mpesa_service.b2c_payment(
+        phone=phone,
+        amount=int(amount),
+        remark=f"Withdrawal {reference}"
+    )
+    
+    if result.get('success'):
+        payment.provider_reference = result.get('conversation_id')
+        payment.status = PaymentStatus.PROCESSING
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Withdrawal initiated',
+            'conversation_id': result.get('conversation_id'),
+            'payment_id': payment.id,
+            'mock': result.get('mock', False)
+        }), 200
+    else:
+        payment.status = PaymentStatus.FAILED
+        db.session.commit()
+        return jsonify({'error': result.get('error', 'Withdrawal failed')}), 400
 
 
-@payments_bp.route("/", methods=["GET"])
+@payments_bp.route('/status/<checkout_request_id>', methods=['GET'])
 @jwt_required()
-def get_payments():
-    """Get payments (filtered by role)."""
+def check_payment_status(checkout_request_id):
+    """Check status of a payment"""
+    result = mpesa_service.check_transaction_status(checkout_request_id)
+    
+    # Update payment record if found
+    payment = Payment.query.filter_by(provider_reference=checkout_request_id).first()
+    if payment:
+        if result.get('result_code') == '0':
+            payment.status = PaymentStatus.COMPLETED
+        elif result.get('result_code'):
+            payment.status = PaymentStatus.FAILED
+        db.session.commit()
+    
+    return jsonify({
+        'status': result,
+        'payment': payment.to_dict() if payment else None
+    })
+
+
+@payments_bp.route('/my', methods=['GET'])
+@jwt_required()
+def my_payments():
+    """Get user's payment history"""
     current_user_id = get_jwt_identity()
-    current_user = User.query.get(current_user_id)
-
-    query = Payment.query
-
-    if current_user.role.value == "worker":
-        worker = Worker.query.filter_by(user_id=current_user_id).first()
-        if not worker:
-            return jsonify({"error": "Worker profile not found"}), 404
-        query = query.filter_by(worker_id=worker.id)
-
-    elif current_user.role.value == "employer":
-        employer = Employer.query.filter_by(user_id=current_user_id).first()
-        if not employer:
-            return jsonify({"error": "Employer profile not found"}), 404
-        query = query.filter_by(employer_id=employer.id)
-
-    job_id = request.args.get("job_id")
-    status = request.args.get("status")
-
-    if job_id:
-        query = query.filter_by(job_id=job_id)
-
-    if status:
-        from ..models.payment import PaymentStatus
-
-        try:
-            query = query.filter_by(status=PaymentStatus(status))
-        except ValueError:
-            return jsonify({"error": "Invalid status value"}), 400
-
-    payments = query.order_by(Payment.created_at.desc()).all()
-
-    result = []
-    for payment in payments:
-        payment_dict = payment.to_dict()
-
-        job = Job.query.get(payment.job_id)
-        if job:
-            payment_dict["job"] = job.to_dict()
-
-        worker = Worker.query.get(payment.worker_id)
-        if worker:
-            payment_dict["worker"] = worker.to_dict()
-
-        employer = Employer.query.get(payment.employer_id)
-        if employer:
-            payment_dict["employer"] = employer.to_dict()
-
-        result.append(payment_dict)
-
-    return jsonify(result), 200
+    
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 20, type=int)
+    
+    payments = Payment.query.filter_by(user_id=current_user_id)\
+        .order_by(Payment.created_at.desc())\
+        .paginate(page=page, per_page=per_page, error_out=False)
+    
+    return jsonify({
+        'payments': [p.to_dict() for p in payments.items],
+        'total': payments.total,
+        'pages': payments.pages,
+        'current_page': page
+    })
 
 
-@payments_bp.route("/<int:payment_id>", methods=["GET"])
+@payments_bp.route('/<int:payment_id>', methods=['GET'])
 @jwt_required()
 def get_payment(payment_id):
-    """Get a specific payment."""
+    """Get specific payment details"""
     current_user_id = get_jwt_identity()
-    current_user = User.query.get(current_user_id)
-
-    payment = Payment.query.get_or_404(payment_id)
-
-    if current_user.role.value == "worker":
-        worker = Worker.query.filter_by(user_id=current_user_id).first()
-        if not worker or payment.worker_id != worker.id:
-            return jsonify({"error": "You can only view your own payments"}), 403
-
-    elif current_user.role.value == "employer":
-        employer = Employer.query.filter_by(user_id=current_user_id).first()
-        if not employer or payment.employer_id != employer.id:
-            return jsonify({"error": "You can only view payments for your jobs"}), 403
-
-    payment_dict = payment.to_dict()
-
-    job = Job.query.get(payment.job_id)
-    if job:
-        payment_dict["job"] = job.to_dict()
-
-    worker = Worker.query.get(payment.worker_id)
-    if worker:
-        payment_dict["worker"] = worker.to_dict()
-
-    employer = Employer.query.get(payment.employer_id)
-    if employer:
-        payment_dict["employer"] = employer.to_dict()
-
-    return jsonify(payment_dict), 200
+    
+    payment = Payment.query.filter_by(
+        id=payment_id, 
+        user_id=current_user_id
+    ).first()
+    
+    if not payment:
+        return jsonify({'error': 'Payment not found'}), 404
+    
+    return jsonify({'payment': payment.to_dict()})
 
 
-@payments_bp.route("/<int:payment_id>", methods=["PUT"])
-@jwt_required()
-def update_payment(payment_id):
-    """Update a payment (admin or employer who made it)."""
-    current_user_id = get_jwt_identity()
-    current_user = User.query.get(current_user_id)
-
-    payment = Payment.query.get_or_404(payment_id)
-
-    if current_user.role.value == "employer":
-        employer = Employer.query.filter_by(user_id=current_user_id).first()
-        if not employer or payment.employer_id != employer.id:
-            return jsonify({"error": "You can only update payments for your jobs"}), 403
-    elif current_user.role.value != "admin":
-        return jsonify({"error": "You do not have permission to update payments"}), 403
-
-    schema = PaymentUpdateSchema()
-    data = schema.load(request.json, partial=True)
-
-    for key, value in data.items():
-        setattr(payment, key, value)
-
-    if "status" in data and data["status"] == "paid" and not payment.paid_at:
-        payment.paid_at = datetime.utcnow()
-
-    db.session.commit()
-    return jsonify(payment.to_dict()), 200
-
-
-@payments_bp.route("/stats", methods=["GET"])
-@jwt_required()
-@admin_required
-def get_payment_stats():
-    """Get payment statistics (admin only)."""
-    total_payments = Payment.query.count()
-    total_amount = (
-        db.session.query(db.func.sum(Payment.amount))
-        .filter(Payment.status == "paid")
-        .scalar()
-        or 0
-    )
-    total_fees = (
-        db.session.query(db.func.sum(Payment.platform_fee))
-        .filter(Payment.status == "paid")
-        .scalar()
-        or 0
-    )
-
-    payments_by_status = {}
-    payments = Payment.query.all()
-    for payment in payments:
-        status = payment.status.value
-        payments_by_status[status] = payments_by_status.get(status, 0) + 1
-
-    thirty_days_ago = datetime.utcnow() - timedelta(days=30)
-    recent_payments = Payment.query.filter(
-        Payment.created_at >= thirty_days_ago
-    ).count()
-
-    return (
-        jsonify(
-            {
-                "total_payments": total_payments,
-                "total_amount_paid": float(total_amount),
-                "total_platform_fees": float(total_fees),
-                "payments_by_status": payments_by_status,
-                "recent_payments_last_30_days": recent_payments,
-            }
-        ),
-        200,
-    )
+@payments_bp.route('/callback', methods=['POST'])
+def mpesa_callback():
+    """M-Pesa callback URL for transaction confirmation"""
+    data = request.get_json()
+    
+    # Extract transaction details from callback
+    body = data.get('Body', {})
+    stk_callback = body.get('stkCallback', {})
+    
+    checkout_request_id = stk_callback.get('CheckoutRequestID')
+    result_code = stk_callback.get('ResultCode')
+    
+    # Find and update payment
+    payment = Payment.query.filter_by(provider_reference=checkout_request_id).first()
+    if payment:
+        if result_code == 0:
+            # Get amount from callback metadata
+            callback_metadata = stk_callback.get('CallbackMetadata', {}).get('Item', [])
+            amount = None
+            for item in callback_metadata:
+                if item.get('Name') == 'Amount':
+                    amount = item.get('Value')
+            
+            payment.status = PaymentStatus.COMPLETED
+            if amount:
+                payment.amount = amount
+        else:
+            payment.status = PaymentStatus.FAILED
+        
+        db.session.commit()
+    
+    return jsonify({'status': 'received'})
 
 
-# ----- END FILE -----
+@payments_bp.route('/config', methods=['GET'])
+def get_payment_config():
+    """Get payment configuration (for frontend)"""
+    return jsonify({
+        'providers': ['mpesa'],
+        'minimum_deposit': 1,
+        'minimum_withdrawal': 10,
+        'mock_mode': True  # Set to False when real credentials configured
+    })

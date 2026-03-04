@@ -5,6 +5,7 @@ from ..extensions import db
 from ..models import User, Review, Job, Worker, Employer, Application
 from ..schemas import ReviewCreateSchema
 from ..utils.permissions import employer_required
+from ..utils.helpers import get_current_user_id
 
 reviews_bp = Blueprint("reviews", __name__)
 
@@ -44,7 +45,7 @@ def get_reviews():
 @employer_required
 def create_review():
     """Employer creates a review for a worker after job completion."""
-    current_user_id = get_jwt_identity()
+    current_user_id = get_current_user_id()
     employer = Employer.query.filter_by(user_id=current_user_id).first_or_404()
 
     schema = ReviewCreateSchema()
@@ -63,8 +64,8 @@ def create_review():
             400,
         )
 
-    application = Application.query.filter_by(job_id=job_id, status="accepted").first()
-    if not application:
+    application = Application.query.filter_by(job_id=job_id).first()
+    if not application or application.status.value != "accepted":
         return jsonify({"error": "No worker was hired for this job"}), 400
 
     worker_id = application.worker_id
@@ -118,7 +119,7 @@ def get_review(review_id):
 @jwt_required()
 def update_review(review_id):
     """Update a review (only by the employer who created it or admin)."""
-    current_user_id = get_jwt_identity()
+    current_user_id = get_current_user_id()
     current_user = User.query.get(current_user_id)
     review = Review.query.get_or_404(review_id)
 
@@ -163,7 +164,7 @@ def update_review(review_id):
 @jwt_required()
 def delete_review(review_id):
     """Delete a review (only by the employer who created it or admin)."""
-    current_user_id = get_jwt_identity()
+    current_user_id = get_current_user_id()
     current_user = User.query.get(current_user_id)
     review = Review.query.get_or_404(review_id)
 

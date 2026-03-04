@@ -1,3 +1,4 @@
+// workforge-frontend/src/pages/admin/Dashboard/components/RecentActivity.tsx
 import React from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import {

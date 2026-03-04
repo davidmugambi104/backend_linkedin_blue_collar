@@ -1,0 +1,3 @@
+// workforge-frontend/src/components/admin/cards/StatCard/index.ts
+export { StatCard } from './StatCard';
+export type { StatCardProps } from './StatCard.types';

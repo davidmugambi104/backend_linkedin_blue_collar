@@ -1,5 +1,7 @@
+// workforge-frontend/src/pages/admin/Verifications/components/VerificationStats.tsx
 import React from 'react';
-import { Card } from '@components/ui/Card';
+import { ClockIcon, CheckCircleIcon, ExclamationCircleIcon } from '@heroicons/react/24/outline';
+import { StatCard } from '@components/admin/cards/StatCard/StatCard';
 import { useVerificationQueue } from '@hooks/useAdmin';
 
 export const VerificationStats: React.FC = () => {
@@ -8,25 +10,28 @@ export const VerificationStats: React.FC = () => {
   const { data: rejectedData } = useVerificationQueue({ status: 'rejected' });
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-      <Card className="p-4">
-        <p className="text-sm text-gray-600 dark:text-gray-400">Pending</p>
-        <p className="text-2xl font-bold text-gray-900 dark:text-white">
-          {pendingData?.total || 0}
-        </p>
-      </Card>
-      <Card className="p-4">
-        <p className="text-sm text-gray-600 dark:text-gray-400">Approved</p>
-        <p className="text-2xl font-bold text-green-600">
-          {verifiedData?.total || 0}
-        </p>
-      </Card>
-      <Card className="p-4">
-        <p className="text-sm text-gray-600 dark:text-gray-400">Rejected</p>
-        <p className="text-2xl font-bold text-red-600">
-          {rejectedData?.total || 0}
-        </p>
-      </Card>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <StatCard
+        title="Pending Verifications"
+        value={pendingData?.total || 0}
+        icon={ClockIcon}
+        trend="neutral"
+        change={0}
+      />
+      <StatCard
+        title="Approved Verifications"
+        value={verifiedData?.total || 0}
+        icon={CheckCircleIcon}
+        trend="up"
+        change={0}
+      />
+      <StatCard
+        title="Rejected Verifications"
+        value={rejectedData?.total || 0}
+        icon={ExclamationCircleIcon}
+        trend="down"
+        change={0}
+      />
     </div>
   );
 };

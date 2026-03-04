@@ -1,4 +1,5 @@
 # ----- FILE: backend/app/models/__init__.py -----
+from .verification import Verification, VerificationCode, VerificationStatus
 from .user import User
 from .worker import Worker
 from .employer import Employer
@@ -8,7 +9,6 @@ from .job import Job
 from .application import Application
 from .review import Review
 from .message import Message
-from .verification import Verification
 from .payment import Payment
-
-# ----- END FILE -----
+from .login_log import LoginLog
+from .dispute import Dispute, DisputeMessage

@@ -1,5 +1,5 @@
 # ----- FILE: backend/app/schemas/worker_schema.py -----
-from marshmallow import Schema, fields, validate, validates, ValidationError
+from marshmallow import Schema, fields, validate
 
 
 class WorkerSchema(Schema):
@@ -37,10 +37,3 @@ class WorkerSkillSchema(Schema):
     worker_id = fields.Int(dump_only=True)
     skill_id = fields.Int(required=True)
     proficiency_level = fields.Int(validate=validate.Range(min=1, max=5))
-
-    @validates("skill_id")
-    def validate_skill_id(self, value):
-        from ..models import Skill
-
-        if not Skill.query.get(value):
-            raise ValidationError("Skill does not exist.")

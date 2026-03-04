@@ -1,3 +1,4 @@
+// workforge-frontend/src/pages/admin/Users/components/BanUserModal.tsx
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';

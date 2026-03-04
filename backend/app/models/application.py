@@ -24,14 +24,14 @@ class Application(db.Model):
     # Unique constraint to prevent duplicate applications
     __table_args__ = (db.UniqueConstraint('job_id', 'worker_id', name='_job_worker_uc'),)
 
-def to_dict(self):
-    return {
-        'id': self.id,
-        'job_id': self.job_id,
-        'worker_id': self.worker_id,
-        'status': self.status.value if self.status else None,
-        'cover_letter': self.cover_letter,
-        'proposed_rate': float(self.proposed_rate) if self.proposed_rate else None,
-        'created_at': self.created_at.isoformat() if self.created_at else None,
-        'updated_at': self.updated_at.isoformat() if self.updated_at else None
-    }
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'job_id': self.job_id,
+            'worker_id': self.worker_id,
+            'status': self.status.value if self.status else None,
+            'cover_letter': self.cover_letter,
+            'proposed_rate': float(self.proposed_rate) if self.proposed_rate else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
