@@ -29,6 +29,10 @@ class Config:
     DB_BACKUP_RATE_LIMIT = os.environ.get("DB_BACKUP_RATE_LIMIT", "5 per hour")
     DB_BACKUP_VERIFY_RATE_LIMIT = os.environ.get("DB_BACKUP_VERIFY_RATE_LIMIT", "30 per minute")
     DB_BACKUP_CATALOG_RATE_LIMIT = os.environ.get("DB_BACKUP_CATALOG_RATE_LIMIT", "60 per minute")
+    DB_BACKUP_PRUNE_RATE_LIMIT = os.environ.get("DB_BACKUP_PRUNE_RATE_LIMIT", "10 per hour")
+    DB_BACKUP_RETENTION_DAYS = int(os.environ.get("DB_BACKUP_RETENTION_DAYS", "30"))
+    DB_BACKUP_MAX_FILES = int(os.environ.get("DB_BACKUP_MAX_FILES", "100"))
+    DB_BACKUP_HOLDS_FILE = os.environ.get("DB_BACKUP_HOLDS_FILE", "backup_holds.json")
     ADMIN_IDEMPOTENCY_ENABLED = os.environ.get("ADMIN_IDEMPOTENCY_ENABLED", "true").lower() == "true"
     ADMIN_IDEMPOTENCY_TTL_SECONDS = int(os.environ.get("ADMIN_IDEMPOTENCY_TTL_SECONDS", "3600"))
     AUDIT_LOG_MAX_EXPORT_ROWS = int(os.environ.get("AUDIT_LOG_MAX_EXPORT_ROWS", "5000"))

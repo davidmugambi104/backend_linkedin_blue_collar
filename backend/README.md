@@ -202,3 +202,41 @@ Operational settings:
 - `DB_BACKUP_DIR` (backup storage directory)
 - `DB_BACKUP_RATE_LIMIT` (default `5 per hour`)
 - `DB_BACKUP_VERIFY_RATE_LIMIT` (default `30 per minute`)
+
+Backup catalog endpoint:
+
+- `GET /api/admin/system/database/backups`
+- Lists recent backup files with:
+	- manifest presence and trust (`manifest_trusted`)
+	- manifest metadata (`manifest_backup_sha256`, `manifest_created_at`)
+	- latest verification summary from audit trail (`latest_verification`)
+- Query params:
+	- `limit` (default `50`, max `200`)
+	- `include_runtime_checks=true` to compute live checksum and compare with manifest
+- Rate limit controlled by `DB_BACKUP_CATALOG_RATE_LIMIT` (default `60 per minute`)
+
+Retention policy enforcement:
+
+- Retention policy is enforced using:
+	- `DB_BACKUP_RETENTION_DAYS` (default `30`)
+	- `DB_BACKUP_MAX_FILES` (default `100`)
+- Backups can be protected from pruning via hold flags stored in `DB_BACKUP_HOLDS_FILE` (default `backup_holds.json`).
+- Catalog responses include `is_held`, `hold`, `prune_eligible`, and `prune_reasons`.
+
+Hold management endpoint:
+
+- `POST /api/admin/system/database/backups/hold`
+- Body:
+	- `backup_file` (required)
+	- `hold` (`true` to set hold, `false` to release; default `true`)
+	- `reason` (optional)
+
+Controlled prune endpoint:
+
+- `POST /api/admin/system/database/backups/prune`
+- Requires admin confirmation token (`X-Admin-Confirm`) when confirmation is enabled.
+- Requires two-person approval and idempotency key when those controls are enabled.
+- Body:
+	- `dry_run` (default `true`)
+- Returns candidate list with reasons (`age`, `count`) and deletion outcomes.
+- Rate limit controlled by `DB_BACKUP_PRUNE_RATE_LIMIT` (default `10 per hour`).

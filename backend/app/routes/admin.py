@@ -41,6 +41,11 @@ ACTION_APPROVAL_POLICY = {
         "approve_roles": {AdminRole.SUPER_ADMIN},
         "execute_roles": {AdminRole.SUPER_ADMIN, AdminRole.OPS_ADMIN},
     },
+    "database_backup_prune": {
+        "request_roles": {AdminRole.SUPER_ADMIN, AdminRole.OPS_ADMIN},
+        "approve_roles": {AdminRole.SUPER_ADMIN},
+        "execute_roles": {AdminRole.SUPER_ADMIN, AdminRole.OPS_ADMIN},
+    },
 }
 
 
@@ -485,6 +490,104 @@ def _safe_backup_path(backup_dir, provided_name):
     if not candidate.startswith(backup_dir_abs + os.sep):
         return None
     return candidate
+
+
+def _backup_holds_file_path(backup_dir):
+    holds_file_name = current_app.config.get("DB_BACKUP_HOLDS_FILE", "backup_holds.json")
+    safe_holds_name = os.path.basename(str(holds_file_name).strip())
+    if not safe_holds_name:
+        safe_holds_name = "backup_holds.json"
+    return os.path.join(backup_dir, safe_holds_name)
+
+
+def _load_backup_holds(backup_dir):
+    holds_path = _backup_holds_file_path(backup_dir)
+    if not os.path.exists(holds_path):
+        return {}, holds_path
+    try:
+        with open(holds_path, "r", encoding="utf-8") as holds_file:
+            payload = json.load(holds_file)
+        holds = payload.get("holds") if isinstance(payload, dict) else {}
+        if not isinstance(holds, dict):
+            holds = {}
+        return holds, holds_path
+    except Exception:
+        return {}, holds_path
+
+
+def _save_backup_holds(holds_path, holds_dict):
+    document = {
+        "version": 1,
+        "updated_at": datetime.utcnow().isoformat(),
+        "holds": holds_dict,
+    }
+    with open(holds_path, "w", encoding="utf-8") as holds_file:
+        json.dump(document, holds_file, separators=(",", ":"), sort_keys=True)
+
+
+def _list_backup_files(backup_dir):
+    files = []
+    for entry in os.listdir(backup_dir):
+        if not entry.endswith(".db"):
+            continue
+        full_path = _safe_backup_path(backup_dir, entry)
+        if not full_path or not os.path.isfile(full_path):
+            continue
+        files.append(full_path)
+    files.sort(key=lambda path: os.path.getmtime(path), reverse=True)
+    return files
+
+
+def _compute_backup_prune_plan(backup_files, holds, retention_days, max_files):
+    now_ts = time.time()
+    held_names = set(holds.keys())
+    reasons_by_name = {}
+
+    for backup_path in backup_files:
+        backup_name = os.path.basename(backup_path)
+        if backup_name in held_names:
+            continue
+
+        age_days = (now_ts - os.path.getmtime(backup_path)) / 86400
+        if age_days > retention_days:
+            reasons_by_name.setdefault(backup_name, set()).add("age")
+
+    non_held_files = [
+        path for path in backup_files
+        if os.path.basename(path) not in held_names
+    ]
+    if len(non_held_files) > max_files:
+        for overflow_path in non_held_files[max_files:]:
+            overflow_name = os.path.basename(overflow_path)
+            reasons_by_name.setdefault(overflow_name, set()).add("count")
+
+    candidates = [
+        path for path in backup_files
+        if os.path.basename(path) in reasons_by_name
+    ]
+    reasons = {
+        name: sorted(list(reason_set))
+        for name, reason_set in reasons_by_name.items()
+    }
+    return candidates, reasons
+
+
+def _load_manifest_with_trust(manifest_path):
+    if not os.path.exists(manifest_path):
+        return None, False
+
+    with open(manifest_path, "r", encoding="utf-8") as manifest_handle:
+        manifest = json.load(manifest_handle)
+
+    stored_signature = manifest.get("signature")
+    if not stored_signature:
+        return manifest, False
+
+    manifest_payload = dict(manifest)
+    manifest_payload.pop("signature", None)
+    expected_signature = _sign_manifest_payload(manifest_payload)
+    signature_valid = hmac.compare_digest(str(stored_signature), str(expected_signature))
+    return manifest, signature_valid
 
 
 def log_admin_action(user_id, action, entity_type=None, entity_id=None, new_values=None):
@@ -2427,4 +2530,318 @@ def verify_database_backup():
         }), 200
 
     except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@admin_bp.route("/system/database/backups", methods=["GET"])
+@limiter.limit(lambda: current_app.config.get("DB_BACKUP_CATALOG_RATE_LIMIT", "60 per minute"))
+@jwt_required()
+@admin_required
+def list_database_backups():
+    """List backups with manifest trust and latest verification status."""
+    try:
+        backup_dir = current_app.config.get("DB_BACKUP_DIR", "instance/backups")
+        os.makedirs(backup_dir, exist_ok=True)
+
+        limit = int(request.args.get("limit", 50))
+        limit = max(1, min(limit, 200))
+        include_runtime_checks = request.args.get("include_runtime_checks", "false").lower() == "true"
+
+        retention_days = max(1, int(current_app.config.get("DB_BACKUP_RETENTION_DAYS", 30)))
+        max_files = max(1, int(current_app.config.get("DB_BACKUP_MAX_FILES", 100)))
+
+        holds, _holds_path = _load_backup_holds(backup_dir)
+        backup_files = _list_backup_files(backup_dir)
+
+        backup_files.sort(key=lambda path: os.path.getmtime(path), reverse=True)
+        backup_files = backup_files[:limit]
+
+        full_backup_list = _list_backup_files(backup_dir)
+        prune_candidates, prune_reasons = _compute_backup_prune_plan(
+            full_backup_list,
+            holds,
+            retention_days,
+            max_files,
+        )
+        prune_candidate_names = {os.path.basename(path) for path in prune_candidates}
+
+        names_in_page = {os.path.basename(path) for path in backup_files}
+        latest_verification_by_file = {}
+        verification_logs = (
+            AuditLog.query
+            .filter(AuditLog.action == "database_backup_verified")
+            .order_by(AuditLog.timestamp.desc(), AuditLog.id.desc())
+            .limit(5000)
+            .all()
+        )
+        for log in verification_logs:
+            payload = log.new_values if isinstance(log.new_values, dict) else {}
+            backup_name = payload.get("backup_file")
+            if backup_name not in names_in_page:
+                continue
+            if backup_name in latest_verification_by_file:
+                continue
+            latest_verification_by_file[backup_name] = {
+                "valid": payload.get("valid"),
+                "signature_valid": payload.get("signature_valid"),
+                "hash_valid": payload.get("hash_valid"),
+                "size_valid": payload.get("size_valid"),
+                "verified_at": log.timestamp.isoformat() if log.timestamp else None,
+                "security_event_id": payload.get("security_event_id"),
+            }
+
+        items = []
+        for backup_path in backup_files:
+            backup_name = os.path.basename(backup_path)
+            manifest_path = f"{backup_path}.manifest.json"
+            manifest_name = os.path.basename(manifest_path)
+
+            manifest_exists = os.path.exists(manifest_path)
+            manifest_payload = None
+            manifest_signature_valid = False
+            if manifest_exists:
+                try:
+                    manifest_payload, manifest_signature_valid = _load_manifest_with_trust(manifest_path)
+                except Exception:
+                    manifest_payload = None
+                    manifest_signature_valid = False
+
+            runtime_sha256 = None
+            runtime_hash_matches_manifest = None
+            if include_runtime_checks:
+                runtime_sha256 = _file_sha256(backup_path)
+                declared_sha256 = (manifest_payload or {}).get("backup_sha256")
+                runtime_hash_matches_manifest = (
+                    bool(declared_sha256)
+                    and hmac.compare_digest(str(runtime_sha256), str(declared_sha256))
+                )
+
+            latest_verification = latest_verification_by_file.get(backup_name)
+            hold_data = holds.get(backup_name) if isinstance(holds, dict) else None
+
+            items.append({
+                "backup_file": backup_path,
+                "backup_name": backup_name,
+                "backup_size_bytes": int(os.path.getsize(backup_path)),
+                "created_at": datetime.utcfromtimestamp(os.path.getmtime(backup_path)).isoformat(),
+                "manifest_file": manifest_path if manifest_exists else None,
+                "manifest_name": manifest_name if manifest_exists else None,
+                "manifest_exists": manifest_exists,
+                "manifest_trusted": manifest_signature_valid,
+                "manifest_backup_sha256": (manifest_payload or {}).get("backup_sha256"),
+                "manifest_created_at": (manifest_payload or {}).get("created_at"),
+                "is_held": bool(hold_data),
+                "hold": hold_data,
+                "prune_eligible": backup_name in prune_candidate_names,
+                "prune_reasons": prune_reasons.get(backup_name, []),
+                "runtime_sha256": runtime_sha256,
+                "runtime_hash_matches_manifest": runtime_hash_matches_manifest,
+                "latest_verification": latest_verification,
+            })
+
+        return jsonify({
+            "items": items,
+            "count": len(items),
+            "limit": limit,
+            "backup_dir": os.path.abspath(backup_dir),
+            "include_runtime_checks": include_runtime_checks,
+            "retention_policy": {
+                "retention_days": retention_days,
+                "max_files": max_files,
+                "held_backups": len(holds) if isinstance(holds, dict) else 0,
+                "prune_candidate_count": len(prune_candidate_names),
+            },
+        }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@admin_bp.route("/system/database/backups/hold", methods=["POST"])
+@limiter.limit(lambda: current_app.config.get("DB_BACKUP_CATALOG_RATE_LIMIT", "60 per minute"))
+@jwt_required()
+@admin_required
+def set_database_backup_hold():
+    """Set or remove a protected hold flag for a backup file."""
+    try:
+        data = request.get_json(silent=True) or {}
+        backup_file = data.get("backup_file")
+        hold = bool(data.get("hold", True))
+        reason = (data.get("reason") or "").strip() or None
+
+        if not backup_file:
+            return jsonify({"error": "backup_file is required"}), 400
+
+        backup_dir = current_app.config.get("DB_BACKUP_DIR", "instance/backups")
+        os.makedirs(backup_dir, exist_ok=True)
+
+        backup_path = _safe_backup_path(backup_dir, backup_file)
+        if not backup_path:
+            return jsonify({"error": "Invalid backup_file"}), 400
+        if not os.path.exists(backup_path):
+            return jsonify({"error": "Backup file not found"}), 404
+
+        holds, holds_path = _load_backup_holds(backup_dir)
+        backup_name = os.path.basename(backup_path)
+        admin_id = int(get_jwt_identity())
+
+        if hold:
+            holds[backup_name] = {
+                "held": True,
+                "reason": reason,
+                "held_by": admin_id,
+                "held_at": datetime.utcnow().isoformat(),
+            }
+            status = "held"
+            event_type = "admin.db.backup.hold"
+            action = "database_backup_hold_set"
+        else:
+            holds.pop(backup_name, None)
+            status = "released"
+            event_type = "admin.db.backup.hold.release"
+            action = "database_backup_hold_released"
+
+        _save_backup_holds(holds_path, holds)
+
+        security_event_id = _new_security_event_id("database_backup_hold")
+        log_admin_action(
+            user_id=admin_id,
+            action=action,
+            entity_type="database_backup",
+            entity_id=None,
+            new_values={
+                "backup_file": backup_name,
+                "status": status,
+                "reason": reason,
+                "security_event_id": security_event_id,
+                "event_type": event_type,
+            },
+        )
+
+        return jsonify({
+            "backup_file": backup_path,
+            "status": status,
+            "hold": holds.get(backup_name),
+            "security_event_id": security_event_id,
+            "event_type": event_type,
+        }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@admin_bp.route("/system/database/backups/prune", methods=["POST"])
+@limiter.limit(lambda: current_app.config.get("DB_BACKUP_PRUNE_RATE_LIMIT", "10 per hour"))
+@jwt_required()
+@admin_required
+def prune_database_backups():
+    """Prune backups by retention policy while preserving held backups."""
+    idempotency_key = None
+    try:
+        confirmation_error = _require_admin_confirmation("database_backup_prune")
+        if confirmation_error:
+            return confirmation_error
+
+        data = request.get_json(silent=True) or {}
+        dry_run = bool(data.get("dry_run", True))
+
+        backup_dir = current_app.config.get("DB_BACKUP_DIR", "instance/backups")
+        os.makedirs(backup_dir, exist_ok=True)
+
+        retention_days = max(1, int(current_app.config.get("DB_BACKUP_RETENTION_DAYS", 30)))
+        max_files = max(1, int(current_app.config.get("DB_BACKUP_MAX_FILES", 100)))
+
+        holds, _holds_path = _load_backup_holds(backup_dir)
+        backup_files = _list_backup_files(backup_dir)
+        prune_candidates, prune_reasons = _compute_backup_prune_plan(
+            backup_files,
+            holds,
+            retention_days,
+            max_files,
+        )
+
+        candidate_names = [os.path.basename(path) for path in prune_candidates]
+        action_payload = {
+            "dry_run": dry_run,
+            "retention_days": retention_days,
+            "max_files": max_files,
+            "candidates": sorted(candidate_names),
+        }
+
+        idempotency_error, idempotency_key = _require_idempotency(
+            "database_backup_prune",
+            action_payload,
+        )
+        if idempotency_error:
+            return idempotency_error
+
+        current_admin_id = int(get_jwt_identity())
+        approval_error = _require_two_person_approval(
+            "database_backup_prune",
+            action_payload,
+            current_admin_id,
+        )
+        if approval_error:
+            return approval_error
+
+        deleted = []
+        skipped = []
+        errors = []
+        for backup_path in prune_candidates:
+            backup_name = os.path.basename(backup_path)
+            manifest_path = f"{backup_path}.manifest.json"
+            if dry_run:
+                skipped.append({"backup_file": backup_name, "reason": "dry_run"})
+                continue
+            try:
+                if os.path.exists(backup_path):
+                    os.remove(backup_path)
+                if os.path.exists(manifest_path):
+                    os.remove(manifest_path)
+                deleted.append(backup_name)
+            except Exception as exc:
+                errors.append({"backup_file": backup_name, "error": str(exc)})
+
+        security_event_id = _new_security_event_id("database_backup_prune")
+        event_type = "admin.db.backup.prune"
+        log_admin_action(
+            user_id=current_admin_id,
+            action="database_backup_pruned",
+            entity_type="database_backup",
+            entity_id=None,
+            new_values={
+                "dry_run": dry_run,
+                "retention_days": retention_days,
+                "max_files": max_files,
+                "candidate_count": len(prune_candidates),
+                "deleted_count": len(deleted),
+                "error_count": len(errors),
+                "security_event_id": security_event_id,
+                "event_type": event_type,
+            },
+        )
+
+        response_body = {
+            "dry_run": dry_run,
+            "retention_policy": {
+                "retention_days": retention_days,
+                "max_files": max_files,
+            },
+            "candidate_count": len(prune_candidates),
+            "candidates": [
+                {
+                    "backup_file": os.path.basename(path),
+                    "reasons": prune_reasons.get(os.path.basename(path), []),
+                }
+                for path in prune_candidates
+            ],
+            "deleted": deleted,
+            "skipped": skipped,
+            "errors": errors,
+            "security_event_id": security_event_id,
+            "event_type": event_type,
+        }
+
+        _finalize_idempotency(idempotency_key, response_body, 200)
+        return jsonify(response_body), 200
+    except Exception as e:
+        _clear_idempotency(idempotency_key)
         return jsonify({"error": str(e)}), 500
