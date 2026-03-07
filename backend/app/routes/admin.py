@@ -86,6 +86,16 @@ def _approval_rate_limit_key():
     return f"approval_ip:{request.remote_addr}"
 
 
+def _security_events_rate_limit_key():
+    try:
+        admin_id = get_jwt_identity()
+        if admin_id:
+            return f"security_events:{admin_id}"
+    except Exception:
+        pass
+    return f"security_events_ip:{request.remote_addr}"
+
+
 def _safe_parse_policy_overrides(raw):
     if not raw:
         return {}
@@ -1818,6 +1828,10 @@ def get_audit_log():
 # ============================================
 
 @admin_bp.route("/security/events", methods=["GET"])
+@limiter.limit(
+    lambda: current_app.config.get("SECURITY_EVENTS_RATE_LIMIT", "60 per minute"),
+    key_func=_security_events_rate_limit_key,
+)
 @jwt_required()
 @admin_required
 def get_security_events():
@@ -1829,7 +1843,9 @@ def get_security_events():
         event_type = request.args.get("event_type")
         action = request.args.get("action")
         since_hours = int(request.args.get("since_hours", 24))
-        since_hours = max(1, min(since_hours, 24 * 30))
+        max_since_hours = int(current_app.config.get("SECURITY_EVENTS_MAX_SINCE_HOURS", 24 * 30))
+        max_since_hours = max(1, min(max_since_hours, 24 * 365))
+        since_hours = max(1, min(since_hours, max_since_hours))
         cursor_token = request.args.get("cursor")
         include_sensitive = request.args.get("include_sensitive", "false").lower() == "true"
 
@@ -1911,7 +1927,8 @@ def get_security_events():
         paged_events = events[:limit]
         next_cursor = None
         if has_more and paged_events:
-            cursor_ttl = 60 * 60 * 24
+            cursor_ttl = int(current_app.config.get("SECURITY_EVENTS_CURSOR_TTL_SECONDS", 60 * 60 * 24))
+            cursor_ttl = max(300, min(cursor_ttl, 60 * 60 * 24 * 7))
             tail = paged_events[-1]
             next_cursor = _encode_security_feed_cursor({
                 "v": 1,

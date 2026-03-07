@@ -141,7 +141,7 @@ Use `GET /api/admin/security/events` for SOC/SIEM ingestion of security-tagged e
 Supported query params:
 
 - `limit` (default `50`, max `200`)
-- `since_hours` (default `24`, max `720`)
+- `since_hours` (default `24`, max from `SECURITY_EVENTS_MAX_SINCE_HOURS`, default `720`)
 - `action` (exact audit action match)
 - `event_type` (exact security event type)
 - `cursor` (signed continuation token for incremental pull)
@@ -151,5 +151,10 @@ Behavior notes:
 
 - Results are ordered by `(timestamp asc, id asc)` for stable incremental ingestion.
 - When `has_more=true`, use `next_cursor` on the next request and keep filters unchanged.
-- Cursor tokens are HMAC-signed and expire after 24h.
+- Cursor tokens are HMAC-signed and expire based on `SECURITY_EVENTS_CURSOR_TTL_SECONDS` (default 24h).
 - Responses include `X-Security-Feed-Signature` (HMAC over canonical JSON body) for transport integrity verification.
+
+Operational controls:
+
+- Feed endpoint throttling is configured by `SECURITY_EVENTS_RATE_LIMIT` (default `60 per minute`).
+- Maximum lookback window is configured by `SECURITY_EVENTS_MAX_SINCE_HOURS`.
