@@ -10,6 +10,13 @@ class UserRole(enum.Enum):
     ADMIN = "admin"
 
 
+class AdminRole(enum.Enum):
+    SUPER_ADMIN = "super_admin"
+    OPS_ADMIN = "ops_admin"
+    TRUST_SAFETY = "trust_safety"
+    FINANCE = "finance"
+
+
 class User(db.Model):
     __tablename__ = "users"
 
@@ -18,6 +25,10 @@ class User(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(128), nullable=False)
     role = db.Column(db.Enum(UserRole), nullable=False)
+    
+    # Admin role (for users with ADMIN role)
+    admin_role = db.Column(db.Enum(AdminRole), default=AdminRole.OPS_ADMIN)
+    
     phone = db.Column(db.String(20), index=True)
     is_phone_verified = db.Column(db.Boolean, default=False)
     is_active = db.Column(db.Boolean, default=True)
@@ -50,8 +61,8 @@ class User(db.Model):
     def check_password(self, password):
         return bcrypt.checkpw(password.encode('utf-8'), self.password_hash.encode('utf-8'))
 
-    def to_dict(self):
-        return {
+    def to_dict(self, include_admin_info=False):
+        data = {
             "id": self.id,
             "username": self.username,
             "email": self.email,
@@ -66,3 +77,8 @@ class User(db.Model):
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
+        
+        if include_admin_info and self.role == UserRole.ADMIN:
+            data["admin_role"] = self.admin_role.value if self.admin_role else None
+        
+        return data

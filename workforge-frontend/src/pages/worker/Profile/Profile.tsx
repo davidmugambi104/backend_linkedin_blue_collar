@@ -1,3 +1,6 @@
+/**
+ * Worker Profile Page - Unified Design System
+ */
 import React, { useState } from 'react';
 import {
   UserIcon,
@@ -8,11 +11,16 @@ import {
   BriefcaseIcon,
   StarIcon,
   PlusIcon,
+  PencilIcon,
+  ShieldCheckIcon,
+  CurrencyDollarIcon,
+  ClockIcon,
 } from '@heroicons/react/24/outline';
 import { Card } from '@components/ui/Card';
 import { Button } from '@components/ui/Button';
 import { Badge } from '@components/ui/Badge';
 import { Skeleton } from '@components/ui/Skeleton';
+import { Input } from '@components/ui/Input';
 import { useWorkerProfile, useUpdateWorkerProfile } from '@hooks/useWorker';
 import { useAuth } from '@context/AuthContext';
 import { Modal } from '@components/ui/Modal';
@@ -42,113 +50,221 @@ export const WorkerProfile: React.FC = () => {
 
   if (error) {
     return (
-      <div className="text-center py-12">
-        <p className="text-red-600">Failed to load profile</p>
+      <div className="flex flex-col items-center justify-center min-h-[400px]">
+        <div className="w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mb-4">
+          <UserIcon className="h-8 w-8 text-red-500" />
+        </div>
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+          Failed to load profile
+        </h2>
+        <p className="text-gray-500 dark:text-gray-400 mb-6">
+          {error instanceof Error ? error.message : 'Please try again'}
+        </p>
+        <Button onClick={() => window.location.reload()}>Try Again</Button>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
-      {/* Profile Header */}
-      <div>
-        <h1 className="text-4xl font-bold text-gray-900">Profile</h1>
-        <p className="mt-2 text-gray-600">Manage your professional information</p>
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
+            My Profile
+          </h1>
+          <p className="mt-1 text-gray-500 dark:text-gray-400">
+            Manage your professional information
+          </p>
+        </div>
+        <Button 
+          leftIcon={<PencilIcon className="h-5 w-5" />}
+          onClick={() => setIsEditOpen(true)}
+        >
+          Edit Profile
+        </Button>
       </div>
 
       {isLoading ? (
         <div className="space-y-6">
-          <Skeleton className="h-40" />
-          <Skeleton className="h-60" />
+          <Skeleton className="h-48" />
+          <Skeleton className="h-64" />
         </div>
       ) : (
         <>
           {/* Primary Info Card */}
-          <Card className="p-8">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
-              <div className="flex items-center gap-6">
-                <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center">
-                  <UserIcon className="w-10 h-10 text-blue-600" />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900">
-                    {profile?.user?.first_name} {profile?.user?.last_name}
-                  </h2>
-                  <p className="text-gray-600 flex items-center gap-2 mt-1">
-                    <StarIcon className="w-4 h-4 text-yellow-400 fill-current" />
-                    {profile?.rating?.toFixed(1) || '0.0'} • {profile?.completed_jobs || 0} jobs completed
-                  </p>
-                </div>
+          <Card className="p-4 lg:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-start gap-6">
+              {/* Avatar */}
+              <div className="w-20 h-20 rounded-2xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
+                <UserIcon className="w-10 h-10 text-blue-600 dark:text-blue-400" />
               </div>
-              <Button onClick={() => setIsEditOpen(true)}>Edit Profile</Button>
-            </div>
 
-            {/* Contact Info */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-8 pt-8 border-t">
-              <div>
-                <label className="text-sm font-medium text-gray-700">Email</label>
-                <p className="mt-1 text-gray-900 flex items-center gap-2">
-                  <EnvelopeIcon className="w-4 h-4" />
-                  {profile?.user?.email}
-                </p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-700">Phone</label>
-                <p className="mt-1 text-gray-900 flex items-center gap-2">
-                  <PhoneIcon className="w-4 h-4" />
-                  {profile?.user?.phone || 'Not provided'}
-                </p>
-              </div>
-              {profile?.location && (
-                <div>
-                  <label className="text-sm font-medium text-gray-700">Location</label>
-                  <p className="mt-1 text-gray-900 flex items-center gap-2">
-                    <MapPinIcon className="w-4 h-4" />
-                    {profile.location.city}, {profile.location.country}
-                  </p>
+              {/* Info */}
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                  <div>
+                    <h2 className="text-xl lg:text-2xl font-bold text-gray-900 dark:text-white">
+                      {profile?.user?.first_name} {profile?.user?.last_name}
+                    </h2>
+                    <div className="flex items-center gap-3 mt-2">
+                      <div className="flex items-center gap-1">
+                        {[1, 2, 3, 4, 5].map(star => (
+                          <StarIcon
+                            key={star}
+                            className={`h-5 w-5 ${
+                              star <= Math.round(profile?.rating || 0)
+                                ? 'text-yellow-400 fill-yellow-400'
+                                : 'text-gray-300 dark:text-gray-600'
+                            }`}
+                          />
+                        ))}
+                        <span className="ml-1 font-medium text-gray-900 dark:text-white">
+                          {profile?.rating?.toFixed(1) || '0.0'}
+                        </span>
+                      </div>
+                      <span className="text-gray-400">•</span>
+                      <span className="text-gray-600 dark:text-gray-400">
+                        {profile?.completed_jobs || 0} jobs completed
+                      </span>
+                    </div>
+                  </div>
+                  {profile?.is_verified && (
+                    <Badge variant="success" className="flex items-center gap-1">
+                      <ShieldCheckIcon className="h-4 w-4" />
+                      Verified
+                    </Badge>
+                  )}
                 </div>
-              )}
+
+                {/* Contact Info Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                      <EnvelopeIcon className="h-5 w-5 text-gray-500" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Email</p>
+                      <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                        {profile?.user?.email}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                      <PhoneIcon className="h-5 w-5 text-gray-500" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Phone</p>
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">
+                        {profile?.user?.phone || 'Not provided'}
+                      </p>
+                    </div>
+                  </div>
+                  {profile?.location && (
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                        <MapPinIcon className="h-5 w-5 text-gray-500" />
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Location</p>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">
+                          {profile.location.city}, {profile.location.country}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </Card>
 
           {/* Professional Info */}
-          <Card className="p-8">
-            <h3 className="text-xl font-bold text-gray-900 mb-6">Professional Information</h3>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <div>
-                <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                  <BriefcaseIcon className="w-4 h-4" />
-                  Experience
-                </label>
-                <p className="mt-2 text-lg font-semibold text-gray-900">
-                  {profile?.years_experience || 0} years
-                </p>
-              </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card className="p-4 lg:p-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
+                Professional Information
+              </h3>
+              
+              <div className="space-y-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                    <BriefcaseIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Experience</p>
+                    <p className="text-xl font-bold text-gray-900 dark:text-white">
+                      {profile?.years_experience || 0} years
+                    </p>
+                  </div>
+                </div>
 
-              <div>
-                <label className="text-sm font-medium text-gray-700">Hourly Rate</label>
-                <p className="mt-2 text-lg font-semibold text-gray-900">
-                  ${profile?.hourly_rate || 0}/hr
-                </p>
-              </div>
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                    <CurrencyDollarIcon className="h-6 w-6 text-green-600 dark:text-green-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Hourly Rate</p>
+                    <p className="text-xl font-bold text-gray-900 dark:text-white">
+                      KES {profile?.hourly_rate?.toLocaleString() || 0}/hr
+                    </p>
+                  </div>
+                </div>
 
-              <div className="sm:col-span-2">
-                <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                  <AcademicCapIcon className="w-4 h-4" />
-                  Availability
-                </label>
-                <p className="mt-2 text-gray-900">{profile?.availability || 'Not specified'}</p>
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+                    <ClockIcon className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Availability</p>
+                    <p className="text-xl font-bold text-gray-900 dark:text-white">
+                      {profile?.availability || 'Not specified'}
+                    </p>
+                  </div>
+                </div>
               </div>
-            </div>
-          </Card>
+            </Card>
+
+            {/* Stats Card */}
+            <Card className="p-4 lg:p-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
+                Performance Stats
+              </h3>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50">
+                  <p className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
+                    {profile?.completed_jobs || 0}
+                  </p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Jobs Completed</p>
+                </div>
+                <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50">
+                  <p className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
+                    {profile?.rating?.toFixed(1) || '0.0'}
+                  </p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Average Rating</p>
+                </div>
+                <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50">
+                  <p className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
+                    {profile?.success_rate || 0}%
+                  </p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Success Rate</p>
+                </div>
+                <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50">
+                  <p className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
+                    {profile?.response_rate || 0}%
+                  </p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Response Rate</p>
+                </div>
+              </div>
+            </Card>
+          </div>
 
           {/* Skills */}
-          <Card className="p-8">
+          <Card className="p-4 lg:p-6">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-gray-900">Skills</h3>
-              <Button variant="outline" size="sm">
-                <PlusIcon className="w-4 h-4 mr-2" />
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Skills</h3>
+              <Button variant="outline" size="sm" leftIcon={<PlusIcon className="h-4 w-4" />}>
                 Add Skill
               </Button>
             </div>
@@ -156,16 +272,22 @@ export const WorkerProfile: React.FC = () => {
             {profile?.skills && profile.skills.length > 0 ? (
               <div className="flex flex-wrap gap-3">
                 {profile.skills.map((skill: any) => (
-                  <Badge key={skill.id} variant="outline">
-                    {skill.name}
+                  <Badge key={skill.id} variant="outline" className="px-3 py-1">
+                    <span className="font-medium">{skill.name}</span>
                     <span className="text-xs text-gray-500 ml-2">
-                      {skill.proficiency_level}
+                      • {skill.proficiency_level}
                     </span>
                   </Badge>
                 ))}
               </div>
             ) : (
-              <p className="text-gray-600">No skills added yet. Add your skills to stand out!</p>
+              <div className="text-center py-8">
+                <AcademicCapIcon className="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+                <p className="text-gray-500 dark:text-gray-400">No skills added yet</p>
+                <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
+                  Add your skills to stand out to employers
+                </p>
+              </div>
             )}
           </Card>
         </>
@@ -179,60 +301,41 @@ export const WorkerProfile: React.FC = () => {
       >
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <input
-              type="text"
-              placeholder="First Name"
+            <Input
+              label="First Name"
               value={formData.first_name}
               onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             />
-            <input
-              type="text"
-              placeholder="Last Name"
+            <Input
+              label="Last Name"
               value={formData.last_name}
               onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             />
           </div>
-
-          <input
+          <Input
+            label="Phone"
             type="tel"
-            placeholder="Phone"
             value={formData.phone}
             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
           />
-
-          <input
+          <Input
+            label="Hourly Rate (KES)"
             type="number"
-            placeholder="Hourly Rate"
             value={formData.hourly_rate}
             onChange={(e) => setFormData({ ...formData, hourly_rate: Number(e.target.value) })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
           />
-
-          <input
+          <Input
+            label="Years of Experience"
             type="number"
-            placeholder="Years of Experience"
             value={formData.years_experience}
             onChange={(e) => setFormData({ ...formData, years_experience: Number(e.target.value) })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
           />
-
-          <textarea
-            placeholder="Availability"
-            value={formData.availability}
-            onChange={(e) => setFormData({ ...formData, availability: e.target.value })}
-            rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-          />
-
-          <div className="flex gap-4 justify-end mt-6">
-            <Button variant="outline" onClick={() => setIsEditOpen(false)}>
+          <div className="flex gap-3 pt-4">
+            <Button variant="outline" className="flex-1" onClick={() => setIsEditOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleSave} disabled={isPending}>
-              {isPending ? 'Saving...' : 'Save Changes'}
+            <Button className="flex-1" onClick={handleSave} isLoading={isPending}>
+              Save Changes
             </Button>
           </div>
         </div>

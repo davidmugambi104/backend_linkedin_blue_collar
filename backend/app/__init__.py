@@ -10,6 +10,8 @@ import os
 from .config import config_by_name
 from .extensions import db, jwt, migrate, socketio, limiter
 from .routes import register_blueprints
+from .db_safety import register_database_safety
+from .security_middleware import register_security_middleware
 from flasgger import Swagger
 
 
@@ -24,10 +26,12 @@ def create_app(config_name=None):
 
     # Initialize extensions
     db.init_app(app)
+    register_database_safety(app)
     jwt.init_app(app)
     migrate.init_app(app, db)
     limiter.init_app(app)
     socketio.init_app(app, cors_allowed_origins=app.config["CORS_ORIGINS"])
+    register_security_middleware(app)
     
     # Initialize Swagger
     swagger = Swagger(app, template={

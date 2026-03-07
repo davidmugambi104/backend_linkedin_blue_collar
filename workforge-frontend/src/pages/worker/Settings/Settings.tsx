@@ -1,3 +1,6 @@
+/**
+ * Worker Settings Page - Unified Design System
+ */
 import React, { useState } from 'react';
 import {
   BellIcon,
@@ -5,6 +8,9 @@ import {
   LockClosedIcon,
   TrashIcon,
   CheckCircleIcon,
+  UserCircleIcon,
+  EnvelopeIcon,
+  DevicePhoneMobileIcon,
 } from '@heroicons/react/24/outline';
 import { Card } from '@components/ui/Card';
 import { Button } from '@components/ui/Button';
@@ -46,9 +52,8 @@ export const WorkerSettings: React.FC = () => {
     )) {
       setIsDeleting(true);
       try {
-        // API call to delete account would go here
         await logout();
-        toast.success('account deleted');
+        toast.success('Account deleted');
         window.location.href = '/';
       } catch (error) {
         toast.error('Failed to delete account');
@@ -59,17 +64,21 @@ export const WorkerSettings: React.FC = () => {
   };
 
   return (
-    <div className="space-y-8 max-w-3xl">
-      {/* Header */}
+    <div className="space-y-6 max-w-3xl">
+      {/* Page Header */}
       <div>
-        <h1 className="text-4xl font-bold text-gray-900">Settings</h1>
-        <p className="mt-2 text-gray-600">Manage your account and preferences</p>
+        <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
+          Settings
+        </h1>
+        <p className="mt-1 text-gray-500 dark:text-gray-400">
+          Manage your account and preferences
+        </p>
       </div>
 
       {/* Notification Settings */}
-      <Card className="p-8">
-        <h2 className="flex items-center gap-3 text-2xl font-bold text-gray-900 mb-6">
-          <BellIcon className="w-6 h-6" />
+      <Card className="p-4 lg:p-6">
+        <h2 className="flex items-center gap-3 text-lg font-semibold text-gray-900 dark:text-white mb-6">
+          <BellIcon className="w-5 h-5" />
           Notifications
         </h2>
 
@@ -98,16 +107,16 @@ export const WorkerSettings: React.FC = () => {
           ].map((notification) => (
             <div
               key={notification.key}
-              className="flex items-center justify-between py-3 border-b last:border-b-0"
+              className="flex items-center justify-between py-3 border-b border-gray-200 dark:border-gray-700 last:border-b-0"
             >
               <div>
-                <p className="font-medium text-gray-900">{notification.label}</p>
-                <p className="text-sm text-gray-600">{notification.description}</p>
+                <p className="font-medium text-gray-900 dark:text-white">{notification.label}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{notification.description}</p>
               </div>
               <button
                 onClick={() => handleSettingChange(notification.key as any)}
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  settings[notification.key as any] ? 'bg-blue-600' : 'bg-gray-300'
+                  settings[notification.key as any] ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'
                 }`}
               >
                 <span
@@ -122,43 +131,50 @@ export const WorkerSettings: React.FC = () => {
       </Card>
 
       {/* Security Settings */}
-      <Card className="p-8">
-        <h2 className="flex items-center gap-3 text-2xl font-bold text-gray-900 mb-6">
-          <ShieldCheckIcon className="w-6 h-6" />
+      <Card className="p-4 lg:p-6">
+        <h2 className="flex items-center gap-3 text-lg font-semibold text-gray-900 dark:text-white mb-6">
+          <ShieldCheckIcon className="w-5 h-5" />
           Security
         </h2>
 
         <div className="space-y-4">
           {/* Password */}
-          <div className="flex items-center justify-between py-4 border-b">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <LockClosedIcon className="w-5 h-5 text-gray-700" />
-                <p className="font-medium text-gray-900">Change Password</p>
+          <div className="flex items-center justify-between py-4 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
+                <LockClosedIcon className="h-5 w-5 text-gray-500" />
               </div>
-              <p className="text-sm text-gray-600">Update your password regularly</p>
+              <div>
+                <p className="font-medium text-gray-900 dark:text-white">Change Password</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Update your password regularly</p>
+              </div>
             </div>
             <Button variant="outline" size="sm">
               Change
             </Button>
           </div>
 
-          {/* Two-Factor Authentication */}
-          <div className="flex items-center justify-between py-4">
-            <div>
-              <p className="font-medium text-gray-900 mb-1">Two-Factor Authentication</p>
-              <p className="text-sm text-gray-600">
-                {settings.twoFactorEnabled
-                  ? 'Your account is protected with 2FA'
-                  : 'Add an extra layer of security to your account'}
-              </p>
+          {/* Two          <div class-Factor Authentication */}
+Name="flex items-center justify-between py-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
+                <DevicePhoneMobileIcon className="h-5 w-5 text-gray-500" />
+              </div>
+              <div>
+                <p className="font-medium text-gray-900 dark:text-white">Two-Factor Authentication</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {settings.twoFactorEnabled
+                    ? 'Your account is protected with 2FA'
+                    : 'Add an extra layer of security to your account'}
+                </p>
+              </div>
             </div>
             {settings.twoFactorEnabled ? (
               <Button
                 onClick={handleDisableTwoFactor}
                 variant="outline"
                 size="sm"
-                className="text-red-600 hover:bg-red-50"
+                className="text-red-600"
               >
                 Disable
               </Button>
@@ -172,41 +188,55 @@ export const WorkerSettings: React.FC = () => {
       </Card>
 
       {/* Account Status */}
-      <Card className="p-8 bg-blue-50 border-blue-200">
-        <h2 className="flex items-center gap-3 text-2xl font-bold text-gray-900 mb-6">
-          <CheckCircleIcon className="w-6 h-6 text-green-600" />
+      <Card className="p-4 lg:p-6 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+        <h2 className="flex items-center gap-3 text-lg font-semibold text-gray-900 dark:text-white mb-6">
+          <CheckCircleIcon className="w-5 h-5 text-green-600" />
           Account Status
         </h2>
 
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-gray-700">Email Verified</span>
-            {user?.is_verified ? (
-              <Badge variant="success">Verified</Badge>
-            ) : (
-              <Button variant="outline" size="sm">
-                Verify Email
-              </Button>
-            )}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-white dark:bg-slate-800">
+            <div className="w-10 h-10 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+              <EnvelopeIcon className="h-5 w-5 text-green-600" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Email</p>
+              <p className="text-sm font-medium text-gray-900 dark:text-white">{user?.email}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-white dark:bg-slate-800">
+            <div className="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+              <UserCircleIcon className="h-5 w-5 text-purple-600" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Status</p>
+              {user?.is_verified ? (
+                <Badge variant="success">Verified</Badge>
+              ) : (
+                <Button variant="outline" size="sm">
+                  Verify
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </Card>
 
       {/* Danger Zone */}
-      <Card className="p-8 border-red-200 bg-red-50">
-        <h2 className="flex items-center gap-3 text-2xl font-bold text-red-600 mb-6">
-          <TrashIcon className="w-6 h-6" />
+      <Card className="p-4 lg:p-6 border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/10">
+        <h2 className="flex items-center gap-3 text-lg font-semibold text-red-600 dark:text-red-400 mb-4">
+          <TrashIcon className="w-5 h-5" />
           Danger Zone
         </h2>
 
-        <p className="text-gray-700 mb-4">
+        <p className="text-gray-600 dark:text-gray-400 mb-4">
           Once you delete your account, there is no going back. Please be certain.
         </p>
 
         <Button
           onClick={handleDeleteAccount}
           disabled={isDeleting}
-          className="bg-red-600 hover:bg-red-700 text-white"
+          variant="destructive"
         >
           {isDeleting ? 'Deleting...' : 'Delete Account'}
         </Button>

@@ -69,8 +69,7 @@ def update_user(user_id):
 def delete_user(user_id):
     user = User.query.get_or_404(user_id)
 
-    # In a real application, you might want to soft delete
-    db.session.delete(user)
+    user.is_active = False
     db.session.commit()
 
-    return jsonify({"message": "User deleted successfully"}), 200
+    return jsonify({"message": "User deactivated successfully"}), 200

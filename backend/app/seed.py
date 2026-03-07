@@ -416,7 +416,7 @@ def create_verifications(workers, users):
             worker_id=worker.id,
             verification_type=random.choice(verification_types),
             document_url=f"https://storage.jobmatch.com/verifications/{uuid.uuid4()}.pdf",
-            status=status,
+            status=status.value,
             reviewed_by=reviewed_by,
             review_notes=review_notes,
             created_at=fake.date_time_between(start_date='-60d', end_date='now')
@@ -462,7 +462,7 @@ def create_payments(workers, employers, jobs, applications):
             net_amount = total_amount - platform_fee
             
             # Payment status
-            status_weights = [0.1, 0.8, 0.05, 0.05]  # Mostly paid
+            status_weights = [0.1, 0.75, 0.1, 0.03, 0.02]  # Mostly processing/completed
             status = random.choices(payment_statuses, weights=status_weights)[0]
             
             payment = Payment(
@@ -470,12 +470,14 @@ def create_payments(workers, employers, jobs, applications):
                 employer_id=employer.id,
                 worker_id=worker.id,
                 amount=total_amount,
+                payment_type='job_payment',
+                reference=f"pay_{uuid.uuid4().hex[:16]}",
                 platform_fee=platform_fee,
                 net_amount=net_amount,
                 status=status,
                 transaction_id=f"txn_{uuid.uuid4().hex[:16]}",
                 payment_method=random.choice(['credit_card', 'bank_transfer', 'paypal']),
-                paid_at=fake.date_time_between(start_date=job.updated_at, end_date='now') if status == PaymentStatus.PAID else None,
+                paid_at=fake.date_time_between(start_date=job.updated_at, end_date='now') if status == PaymentStatus.COMPLETED else None,
                 created_at=fake.date_time_between(start_date=job.updated_at, end_date='now')
             )
             payments.append(payment)

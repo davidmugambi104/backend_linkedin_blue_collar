@@ -203,8 +203,8 @@ export interface AuditLogEntry {
   admin_id: number;
   admin_name: string;
   action: string;
-  entity_type: 'user' | 'job' | 'payment' | 'review' | 'verification';
-  entity_id: number;
+  entity_type: 'user' | 'job' | 'payment' | 'review' | 'verification' | 'moderation';
+  entity_id: number | null;
   changes: Record<string, any>;
   ip_address: string;
   user_agent: string;

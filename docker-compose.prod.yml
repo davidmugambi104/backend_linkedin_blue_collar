@@ -1,101 +1,87 @@
 version: '3.8'
 
 services:
-  # Backend API
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    ports:
-      - "5000:5000"
-    environment:
-      - FLASK_ENV=development
-      - DATABASE_URL=postgresql://workforge:workforge@postgres:5432/workforge
-      - REDIS_URL=redis://redis:6379/0
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-dev-secret-key-change-in-production}
-      - MPESA_ENV=sandbox
-    volumes:
-      - ./backend:/app
-      - uploads:/app/uploads
-    depends_on:
-      - postgres
-      - redis
-    networks:
-      - workforge-network
-    command: gunicorn -w 4 -b 0.0.0.0:5000 "app:create_app()"
-
-  # Frontend
-  frontend:
-    build:
-      context: ./workforge-frontend
-      dockerfile: Dockerfile
-    ports:
-      - "3000:3000"
-    environment:
-      - VITE_API_URL=http://localhost:5000/api
-      - VITE_WS_URL=ws://localhost:5000
-    volumes:
-      - ./workforge-frontend:/app
-      - /app/node_modules
-    depends_on:
-      - backend
-    networks:
-      - workforge-network
-    command: npm run dev
-
-  # Frontend Production
-  frontend-prod:
-    build:
-      context: ./workforge-frontend
-      dockerfile: Dockerfile
-      target: production
-    ports:
-      - "80:80"
-    environment:
-      - VITE_API_URL=/api
-    depends_on:
-      - backend
-    networks:
-      - workforge-network
-
   # PostgreSQL Database
   postgres:
     image: postgres:15-alpine
+    container_name: workforge-db
     environment:
-      - POSTGRES_USER=workforge
-      - POSTGRES_PASSWORD=workforge
-      - POSTGRES_DB=workforge
+      POSTGRES_USER: ${POSTGRES_USER:-workforge}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-workforge_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-workforge}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./backend/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
     ports:
       - "5432:5432"
-    networks:
-      - workforge-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-workforge}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
 
-  # Redis for caching and sessions
+  # Redis Cache
   redis:
     image: redis:7-alpine
+    container_name: workforge-redis
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
-    networks:
-      - workforge-network
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Backend API
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: production
+    container_name: workforge-api
+    environment:
+      - FLASK_ENV=production
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-workforge}:${POSTGRES_PASSWORD:-workforge_pass}@postgres:5432/${POSTGRES_DB:-workforge}
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=${SECRET_KEY:-change-this-in-production}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-change-this-in-production}
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000}
+    ports:
+      - "5000:5000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend/logs:/app/logs
+      - uploads:/app/uploads
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/docs/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   # Nginx Reverse Proxy
   nginx:
     image: nginx:alpine
+    container_name: workforge-nginx
     ports:
       - "80:80"
       - "443:443"
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      - certs:/etc/nginx/certs:ro
+      - ./ssl:/etc/nginx/ssl:ro
     depends_on:
-      - backend
-      - frontend-prod
-    networks:
-      - workforge-network
+      - api
+    restart: unless-stopped
 
 volumes:
   postgres_data:
@@ -103,5 +89,5 @@ volumes:
   uploads:
 
 networks:
-  workforge-network:
-    driver: bridge
+  default:
+    name: workforge-network

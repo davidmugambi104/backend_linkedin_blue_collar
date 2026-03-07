@@ -8,11 +8,49 @@ load_dotenv()
 class Config:
     SECRET_KEY = os.environ.get("SECRET_KEY") or "dev-secret-key-change-in-production"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "pool_pre_ping": True,
+        "pool_recycle": int(os.environ.get("DB_POOL_RECYCLE_SECONDS", "1800")),
+    }
+    DB_ENFORCE_SOFT_DELETE = os.environ.get("DB_ENFORCE_SOFT_DELETE", "true").lower() == "true"
+    ALLOW_HARD_DELETE = os.environ.get("ALLOW_HARD_DELETE", "false").lower() == "true"
+    ALLOW_DESTRUCTIVE_OPERATIONS = os.environ.get("ALLOW_DESTRUCTIVE_OPERATIONS", "false").lower() == "true"
+    REQUIRE_ADMIN_CONFIRMATION = os.environ.get("REQUIRE_ADMIN_CONFIRMATION", "true").lower() == "true"
+    ADMIN_ACTION_CONFIRMATION_TOKEN = os.environ.get("ADMIN_ACTION_CONFIRMATION_TOKEN")
+    TWO_PERSON_APPROVAL_ENABLED = os.environ.get("TWO_PERSON_APPROVAL_ENABLED", "true").lower() == "true"
+    ADMIN_APPROVAL_TTL_SECONDS = int(os.environ.get("ADMIN_APPROVAL_TTL_SECONDS", "1800"))
+    ADMIN_APPROVAL_POLICY_OVERRIDES = os.environ.get("ADMIN_APPROVAL_POLICY_OVERRIDES", "")
+    ADMIN_APPROVAL_PERMISSION_OVERRIDES = os.environ.get("ADMIN_APPROVAL_PERMISSION_OVERRIDES", "")
+    ADMIN_APPROVAL_RATE_LIMIT = os.environ.get("ADMIN_APPROVAL_RATE_LIMIT", "30 per minute")
+    ADMIN_APPROVAL_REVIEW_RATE_LIMIT = os.environ.get("ADMIN_APPROVAL_REVIEW_RATE_LIMIT", "20 per minute")
+    ADMIN_IDEMPOTENCY_ENABLED = os.environ.get("ADMIN_IDEMPOTENCY_ENABLED", "true").lower() == "true"
+    ADMIN_IDEMPOTENCY_TTL_SECONDS = int(os.environ.get("ADMIN_IDEMPOTENCY_TTL_SECONDS", "3600"))
+    AUDIT_LOG_MAX_EXPORT_ROWS = int(os.environ.get("AUDIT_LOG_MAX_EXPORT_ROWS", "5000"))
+    AUDIT_LOG_MAX_PAGE_SIZE = int(os.environ.get("AUDIT_LOG_MAX_PAGE_SIZE", "200"))
+    AUDIT_EXPORT_SIGNING_KEY = os.environ.get("AUDIT_EXPORT_SIGNING_KEY")
+    MAX_CONTENT_LENGTH = int(os.environ.get("MAX_CONTENT_LENGTH", str(2 * 1024 * 1024)))
+    RATELIMIT_STORAGE_URI = (
+        os.environ.get("RATELIMIT_STORAGE_URI")
+        or os.environ.get("SOCKETIO_MESSAGE_QUEUE")
+        or "redis://localhost:6379/1"
+    )
+    RATELIMIT_HEADERS_ENABLED = True
+    PROTECTED_DELETE_TABLES = {
+        table.strip()
+        for table in os.environ.get(
+            "PROTECTED_DELETE_TABLES",
+            "users,jobs,applications,reviews,skills,workers,employers,payments,messages,document_verifications,verification_codes",
+        ).split(",")
+        if table.strip()
+    }
     JWT_SECRET_KEY = (
         os.environ.get("JWT_SECRET_KEY") or "jwt-secret-key-change-in-production"
     )
     JWT_ACCESS_TOKEN_EXPIRES = 3600  # 1 hour
     JWT_REFRESH_TOKEN_EXPIRES = 86400  # 24 hours
+    JWT_TOKEN_LOCATION = ["headers"]
+    JWT_HEADER_NAME = "Authorization"
+    JWT_HEADER_TYPE = "Bearer"
     JWT_BLACKLIST_ENABLED = True
     JWT_BLACKLIST_TOKEN_CHECKS = ["access", "refresh"]
     CORS_ORIGINS = os.environ.get(
@@ -22,6 +60,15 @@ class Config:
     SOCKETIO_MESSAGE_QUEUE = os.environ.get(
         "SOCKETIO_MESSAGE_QUEUE", "redis://localhost:6379/0"
     )
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "pool_pre_ping": True,
+    }
+
+    DB_PROTECT_MODE = os.environ.get("DB_PROTECT_MODE", "true").lower() == "true"
+    ALLOW_DESTRUCTIVE_OPERATIONS = (
+        os.environ.get("ALLOW_DESTRUCTIVE_OPERATIONS", "false").lower() == "true"
+    )
+    DB_BACKUP_DIR = os.environ.get("DB_BACKUP_DIR", "instance/backups")
 
 
 class DevelopmentConfig(Config):

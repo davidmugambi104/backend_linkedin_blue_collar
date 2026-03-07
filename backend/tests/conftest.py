@@ -1,89 +1,193 @@
-# ----- FILE: backend/tests/conftest.py -----
+"""
+Pytest fixtures for WorkForge tests
+"""
 import pytest
+import os
+import sys
+
+# Add backend to path
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+
 from app import create_app
 from app.extensions import db
-from app.models import User, Worker, Employer, Skill
-from app.models.user import UserRole
-import bcrypt
+from app.models.user import User, UserRole
+from app.models.worker import Worker
+from app.models.employer import Employer
+from app.models.job import Job
+from app.models.application import Application
+from app.models.skill import Skill, SkillCategory
 
 
-@pytest.fixture
+@pytest.fixture(scope='session')
 def app():
-    """Create application for testing."""
-    app = create_app("testing")
+    """Create application for testing"""
+    os.environ['FLASK_ENV'] = 'testing'
+    app = create_app('testing')
+    app.config['TESTING'] = True
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
+    app.config['JWT_SECRET_KEY'] = 'test-secret-key'
+    app.config['WTF_CSRF_ENABLED'] = False
     
+    yield app
+
+
+@pytest.fixture(scope='function')
+def client(app):
+    """Test client"""
+    return app.test_client()
+
+
+@pytest.fixture(scope='function')
+def db_session(app):
+    """Database session with automatic rollback"""
     with app.app_context():
         db.create_all()
-        yield app
+        yield db.session
         db.session.remove()
         db.drop_all()
 
 
 @pytest.fixture
-def client(app):
-    """Create test client."""
-    return app.test_client()
-
-
-@pytest.fixture
-def db_session(app):
-    """Create database session for testing."""
-    with app.app_context():
-        yield db.session
-
-
-@pytest.fixture
-def test_user(db_session):
-    """Create a test user."""
-    password = "testpass123"
-    hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
-    
+def sample_user(db_session):
+    """Create a sample user"""
     user = User(
-        username="testuser",
-        email="test@example.com",
-        password_hash=hashed,
+        username='testuser',
+        email='test@example.com',
         role=UserRole.WORKER,
-        phone="+254700000001"
+        phone='+254712345678'
     )
+    user.set_password('password123')
     db_session.add(user)
     db_session.commit()
-    
-    return {"user": user, "password": password}
+    return user
 
 
 @pytest.fixture
-def test_worker(db_session, test_user):
-    """Create a test worker."""
+def sample_worker(db_session, sample_user):
+    """Create a sample worker profile"""
     worker = Worker(
-        user_id=test_user["user"].id,
-        full_name="Test Worker",
-        phone="+254700000001"
+        user_id=sample_user.id,
+        first_name='John',
+        last_name='Doe',
+        years_experience=5,
+        hourly_rate_min=500,
+        hourly_rate_max=1000,
+        is_verified=True,
+        average_rating=4.5
     )
     db_session.add(worker)
     db_session.commit()
-    
     return worker
 
 
 @pytest.fixture
-def test_skill(db_session):
-    """Create a test skill."""
+def sample_employer(db_session):
+    """Create a sample employer"""
+    # Create user first
+    user = User(
+        username='testemployer',
+        email='employer@example.com',
+        role=UserRole.EMPLOYER,
+        phone='+254798765432'
+    )
+    user.set_password('password123')
+    db_session.add(user)
+    db_session.commit()
+    
+    employer = Employer(
+        user_id=user.id,
+        company_name='Test Company Ltd',
+        is_verified=True
+    )
+    db_session.add(employer)
+    db_session.commit()
+    return employer
+
+
+@pytest.fixture
+def sample_skill(db_session):
+    """Create a sample skill"""
+    category = SkillCategory(name='Plumbing')
+    db_session.add(category)
+    db_session.commit()
+    
     skill = Skill(
-        name="Carpenter",
-        category="construction",
-        description="Wood working"
+        name='Pipe Fitting',
+        category_id=category.id,
+        average_market_rate=800
     )
     db_session.add(skill)
     db_session.commit()
-    
     return skill
 
 
 @pytest.fixture
-def auth_token(client, test_user):
-    """Get authentication token."""
-    response = client.post("/api/auth/login", json={
-        "email": test_user["user"].email,
-        "password": test_user["password"]
+def sample_job(db_session, sample_employer, sample_skill):
+    """Create a sample job"""
+    job = Job(
+        employer_id=sample_employer.id,
+        title='Need plumber for bathroom',
+        description='Looking for experienced plumber',
+        skill_id=sample_skill.id,
+        county='Nairobi',
+        sub_county='Westlands',
+        start_date='2026-04-01',
+        payment_type='fixed',
+        budget_min=5000,
+        budget_max=10000,
+        status='published'
+    )
+    db_session.add(job)
+    db_session.commit()
+    return job
+
+
+@pytest.fixture
+def sample_application(db_session, sample_job, sample_worker):
+    """Create a sample application"""
+    application = Application(
+        job_id=sample_job.id,
+        worker_id=sample_worker.id,
+        status='pending',
+        proposed_rate=8000
+    )
+    db_session.add(application)
+    db_session.commit()
+    return application
+
+
+@pytest.fixture
+def auth_headers(client, sample_user):
+    """Get authentication headers for sample user"""
+    response = client.post('/api/auth/login', json={
+        'email': 'test@example.com',
+        'password': 'password123'
     })
-    return response.json["access_token"]
+    token = response.json['access_token']
+    return {'Authorization': f'Bearer {token}'}
+
+
+@pytest.fixture
+def admin_user(db_session):
+    """Create an admin user"""
+    user = User(
+        username='admin',
+        email='admin@workforge.com',
+        role=UserRole.ADMIN,
+        phone='+254700000000'
+    )
+    user.set_password('admin123')
+    db_session.add(user)
+    db_session.commit()
+    return user
+
+
+@pytest.fixture
+def admin_headers(client, admin_user):
+    """Get authentication headers for admin"""
+    response = client.post('/api/auth/login', json={
+        'email': 'admin@workforge.com',
+        'password': 'admin123'
+    })
+    token = response.json['access_token']
+    return {'Authorization': f'Bearer {token}'}

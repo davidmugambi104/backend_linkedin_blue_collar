@@ -12,7 +12,11 @@ skills_bp = Blueprint("skills", __name__)
 @skills_bp.route("/", methods=["GET"])
 def get_skills():
     """Get all skills. Public endpoint."""
-    skills = Skill.query.all()
+    include_deprecated = request.args.get("include_deprecated", "false").lower() == "true"
+    query = Skill.query
+    if not include_deprecated:
+        query = query.filter((Skill.category.is_(None)) | (Skill.category != "deprecated"))
+    skills = query.all()
     return jsonify([skill.to_dict() for skill in skills]), 200
 
 
@@ -85,10 +89,10 @@ def delete_skill(skill_id):
             400,
         )
 
-    db.session.delete(skill)
+    skill.category = "deprecated"
     db.session.commit()
 
-    return jsonify({"message": "Skill deleted successfully"}), 200
+    return jsonify({"message": "Skill deprecated successfully"}), 200
 
 
 @skills_bp.route("/categories", methods=["GET"])

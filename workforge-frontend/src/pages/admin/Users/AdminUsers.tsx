@@ -5,6 +5,7 @@ import { AdminTable } from '@components/admin/tables/AdminTable/AdminTable';
 import { StatCard } from '@components/admin/cards/StatCard/StatCard';
 import { StatusBadge } from '@components/admin/common/StatusBadge/StatusBadge';
 import { useAdminUsers } from '@hooks/useAdmin';
+import { useBanUser, useUnbanUser } from '@hooks/useAdmin';
 import { useAuth } from '@context/AuthContext';
 import {
   UsersIcon,
@@ -22,17 +23,34 @@ interface User {
   last_name?: string;
   email: string;
   role: 'worker' | 'employer' | 'admin';
-  status?: string;
+  is_active?: boolean;
   created_at: string;
 }
 
 export const AdminUsers: React.FC = () => {
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'created_at', direction: 'desc' });
   const [currentPage, setCurrentPage] = useState(1);
+  const [search, setSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState<'all' | 'worker' | 'employer' | 'admin'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const { user: currentUser, isAuthenticated } = useAuth();
 
+  const pageSize = 20;
+  const sortParam = `${sortConfig.direction === 'desc' ? '-' : ''}${sortConfig.key}`;
+
+  const queryParams = {
+    page: currentPage,
+    limit: pageSize,
+    sort: sortParam,
+    ...(search.trim() ? { search: search.trim() } : {}),
+    ...(roleFilter !== 'all' ? { role: roleFilter } : {}),
+    ...(statusFilter !== 'all' ? { status: statusFilter } : {}),
+  };
+
   // Fetch real data from API
-  const { data, isLoading, error } = useAdminUsers();
+  const { data, isLoading, error } = useAdminUsers(queryParams);
+  const banUser = useBanUser();
+  const unbanUser = useUnbanUser();
 
   // Show authentication error if not logged in or not admin
   if (!isAuthenticated) {
@@ -73,6 +91,25 @@ export const AdminUsers: React.FC = () => {
 
   const users: User[] = data?.users || [];
 
+  const handleToggleUserStatus = async (user: User) => {
+    if (user.role === 'admin' && user.id === currentUser?.id) {
+      return;
+    }
+
+    if (user.is_active) {
+      await banUser.mutateAsync({
+        userId: user.id,
+        data: {
+          reason: 'Suspended by admin',
+          duration: 'permanent',
+          notify_user: false,
+        },
+      });
+    } else {
+      await unbanUser.mutateAsync(user.id);
+    }
+  };
+
   const columns: Column<User>[] = [
     {
       key: 'username',
@@ -108,8 +145,23 @@ export const AdminUsers: React.FC = () => {
     {
       key: 'status',
       header: 'Status',
-      accessor: (user) => <StatusBadge status={user.status || 'active'} />,
+      accessor: (user) => <StatusBadge status={user.is_active ? 'active' : 'inactive'} />,
       sortable: true,
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      accessor: (user) => (
+        <button
+          type="button"
+          disabled={(banUser.isPending || unbanUser.isPending) || (user.role === 'admin' && user.id === currentUser?.id)}
+          onClick={() => handleToggleUserStatus(user)}
+          className="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50"
+        >
+          {user.is_active ? 'Suspend' : 'Reactivate'}
+        </button>
+      ),
+      align: 'right',
     },
     {
       key: 'created_at',
@@ -120,25 +172,13 @@ export const AdminUsers: React.FC = () => {
     },
   ];
 
-  const sortedUsers = useMemo(() => {
-    if (!users.length) return [];
-    
-    const sorted = [...users].sort((a, b) => {
-      const aVal = a[sortConfig.key as keyof User];
-      const bVal = b[sortConfig.key as keyof User];
-
-      if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
-      if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
-      return 0;
-    });
-    return sorted;
-  }, [users, sortConfig]);
+  const sortedUsers = useMemo(() => users, [users]);
 
   const stats = [
     { title: 'Total Users', value: data?.total || 0, icon: UsersIcon, change: 12, trend: 'up' as const },
-    { title: 'Active Users', value: users.filter((u) => u.status === 'active' || !u.status).length, icon: UserGroupIcon, change: 8, trend: 'up' as const },
-    { title: 'Suspended', value: users.filter((u) => u.status === 'suspended').length, icon: UserMinusIcon, change: 5, trend: 'down' as const },
-    { title: 'Banned', value: users.filter((u) => u.status === 'banned').length, icon: ShieldExclamationIcon, change: 2, trend: 'up' as const },
+    { title: 'Active Users', value: users.filter((u) => u.is_active).length, icon: UserGroupIcon, change: 8, trend: 'up' as const },
+    { title: 'Suspended', value: users.filter((u) => !u.is_active).length, icon: UserMinusIcon, change: 5, trend: 'down' as const },
+    { title: 'Admins', value: users.filter((u) => u.role === 'admin').length, icon: ShieldExclamationIcon, change: 2, trend: 'up' as const },
   ];
 
   return (
@@ -161,17 +201,75 @@ export const AdminUsers: React.FC = () => {
       </div>
 
       {/* Users Table */}
+      <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 dark:border-gray-800/50 p-4 sm:p-6">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <input
+            type="text"
+            value={search}
+            onChange={(event) => {
+              setCurrentPage(1);
+              setSearch(event.target.value);
+            }}
+            placeholder="Search by username or email"
+            className="h-10 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-sm"
+          />
+
+          <select
+            value={roleFilter}
+            onChange={(event) => {
+              setCurrentPage(1);
+              setRoleFilter(event.target.value as 'all' | 'worker' | 'employer' | 'admin');
+            }}
+            className="h-10 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-sm"
+          >
+            <option value="all">All roles</option>
+            <option value="worker">Worker</option>
+            <option value="employer">Employer</option>
+            <option value="admin">Admin</option>
+          </select>
+
+          <select
+            value={statusFilter}
+            onChange={(event) => {
+              setCurrentPage(1);
+              setStatusFilter(event.target.value as 'all' | 'active' | 'inactive');
+            }}
+            className="h-10 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-sm"
+          >
+            <option value="all">All statuses</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+
+          <button
+            type="button"
+            onClick={() => {
+              setCurrentPage(1);
+              setSearch('');
+              setRoleFilter('all');
+              setStatusFilter('all');
+            }}
+            className="h-10 rounded-lg border border-gray-300 dark:border-gray-700 px-3 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+          >
+            Reset filters
+          </button>
+        </div>
+      </div>
+
       <AdminTable
         columns={columns}
         data={sortedUsers}
         sortConfig={sortConfig}
-        onSort={setSortConfig}
+        onSort={(nextSort) => {
+          setCurrentPage(1);
+          setSortConfig(nextSort);
+        }}
         loading={isLoading}
         pagination={{
           currentPage,
           totalPages: data?.pages || 1,
           totalItems: data?.total || 0,
-          pageSize: 20,
+          pageSize,
         }}
         onPageChange={setCurrentPage}
       />

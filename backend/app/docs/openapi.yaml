@@ -1,0 +1,1363 @@
+# WorkForge API Specification
+# OpenAPI 3.0 - Auto-generated and maintained
+
+openapi: 3.0.0
+info:
+  title: WorkForge API
+  description: |
+    WorkForge is an enterprise-grade workforce orchestration platform bridging 
+    the gap between informal skilled labor ("fundis") and formal employment 
+    opportunities across East Africa.
+    
+    ## Authentication
+    Most endpoints require JWT authentication. Include the token in the header:
+    ```
+    Authorization: Bearer <your_token>
+    ```
+    
+    ## Rate Limits
+    - Auth endpoints: 5 requests/minute
+    - General API: 100 requests/minute
+    - Payments: 20 requests/hour
+    
+    ## Errors
+    Standard HTTP status codes:
+    - 200: Success
+    - 201: Created
+    - 400: Bad Request
+    - 401: Unauthorized
+    - 403: Forbidden
+    - 404: Not Found
+    - 429: Rate Limited
+    - 500: Server Error
+  version: 1.0.0
+  contact:
+    name: WorkForge Support
+    email: support@workforge.co.ke
+  license:
+    name: Proprietary
+
+servers:
+  - url: https://api.workforge.co.ke/v1
+    description: Production server
+  - url: https://staging-api.workforge.co.ke/v1
+    description: Staging server
+  - url: http://localhost:5000/v1
+    description: Local development
+
+tags:
+  - name: Authentication
+    description: User registration, login, password management
+  - name: Users
+    description: User profile management
+  - name: Workers
+    description: Worker/fundi profiles and skills
+  - name: Employers
+    description: Employer profiles and management
+  - name: Jobs
+    description: Job postings and management
+  - name: Applications
+    description: Job applications
+  - name: Payments
+    description: Payment processing and escrow
+  - name: Reviews
+    description: Ratings and reviews
+  - name: Messages
+    description: In-app messaging
+  - name: Verification
+    description: Identity and skill verification
+  - name: Analytics
+    description: Dashboard and reporting
+  - name: Admin
+    description: Administrative operations
+
+paths:
+  # ============== AUTHENTICATION ==============
+  /auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: Register new user
+      description: Create a new user account (worker or employer)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - email
+                - password
+                - role
+              properties:
+                username:
+                  type: string
+                  minLength: 3
+                  maxLength: 80
+                  example: "john_doe"
+                email:
+                  type: string
+                  format: email
+                  example: "john@example.com"
+                password:
+                  type: string
+                  minLength: 6
+                  example: "SecurePass123"
+                role:
+                  type: string
+                  enum: [worker, employer]
+                  example: "worker"
+                phone:
+                  type: string
+                  example: "+254712345678"
+      responses:
+        201:
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/User'
+        400:
+          description: Validation error
+        409:
+          description: Email or username already exists
+
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: User login
+      description: Authenticate user and get JWT tokens
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        200:
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                  refresh_token:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/User'
+        401:
+          description: Invalid credentials
+
+  /auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: User logout
+      security:
+        - Bearer: []
+      responses:
+        200:
+          description: Logged out successfully
+
+  /auth/refresh:
+    post:
+      tags:
+        - Authentication
+      summary: Refresh access token
+      security:
+        - Bearer: []
+      responses:
+        200:
+          description: New access token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+
+  # ============== WORKERS ==============
+  /workers:
+    get:
+      tags:
+        - Workers
+      summary: List workers
+      description: Get paginated list of workers with optional filters
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: skill_id
+          in: query
+          schema:
+            type: integer
+        - name: county
+          in: query
+          schema:
+            type: string
+        - name: min_rating
+          in: query
+          schema:
+            type: number
+            minimum: 0
+            maximum: 5
+        - name: verified_only
+          in: query
+          schema:
+            type: boolean
+            default: false
+        - name: availability
+          in: query
+          schema:
+            type: string
+            enum: [available, busy, unavailable]
+        - name: sort_by
+          in: query
+          schema:
+            type: string
+            enum: [rating, experience, distance, created_at]
+            default: rating
+      security:
+        - Bearer: []
+      responses:
+        200:
+          description: Workers list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  workers:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Worker'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+    post:
+      tags:
+        - Workers
+      summary: Create worker profile
+      security:
+        - Bearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkerCreate'
+      responses:
+        201:
+          description: Profile created
+
+  /workers/{worker_id}:
+    get:
+      tags:
+        - Workers
+      summary: Get worker details
+      parameters:
+        - name: worker_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Worker details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkerDetail'
+        404:
+          description: Worker not found
+
+    put:
+      tags:
+        - Workers
+      summary: Update worker profile
+      security:
+        - Bearer: []
+      parameters:
+        - name: worker_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkerUpdate'
+      responses:
+        200:
+          description: Profile updated
+
+  /workers/{worker_id}/skills:
+    post:
+      tags:
+        - Workers
+      summary: Add skill to worker
+      security:
+        - Bearer: []
+      parameters:
+        - name: worker_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - skill_id
+                - proficiency_level
+              properties:
+                skill_id:
+                  type: integer
+                proficiency_level:
+                  type: string
+                  enum: [beginner, intermediate, expert, master]
+                years_experience:
+                  type: integer
+                hourly_rate:
+                  type: number
+      responses:
+        201:
+          description: Skill added
+
+  /workers/search:
+    get:
+      tags:
+        - Workers
+      summary: Search workers
+      description: Advanced search with location-based matching
+      parameters:
+        - name: skill_id
+          in: query
+          schema:
+            type: integer
+        - name: county
+          in: query
+          schema:
+            type: string
+        - name: sub_county
+          in: query
+          schema:
+            type: string
+        - name: max_distance
+          in: query
+          schema:
+            type: integer
+            default: 10
+        - name: min_rating
+          in: query
+          schema:
+            type: number
+        - name: max_hourly_rate
+          in: query
+          schema:
+            type: number
+        - name: availability
+          in: query
+          schema:
+            type: string
+        - name: verified_only
+          in: query
+          schema:
+            type: boolean
+      security:
+        - Bearer: []
+      responses:
+        200:
+          description: Search results
+
+  # ============== EMPLOYERS ==============
+  /employers:
+    get:
+      tags:
+        - Employers
+      summary: List employers
+      security:
+        - Bearer: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Employers list
+
+    post:
+      tags:
+        - Employers
+      summary: Create employer profile
+      security:
+        - Bearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmployerCreate'
+      responses:
+        201:
+          description: Profile created
+
+  /employers/{employer_id}:
+    get:
+      tags:
+        - Employers
+      summary: Get employer details
+      parameters:
+        - name: employer_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Employer details
+
+    put:
+      tags:
+        - Employers
+      summary: Update employer profile
+      security:
+        - Bearer: []
+      parameters:
+        - name: employer_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmployerUpdate'
+      responses:
+        200:
+          description: Profile updated
+
+  # ============== JOBS ==============
+  /jobs:
+    get:
+      tags:
+        - Jobs
+      summary: List jobs
+      description: Get published job listings with filters
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: skill_id
+          in: query
+          schema:
+            type: integer
+        - name: county
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [draft, published, in_progress, completed]
+        - name: payment_type
+          in: query
+          schema:
+            type: string
+            enum: [hourly, daily, fixed, milestone]
+        - name: min_budget
+          in: query
+          schema:
+            type: number
+        - name: max_budget
+          in: query
+          schema:
+            type: number
+      responses:
+        200:
+          description: Jobs list
+
+    post:
+      tags:
+        - Jobs
+      summary: Create job posting
+      security:
+        - Bearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JobCreate'
+      responses:
+        201:
+          description: Job created
+
+  /jobs/{job_id}:
+    get:
+      tags:
+        - Jobs
+      summary: Get job details
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Job details
+
+    put:
+      tags:
+        - Jobs
+      summary: Update job
+      security:
+        - Bearer: []
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JobUpdate'
+      responses:
+        200:
+          description: Job updated
+
+    delete:
+      tags:
+        - Jobs
+      summary: Delete job
+      security:
+        - Bearer: []
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Job deleted
+
+  /jobs/{job_id}/apply:
+    post:
+      tags:
+        - Jobs
+      summary: Apply for job
+      security:
+        - Bearer: []
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                cover_note:
+                  type: string
+                proposed_rate:
+                  type: number
+                available_from:
+                  type: string
+                  format: date
+                estimated_days:
+                  type: integer
+      responses:
+        201:
+          description: Application submitted
+
+  /jobs/{job_id}/match:
+    get:
+      tags:
+        - Jobs
+      summary: Get matching workers for job
+      security:
+        - Bearer: []
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: min_score
+          in: query
+          schema:
+            type: integer
+            default: 60
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        200:
+          description: Matching workers
+
+  # ============== APPLICATIONS ==============
+  /applications:
+    get:
+      tags:
+        - Applications
+      summary: List my applications
+      security:
+        - Bearer: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Applications list
+
+  /applications/{application_id}:
+    get:
+      tags:
+        - Applications
+      summary: Get application details
+      security:
+        - Bearer: []
+      parameters:
+        - name: application_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Application details
+
+  /applications/{application_id}/status:
+    put:
+      tags:
+        - Applications
+      summary: Update application status
+      security:
+        - Bearer: []
+      parameters:
+        - name: application_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  type: string
+                  enum: [shortlisted, interview_scheduled, offered, accepted, rejected, withdrawn]
+                interview_date:
+                  type: string
+                  format: date-time
+                offered_rate:
+                  type: number
+      responses:
+        200:
+          description: Status updated
+
+  # ============== PAYMENTS ==============
+  /payments/escrow/create:
+    post:
+      tags:
+        - Payments
+      summary: Create escrow payment
+      security:
+        - Bearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - contract_id
+                - amount
+              properties:
+                contract_id:
+                  type: integer
+                amount:
+                  type: number
+                payment_method:
+                  type: string
+                  enum: [mpesa, card, bank]
+      responses:
+        201:
+          description: Escrow created
+
+  /payments/escrow/release:
+    post:
+      tags:
+        - Payments
+      summary: Release escrow payment
+      security:
+        - Bearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - contract_id
+              properties:
+                contract_id:
+                  type: integer
+                release_notes:
+                  type: string
+      responses:
+        200:
+          description: Payment released
+
+  /payments/mpesa/stk-push:
+    post:
+      tags:
+        - Payments
+      summary: Initiate M-Pesa STK Push
+      description: Start M-Pesa payment via STK Push
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - phone
+                - amount
+                - reference
+              properties:
+                phone:
+                  type: string
+                  example: "254712345678"
+                amount:
+                  type: number
+                  minimum: 10
+                reference:
+                  type: string
+                description:
+                  type: string
+      responses:
+        202:
+          description: STK Push initiated
+
+  /payments/mpesa/callback:
+    post:
+      tags:
+        - Payments
+      summary: M-Pesa payment callback
+      description: Webhook for M-Pesa payment notifications
+      responses:
+        200:
+          description: Callback received
+
+  # ============== REVIEWS ==============
+  /reviews:
+    post:
+      tags:
+        - Reviews
+      summary: Create review
+      security:
+        - Bearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - contract_id
+                - overall_rating
+              properties:
+                contract_id:
+                  type: integer
+                overall_rating:
+                  type: number
+                  minimum: 1
+                  maximum: 5
+                quality_rating:
+                  type: number
+                communication_rating:
+                  type: number
+                punctuality_rating:
+                  type: number
+                value_rating:
+                  type: number
+                review_text:
+                  type: string
+      responses:
+        201:
+          description: Review created
+
+  # ============== MESSAGES ==============
+  /messages:
+    get:
+      tags:
+        - Messages
+      summary: Get conversations
+      security:
+        - Bearer: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Conversations list
+
+    post:
+      tags:
+        - Messages
+      summary: Send message
+      security:
+        - Bearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - recipient_id
+                - content
+              properties:
+                recipient_id:
+                  type: integer
+                content:
+                  type: string
+      responses:
+        201:
+          description: Message sent
+
+  # ============== VERIFICATION ==============
+  /verification/submit:
+    post:
+      tags:
+        - Verification
+      summary: Submit for verification
+      security:
+        - Bearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - verification_type
+              properties:
+                verification_type:
+                  type: string
+                  enum: [id_verification, business_verification, skill_certification]
+                documents:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+      responses:
+        202:
+          description: Verification submitted
+
+  /verification/status:
+    get:
+      tags:
+        - Verification
+      summary: Get verification status
+      security:
+        - Bearer: []
+      responses:
+        200:
+          description: Verification status
+
+  # ============== ANALYTICS ==============
+  /analytics/dashboard:
+    get:
+      tags:
+        - Analytics
+      summary: Get user dashboard
+      security:
+        - Bearer: []
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [week, month, quarter, year]
+            default: month
+      responses:
+        200:
+          description: Dashboard data
+
+  # ============== SKILLS ==============
+  /skills:
+    get:
+      tags:
+        - Skills
+      summary: List all skills
+      responses:
+        200:
+          description: Skills list
+
+  /skills/categories:
+    get:
+      tags:
+        - Skills
+      summary: List skill categories
+      responses:
+        200:
+          description: Categories list
+
+  # ============== ADMIN ==============
+  /admin/users:
+    get:
+      tags:
+        - Admin
+      summary: List all users
+      security:
+        - Bearer: []
+      parameters:
+        - name: role
+          in: query
+          schema:
+            type: string
+        - name: is_active
+          in: query
+          schema:
+            type: boolean
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Users list
+
+  /admin/stats:
+    get:
+      tags:
+        - Admin
+      summary: Get platform statistics
+      security:
+        - Bearer: []
+      responses:
+        200:
+          description: Platform stats
+
+components:
+  securitySchemes:
+    Bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token. Include in header: Authorization: Bearer <token>
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+          enum: [worker, employer, admin]
+        phone:
+          type: string
+        is_phone_verified:
+          type: boolean
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+
+    Worker:
+      type: object
+      properties:
+        id:
+          type: integer
+        user_id:
+          type: integer
+        first_name:
+          type: string
+        last_name:
+          type: string
+        profile_photo_url:
+          type: string
+        bio:
+          type: string
+        years_experience:
+          type: integer
+        hourly_rate_min:
+          type: number
+        hourly_rate_max:
+          type: number
+        availability_status:
+          type: string
+        is_verified:
+          type: boolean
+        average_rating:
+          type: number
+        total_jobs_completed:
+          type: integer
+        skills:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkerSkill'
+
+    WorkerCreate:
+      type: object
+      properties:
+        first_name:
+          type: string
+        last_name:
+          type: string
+        bio:
+          type: string
+        years_experience:
+          type: integer
+        hourly_rate_min:
+          type: number
+        hourly_rate_max:
+          type: number
+
+    WorkerUpdate:
+      type: object
+      properties:
+        first_name:
+          type: string
+        last_name:
+          type: string
+        bio:
+          type: string
+        years_experience:
+          type: integer
+        hourly_rate_min:
+          type: number
+        hourly_rate_max:
+          type: number
+        availability_status:
+          type: string
+
+    WorkerDetail:
+      allOf:
+        - $ref: '#/components/schemas/Worker'
+        - type: object
+          properties:
+            user:
+              $ref: '#/components/schemas/User'
+            skills:
+              type: array
+              items:
+                $ref: '#/components/schemas/WorkerSkill'
+            reviews:
+              type: array
+              items:
+                $ref: '#/components/schemas/Review'
+            location:
+              type: object
+              properties:
+                county:
+                  type: string
+                sub_county:
+                  type: string
+                latitude:
+                  type: number
+                longitude:
+                  type: number
+
+    WorkerSkill:
+      type: object
+      properties:
+        id:
+          type: integer
+        skill_id:
+          type: integer
+        skill_name:
+          type: string
+        proficiency_level:
+          type: string
+        years_experience:
+          type: integer
+        hourly_rate:
+          type: number
+
+    Employer:
+      type: object
+      properties:
+        id:
+          type: integer
+        user_id:
+          type: integer
+        company_name:
+          type: string
+        business_registration_number:
+          type: string
+        company_type:
+          type: string
+        industry_sector:
+          type: string
+        is_verified:
+          type: boolean
+        average_rating:
+          type: number
+        total_jobs_posted:
+          type: integer
+
+    EmployerCreate:
+      type: object
+      required:
+        - company_name
+      properties:
+        company_name:
+          type: string
+        business_registration_number:
+          type: string
+        company_type:
+          type: string
+        industry_sector:
+          type: string
+        contact_person_name:
+          type: string
+        business_phone:
+          type: string
+
+    EmployerUpdate:
+      type: object
+      properties:
+        company_name:
+          type: string
+        business_registration_number:
+          type: string
+        company_type:
+          type: string
+        industry_sector:
+          type: string
+
+    Job:
+      type: object
+      properties:
+        id:
+          type: integer
+        employer_id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        skill_id:
+          type: integer
+        county:
+          type: string
+        sub_county:
+          type: string
+        start_date:
+          type: string
+          format: date
+        payment_type:
+          type: string
+        budget_min:
+          type: number
+        budget_max:
+          type: number
+        status:
+          type: string
+        application_count:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+
+    JobCreate:
+      type: object
+      required:
+        - title
+        - description
+        - skill_id
+        - start_date
+        - payment_type
+      properties:
+        title:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+          maxLength: 5000
+        skill_id:
+          type: integer
+        county:
+          type: string
+        sub_county:
+          type: string
+        specific_address:
+          type: string
+        start_date:
+          type: string
+          format: date
+        estimated_duration_days:
+          type: integer
+        payment_type:
+          type: string
+          enum: [hourly, daily, fixed, milestone]
+        budget_min:
+          type: number
+        budget_max:
+          type: number
+        is_negotiable:
+          type: boolean
+        required_experience_years:
+          type: integer
+        required_tools:
+          type: array
+          items:
+            type: string
+        number_of_workers_needed:
+          type: integer
+          default: 1
+        visibility:
+          type: string
+          enum: [public, private, invite_only]
+          default: public
+
+    JobUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+        budget_min:
+          type: number
+        budget_max:
+          type: number
+
+    Review:
+      type: object
+      properties:
+        id:
+          type: integer
+        contract_id:
+          type: integer
+        rater_id:
+          type: integer
+        ratee_id:
+          type: integer
+        overall_rating:
+          type: number
+        quality_rating:
+          type: number
+        communication_rating:
+          type: number
+        punctuality_rating:
+          type: number
+        value_rating:
+          type: number
+        review_text:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+        per_page:
+          type: integer
+        total:
+          type: integer
+        pages:
+          type: integer
+        has_next:
+          type: boolean
+        has_prev:
+          type: boolean
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        details:
+          type: object

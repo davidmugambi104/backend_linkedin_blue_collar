@@ -49,9 +49,7 @@ class ReviewService {
   }
 
   async getWorkerAverageRating(workerId: number): Promise<WorkerAverageRating> {
-    return axiosClient.get<WorkerAverageRating>(ENDPOINTS.REVIEWS.WORKER_AVERAGE, {
-      params: { worker_id: workerId },
-    });
+    return axiosClient.get<WorkerAverageRating>(ENDPOINTS.REVIEWS.WORKER_AVERAGE(workerId));
   }
 
   async getWorkerReviewStats(workerId: number): Promise<ReviewStats> {

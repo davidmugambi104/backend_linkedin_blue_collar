@@ -8,8 +8,10 @@ from flask_jwt_extended import (
     get_jwt,
 )
 from ..extensions import db, jwt, limiter
+from ..extensions import redis_cache
 from ..models.user import UserRole
 from ..models import User, Worker, Employer
+from ..models.login_log import LoginLog, AuditLog
 from ..schemas import UserSchema, UserLoginSchema
 from ..utils.permissions import admin_required
 from ..services.sms_service import sms_service
@@ -19,8 +21,53 @@ import string
 
 auth_bp = Blueprint("auth", __name__)
 
-# In-memory blacklist (use Redis or DB in production)
-blacklisted_tokens = set()
+def _request_json():
+  return request.get_json(silent=True) or {}
+
+
+def _login_rate_limit_key():
+  payload = _request_json()
+  email = str(payload.get("email", "")).strip().lower()
+  if email:
+    return f"login:{request.remote_addr}:{email}"
+  return f"login:{request.remote_addr}"
+
+
+def _revoke_token(jwt_payload):
+  jti = jwt_payload.get("jti")
+  exp = jwt_payload.get("exp")
+  if not jti or not exp:
+    return
+
+  now = int(datetime.utcnow().timestamp())
+  ttl = max(exp - now, 1)
+  redis_cache.setex(f"token_blacklist:{jti}", ttl, "1")
+
+
+def _is_token_revoked(jwt_payload):
+  jti = jwt_payload.get("jti")
+  if not jti:
+    return False
+  return bool(redis_cache.get(f"token_blacklist:{jti}"))
+
+
+def log_audit(user_id, action, entity_type=None, entity_id=None, new_values=None):
+    """Log action to audit table"""
+    try:
+        audit = AuditLog(
+            user_id=user_id,
+            action=action,
+            entity_type=entity_type,
+            entity_id=entity_id,
+            new_values=new_values,
+            ip_address=request.remote_addr,
+            user_agent=request.headers.get('User-Agent')
+        )
+        db.session.add(audit)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Audit logging failed: {e}")
 
 
 @auth_bp.route("/register", methods=["POST"])
@@ -62,7 +109,7 @@ def register():
         description: Validation error
     """
     schema = UserSchema()
-    data = schema.load(request.json)
+    data = schema.load(_request_json())
 
     # Create user
     user = User(
@@ -75,6 +122,9 @@ def register():
 
     db.session.add(user)
     db.session.commit()
+
+    # Audit log
+    log_audit(user.id, "user_registered", "user", user.id, {"email": user.email, "role": user.role.value})
 
     # Create profile based on role
     if user.role == UserRole.WORKER:
@@ -93,7 +143,7 @@ def register():
 
 
 @auth_bp.route("/login", methods=["POST"])
-@limiter.limit("10 per minute")
+@limiter.limit("10 per minute", key_func=_login_rate_limit_key)
 def login():
     """Login user
     ---
@@ -129,14 +179,47 @@ def login():
         description: Invalid credentials
     """
     schema = UserLoginSchema()
-    data = schema.load(request.json)
+    data = schema.load(_request_json())
 
     user = User.query.filter_by(email=data["email"]).first()
     if not user or not user.check_password(data["password"]):
+        if user:
+            db.session.add(
+                LoginLog(
+                    user_id=user.id,
+                    ip_address=request.remote_addr,
+                    user_agent=request.headers.get("User-Agent"),
+                    success=False,
+                )
+            )
+            db.session.commit()
         return jsonify({"error": "Invalid email or password"}), 401
 
     if not user.is_active:
+        # Log failed attempt
+        log_audit(user.id, "login_failed", "user", user.id, {"reason": "account_deactivated"})
+        db.session.add(
+            LoginLog(
+                user_id=user.id,
+                ip_address=request.remote_addr,
+                user_agent=request.headers.get("User-Agent"),
+                success=False,
+            )
+        )
+        db.session.commit()
         return jsonify({"error": "Account is deactivated"}), 403
+
+    # Log successful login
+    log_audit(user.id, "login_success", "user", user.id)
+    db.session.add(
+        LoginLog(
+            user_id=user.id,
+            ip_address=request.remote_addr,
+            user_agent=request.headers.get("User-Agent"),
+            success=True,
+        )
+    )
+    db.session.commit()
 
     # Create tokens
     access_token = create_access_token(
@@ -174,24 +257,28 @@ def refresh():
 @auth_bp.route("/logout", methods=["POST"])
 @jwt_required()
 def logout():
-    jti = get_jwt()["jti"]
-    blacklisted_tokens.add(jti)
+    jwt_payload = get_jwt()
+    _revoke_token(jwt_payload)
+    
+    # Audit log
+    user_id = int(get_jwt_identity())
+    log_audit(user_id, "logout", "user", user_id)
+    
     return jsonify({"message": "Successfully logged out"}), 200
 
 
 @auth_bp.route("/logout/refresh", methods=["POST"])
 @jwt_required(refresh=True)
 def logout_refresh():
-    jti = get_jwt()["jti"]
-    blacklisted_tokens.add(jti)
+    jwt_payload = get_jwt()
+    _revoke_token(jwt_payload)
     return jsonify({"message": "Refresh token revoked"}), 200
 
 
 # JWT callback to check blacklist
 @jwt.token_in_blocklist_loader
 def check_if_token_in_blacklist(jwt_header, jwt_payload):
-    jti = jwt_payload["jti"]
-    return jti in blacklisted_tokens
+    return _is_token_revoked(jwt_payload)
 
 
 # Admin route to activate/deactivate users
@@ -200,13 +287,23 @@ def check_if_token_in_blacklist(jwt_header, jwt_payload):
 @admin_required
 def toggle_user_activation(user_id):
     user = User.query.get_or_404(user_id)
+    admin_id = int(get_jwt_identity())
 
-    data = request.json
+    data = _request_json()
     if "is_active" not in data:
         return jsonify({"error": "Missing is_active field"}), 400
 
     user.is_active = data["is_active"]
     db.session.commit()
+
+    # Audit log
+    log_audit(
+        admin_id, 
+        f"user_{'activated' if user.is_active else 'deactivated'}", 
+        "user", 
+        user_id,
+        {"is_active": user.is_active}
+    )
 
     return (
         jsonify(
@@ -223,7 +320,7 @@ def toggle_user_activation(user_id):
 @auth_bp.route("/password-reset/request", methods=["POST"])
 @limiter.limit("3 per minute")
 def request_password_reset():
-    data = request.get_json()
+    data = _request_json()
     email = data.get("email")
     
     if not email:
@@ -247,7 +344,7 @@ def request_password_reset():
             )
         
         # In development, also return the code
-        if app.config.get("DEBUG"):
+        if current_app.config.get("DEBUG"):
             return jsonify({"message": "Password reset code sent", "code": code}), 200
     
     return jsonify({"message": "If an account exists with this email, a reset code has been sent"}), 200
@@ -255,8 +352,9 @@ def request_password_reset():
 
 # Password Reset - Verify code and reset
 @auth_bp.route("/password-reset/verify", methods=["POST"])
+@limiter.limit("5 per minute", key_func=_login_rate_limit_key)
 def verify_password_reset():
-    data = request.get_json()
+    data = _request_json()
     email = data.get("email")
     code = data.get("code")
     new_password = data.get("new_password")
@@ -287,11 +385,12 @@ def verify_password_reset():
 # Change password (when logged in)
 @auth_bp.route("/password/change", methods=["POST"])
 @jwt_required()
+@limiter.limit("10 per hour")
 def change_password():
     current_user_id = get_jwt_identity()
     user = User.query.get(int(current_user_id))
     
-    data = request.get_json()
+    data = _request_json()
     current_password = data.get("current_password")
     new_password = data.get("new_password")
     
@@ -307,5 +406,3 @@ def change_password():
     return jsonify({"message": "Password changed successfully"}), 200
 
 
-# Import app at module level for config access
-from flask import current_app as app

@@ -1,136 +1,129 @@
-# ----- FILE: backend/tests/test_jobs.py -----
+"""
+Job tests
+"""
 import pytest
-from app.models import Job, Application
-from app.models.job import JobStatus
-from app.models.user import UserRole
+from datetime import datetime, timedelta
 
 
-@pytest.fixture
-def employer_user(db_session):
-    """Create an employer user."""
-    import bcrypt
-    hashed = bcrypt.hashpw(b"emppass123".encode(), bcrypt.gensalt()).decode()
+class TestJobList:
+    """Test job listing"""
     
-    user = User(
-        username="employer1",
-        email="employer@test.com",
-        password_hash=hashed,
-        role=UserRole.EMPLOYER,
-        phone="+254700000002"
-    )
-    db_session.add(user)
-    db_session.commit()
-    return user
-
-
-@pytest.fixture
-def employer(db_session, employer_user):
-    """Create an employer profile."""
-    from app.models import Employer
-    employer = Employer(
-        user_id=employer_user.id,
-        company_name="Test Company"
-    )
-    db_session.add(employer)
-    db_session.commit()
-    return employer
-
-
-def test_create_job(client, auth_token, employer, test_skill):
-    """Test job creation."""
-    response = client.post("/api/employers/jobs",
-        headers={"Authorization": f"Bearer {auth_token}"},
-        json={
-            "title": "Need Carpenter",
-            "description": "Build furniture",
-            "required_skill_id": test_skill.id,
-            "pay_min": 500,
-            "pay_max": 1000,
-            "pay_type": "daily",
-            "address": "Nairobi"
-        })
+    def test_list_jobs(self, client, db_session, sample_job):
+        """Test listing jobs"""
+        response = client.get('/api/jobs')
+        
+        assert response.status_code == 200
+        data = response.json
+        assert 'jobs' in data
     
-    assert response.status_code == 201
-    assert response.json["title"] == "Need Carpenter"
+    def test_list_jobs_with_filters(self, client, db_session, sample_job, sample_skill):
+        """Test listing jobs with filters"""
+        response = client.get(f'/api/jobs?skill_id={sample_skill.id}&county=Nairobi')
+        
+        assert response.status_code == 200
 
 
-def test_list_jobs(client, employer, test_skill, db_session):
-    """Test listing jobs."""
-    # Create a job
-    job = Job(
-        employer_id=employer.id,
-        title="Test Job",
-        description="Test description",
-        required_skill_id=test_skill.id,
-        pay_min=500,
-        pay_max=1000,
-        status=JobStatus.OPEN
-    )
-    db_session.add(job)
-    db_session.commit()
+class TestJobDetails:
+    """Test job details"""
     
-    response = client.get("/api/jobs/")
-    assert response.status_code == 200
-    assert len(response.json) > 0
-
-
-def test_search_jobs(client, employer, test_skill, db_session):
-    """Test job search with filters."""
-    job = Job(
-        employer_id=employer.id,
-        title="Carpenter Needed",
-        description="Skilled carpenter",
-        required_skill_id=test_skill.id,
-        pay_min=500,
-        pay_max=1000,
-        status=JobStatus.OPEN,
-        county="Nairobi"
-    )
-    db_session.add(job)
-    db_session.commit()
+    def test_get_job(self, client, db_session, sample_job):
+        """Test getting job details"""
+        response = client.get(f'/api/jobs/{sample_job.id}')
+        
+        assert response.status_code == 200
+        data = response.json
+        assert data['title'] == sample_job.title
     
-    response = client.get(f"/api/jobs/search?county=Nairobi&skill_id={test_skill.id}")
-    assert response.status_code == 200
+    def test_get_nonexistent_job(self, client):
+        """Test getting non-existent job"""
+        response = client.get('/api/jobs/99999')
+        
+        assert response.status_code == 404
 
 
-def test_apply_to_job(client, auth_token, employer, test_worker, test_skill, db_session):
-    """Test applying to a job."""
-    # Create job
-    job = Job(
-        employer_id=employer.id,
-        title="Test Job",
-        description="Test",
-        required_skill_id=test_skill.id,
-        status=JobStatus.OPEN
-    )
-    db_session.add(job)
-    db_session.commit()
+class TestJobCreate:
+    """Test job creation"""
     
-    # Apply
-    response = client.post(f"/api/jobs/{job.id}/apply",
-        headers={"Authorization": f"Bearer {auth_token}"},
-        json={"cover_letter": "I'm interested"})
+    def test_create_job(self, client, db_session, sample_employer, auth_headers):
+        """Test creating a job"""
+        response = client.post(
+            '/api/jobs',
+            headers=auth_headers,
+            json={
+                'employer_id': sample_employer.id,
+                'title': 'New Job',
+                'description': 'Job description',
+                'skill_id': 1,
+                'county': 'Nairobi',
+                'sub_county': 'Westlands',
+                'start_date': '2026-04-01',
+                'payment_type': 'fixed',
+                'budget_min': 5000,
+                'budget_max': 10000
+            }
+        )
+        
+        assert response.status_code == 201
     
-    assert response.status_code == 201
+    def test_create_job_unauthorized(self, client, db_session):
+        """Test creating job without auth"""
+        response = client.post('/api/jobs', json={})
+        
+        assert response.status_code == 401
 
 
-def test_job_match_score(client, auth_token, employer, test_worker, test_skill, db_session):
-    """Test worker matching to job."""
-    # Create job
-    job = Job(
-        employer_id=employer.id,
-        title="Test Job",
-        description="Test",
-        required_skill_id=test_skill.id,
-        status=JobStatus.OPEN,
-        pay_min=500,
-        pay_max=1000
-    )
-    db_session.add(job)
-    db_session.commit()
+class TestJobUpdate:
+    """Test job update"""
     
-    # Get matches
-    response = client.get(f"/api/jobs/match/workers/{job.id}",
-        headers={"Authorization": f"Bearer {auth_token}"})
+    def test_update_job(self, client, db_session, sample_job, auth_headers):
+        """Test updating job"""
+        response = client.put(
+            f'/api/jobs/{sample_job.id}',
+            headers=auth_headers,
+            json={
+                'title': 'Updated Title',
+                'budget_min': 6000
+            }
+        )
+        
+        assert response.status_code == 200
+
+
+class TestJobApply:
+    """Test job application"""
     
-    assert response.status_code == 200
+    def test_apply_for_job(self, client, db_session, sample_job, sample_worker, auth_headers):
+        """Test applying for a job"""
+        response = client.post(
+            f'/api/jobs/{sample_job.id}/apply',
+            headers=auth_headers,
+            json={
+                'cover_note': 'I am interested in this job',
+                'proposed_rate': 8000
+            }
+        )
+        
+        assert response.status_code == 201
+    
+    def test_apply_twice(self, client, db_session, sample_job, sample_worker, auth_headers, sample_application):
+        """Test applying twice for same job"""
+        response = client.post(
+            f'/api/jobs/{sample_job.id}/apply',
+            headers=auth_headers,
+            json={'proposed_rate': 8000}
+        )
+        
+        assert response.status_code != 201
+
+
+class TestJobMatch:
+    """Test job matching"""
+    
+    def test_get_job_matches(self, client, db_session, sample_job, sample_worker, auth_headers):
+        """Test getting job matches"""
+        response = client.get(
+            f'/api/jobs/{sample_job.id}/match',
+            headers=auth_headers
+        )
+        
+        assert response.status_code == 200

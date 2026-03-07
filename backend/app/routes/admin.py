@@ -1,21 +1,398 @@
 # ----- FILE: backend/app/routes/admin.py -----
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, Response, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime, timedelta
-from sqlalchemy import func, or_, and_
-from ..extensions import db
+from sqlalchemy import func, or_, and_, text
+import csv
+import io
+import os
+import sqlite3
+import time
+import json
+import hashlib
+import hmac
+from uuid import uuid4
+from ..extensions import db, redis_cache, limiter
 from ..models import (
     User, Worker, Employer, Job, Application, Payment, 
     Review, Verification, Skill, WorkerSkill, Message
 )
+from ..models.login_log import AuditLog
 from ..utils.helpers import get_current_user_id
-from ..models.user import UserRole
+from ..models.user import UserRole, AdminRole
 from ..models.job import JobStatus
 from ..models.payment import PaymentStatus
-from ..models.verification import VerificationStatus
 from ..utils.permissions import admin_required
+from ..utils.admin_permissions import get_user_permissions
 
 admin_bp = Blueprint("admin", __name__)
+
+
+ACTION_APPROVAL_POLICY = {
+    "delete_user": {
+        "request_roles": {AdminRole.SUPER_ADMIN, AdminRole.OPS_ADMIN},
+        "approve_roles": {AdminRole.SUPER_ADMIN},
+        "execute_roles": {AdminRole.SUPER_ADMIN, AdminRole.OPS_ADMIN},
+    },
+    "bulk_delete_users": {
+        "request_roles": {AdminRole.SUPER_ADMIN, AdminRole.OPS_ADMIN},
+        "approve_roles": {AdminRole.SUPER_ADMIN},
+        "execute_roles": {AdminRole.SUPER_ADMIN, AdminRole.OPS_ADMIN},
+    },
+}
+
+
+ACTION_PERMISSION_POLICY = {
+    "delete_user": {
+        "request_permission": "users:suspend",
+        "approve_permission": "users:suspend",
+        "execute_permission": "users:suspend",
+    },
+    "bulk_delete_users": {
+        "request_permission": "users:suspend",
+        "approve_permission": "users:suspend",
+        "execute_permission": "users:suspend",
+    },
+}
+
+
+def _is_super_admin(user):
+    return (
+        user
+        and user.role == UserRole.ADMIN
+        and user.admin_role == AdminRole.SUPER_ADMIN
+    )
+
+
+def _get_admin_user(user_id):
+    user = User.query.get(int(user_id))
+    if not user or user.role != UserRole.ADMIN:
+        return None
+    return user
+
+
+def _get_admin_role(user):
+    return user.admin_role if user and user.admin_role else AdminRole.OPS_ADMIN
+
+
+def _approval_rate_limit_key():
+    try:
+        admin_id = get_jwt_identity()
+        if admin_id:
+            return f"approval:{admin_id}"
+    except Exception:
+        pass
+    return f"approval_ip:{request.remote_addr}"
+
+
+def _safe_parse_policy_overrides(raw):
+    if not raw:
+        return {}
+    try:
+        parsed = json.loads(raw)
+        return parsed if isinstance(parsed, dict) else {}
+    except Exception:
+        return {}
+
+
+def _resolve_action_approval_policy(action_name):
+    base = ACTION_APPROVAL_POLICY.get(action_name, {})
+    policy = {
+        "request_roles": set(base.get("request_roles", set())),
+        "approve_roles": set(base.get("approve_roles", set())),
+        "execute_roles": set(base.get("execute_roles", set())),
+    }
+    overrides = _safe_parse_policy_overrides(
+        current_app.config.get("ADMIN_APPROVAL_POLICY_OVERRIDES", "")
+    )
+    action_override = overrides.get(action_name, {}) if isinstance(overrides, dict) else {}
+    if isinstance(action_override, dict):
+        for key in ("request_roles", "approve_roles", "execute_roles"):
+            if key in action_override and isinstance(action_override[key], list):
+                policy[key] = set(str(role).strip() for role in action_override[key] if str(role).strip())
+    return policy
+
+
+def _resolve_action_permission_policy(action_name):
+    policy = ACTION_PERMISSION_POLICY.get(action_name, {}).copy()
+    overrides = _safe_parse_policy_overrides(
+        current_app.config.get("ADMIN_APPROVAL_PERMISSION_OVERRIDES", "")
+    )
+    action_override = overrides.get(action_name, {}) if isinstance(overrides, dict) else {}
+    if isinstance(action_override, dict):
+        for key in ("request_permission", "approve_permission", "execute_permission"):
+            if key in action_override and isinstance(action_override[key], str):
+                policy[key] = action_override[key]
+    return policy
+
+
+def _has_admin_permission(user, permission_name):
+    if not permission_name:
+        return True
+    return permission_name in get_user_permissions(user)
+
+
+def _check_approval_permission(action_name, user, stage):
+    policy = _resolve_action_permission_policy(action_name)
+    if not policy:
+        return None
+
+    permission_name = policy.get(f"{stage}_permission")
+    if permission_name and not _has_admin_permission(user, permission_name):
+        return jsonify({
+            "error": "Insufficient approval permission",
+            "action": action_name,
+            "stage": stage,
+            "required_permission": permission_name,
+            "your_permissions": get_user_permissions(user),
+        }), 403
+    return None
+
+
+def _check_approval_policy(action_name, user, stage):
+    policy = _resolve_action_approval_policy(action_name)
+    if not policy:
+        return None
+
+    allowed_roles = policy.get(f"{stage}_roles")
+    user_role = _get_admin_role(user)
+    user_role_value = user_role.value if hasattr(user_role, "value") else str(user_role)
+    normalized_allowed = {
+        role.value if hasattr(role, "value") else str(role)
+        for role in (allowed_roles or set())
+    }
+    if normalized_allowed and user_role_value not in normalized_allowed:
+        return jsonify({
+            "error": "Insufficient approval role",
+            "action": action_name,
+            "stage": stage,
+            "required_roles": sorted(list(normalized_allowed)),
+            "your_role": user_role_value,
+        }), 403
+    return None
+
+
+def _require_admin_confirmation(action_name):
+    if not current_app.config.get("REQUIRE_ADMIN_CONFIRMATION", True):
+        return None
+
+    expected = current_app.config.get("ADMIN_ACTION_CONFIRMATION_TOKEN")
+    if not expected:
+        return None
+
+    provided = request.headers.get("X-Admin-Confirm")
+    if provided != expected:
+        return jsonify({
+            "error": "Admin confirmation required",
+            "message": f"Missing or invalid X-Admin-Confirm for action '{action_name}'"
+        }), 403
+    return None
+
+
+def _canonical_payload_hash(payload):
+    canonical = json.dumps(payload or {}, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def _new_security_event_id(action_name):
+    normalized = str(action_name or "event").replace(" ", "_").lower()
+    return f"sec_{normalized}_{uuid4().hex[:16]}"
+
+
+def _idempotency_store_key(action_name, provided_key, payload_hash):
+    digest = hashlib.sha256(
+        f"{action_name}:{provided_key}:{payload_hash}".encode("utf-8")
+    ).hexdigest()
+    return f"admin:idempotency:{digest}"
+
+
+def _require_idempotency(action_name, payload):
+    if not current_app.config.get("ADMIN_IDEMPOTENCY_ENABLED", True):
+        return None, None
+
+    provided_key = request.headers.get("Idempotency-Key") or request.headers.get("X-Idempotency-Key")
+    if not provided_key:
+        return jsonify({
+            "error": "Idempotency key required",
+            "message": "Provide Idempotency-Key header for this action",
+            "action": action_name,
+        }), None
+
+    payload_hash = _canonical_payload_hash(payload)
+    store_key = _idempotency_store_key(action_name, provided_key, payload_hash)
+    existing = redis_cache.get(store_key)
+    if existing:
+        if isinstance(existing, bytes):
+            existing = existing.decode("utf-8")
+        if isinstance(existing, str):
+            existing = json.loads(existing)
+
+        if existing.get("status") == "completed":
+            body = existing.get("response") or {"message": "Replay detected"}
+            body["idempotent_replay"] = True
+            status_code = int(existing.get("status_code", 200))
+            return jsonify(body), None
+
+        return jsonify({"error": "Duplicate request in progress"}), None
+
+    ttl = current_app.config.get("ADMIN_IDEMPOTENCY_TTL_SECONDS", 3600)
+    redis_cache.setex(
+        store_key,
+        ttl,
+        json.dumps({
+            "status": "in_progress",
+            "action": action_name,
+            "started_at": datetime.utcnow().isoformat(),
+        }),
+    )
+    return None, store_key
+
+
+def _finalize_idempotency(store_key, response_body, status_code):
+    if not store_key:
+        return
+    ttl = current_app.config.get("ADMIN_IDEMPOTENCY_TTL_SECONDS", 3600)
+    redis_cache.setex(
+        store_key,
+        ttl,
+        json.dumps({
+            "status": "completed",
+            "status_code": int(status_code),
+            "response": response_body,
+            "completed_at": datetime.utcnow().isoformat(),
+        }),
+    )
+
+
+def _clear_idempotency(store_key):
+    if store_key:
+        redis_cache.delete(store_key)
+
+
+def _approval_key(approval_id):
+    return f"admin:approval:{approval_id}"
+
+
+def _approval_index_key():
+    return "admin:approvals:index"
+
+
+def _store_approval(record, ttl):
+    redis_cache.setex(_approval_key(record["id"]), ttl, json.dumps(record))
+    redis_cache.sadd(_approval_index_key(), record["id"])
+
+
+def _load_approval(approval_id):
+    raw = redis_cache.get(_approval_key(approval_id))
+    if not raw:
+        return None
+    if isinstance(raw, bytes):
+        raw = raw.decode("utf-8")
+    if isinstance(raw, str):
+        return json.loads(raw)
+    return raw
+
+
+def _list_approvals(status=None, requested_by=None, limit=100):
+    approval_ids = list(redis_cache.smembers(_approval_index_key()) or set())
+    approvals = []
+    for approval_id in approval_ids:
+        approval = _load_approval(str(approval_id))
+        if not approval:
+            redis_cache.srem(_approval_index_key(), str(approval_id))
+            continue
+
+        if status and approval.get("status") != status:
+            continue
+        if requested_by is not None and int(approval.get("requested_by")) != int(requested_by):
+            continue
+        approvals.append(approval)
+
+    approvals.sort(key=lambda item: item.get("requested_at", ""), reverse=True)
+    return approvals[: max(1, min(limit, 500))]
+
+
+def _require_two_person_approval(action_name, payload, executor_id):
+    if not current_app.config.get("TWO_PERSON_APPROVAL_ENABLED", True):
+        return None
+
+    approval_id = request.headers.get("X-Approval-ID")
+    if not approval_id:
+        return jsonify({
+            "error": "Approval required",
+            "message": "X-Approval-ID header is required for this action",
+            "action": action_name,
+        }), 403
+
+    approval = _load_approval(approval_id)
+    if not approval:
+        return jsonify({"error": "Approval not found or expired"}), 403
+
+    if approval.get("status") != "approved":
+        return jsonify({"error": "Approval is not in approved state"}), 403
+
+    if approval.get("action") != action_name:
+        return jsonify({"error": "Approval action mismatch"}), 403
+
+    executor_user = _get_admin_user(executor_id)
+    if not executor_user:
+        return jsonify({"error": "Admin user not found"}), 404
+
+    policy_error = _check_approval_policy(action_name, executor_user, "execute")
+    if policy_error:
+        return policy_error
+
+    permission_error = _check_approval_permission(action_name, executor_user, "execute")
+    if permission_error:
+        return permission_error
+
+    if approval.get("payload_hash") != _canonical_payload_hash(payload):
+        return jsonify({"error": "Approval payload mismatch"}), 403
+
+    requester_id = int(approval.get("requested_by"))
+    approved_by = int(approval.get("approved_by"))
+    if requester_id == approved_by:
+        return jsonify({"error": "Approval invalid: requester and approver must differ"}), 403
+    if approved_by == int(executor_id):
+        return jsonify({"error": "Approver cannot execute the approved action"}), 403
+
+    approval["status"] = "consumed"
+    approval["consumed_at"] = datetime.utcnow().isoformat()
+    approval["consumed_by"] = int(executor_id)
+    _store_approval(approval, current_app.config.get("ADMIN_APPROVAL_TTL_SECONDS", 1800))
+    return None
+
+
+def _sign_audit_export(payload_bytes):
+    digest = hashlib.sha256(payload_bytes).hexdigest()
+    signing_key = (
+        current_app.config.get("AUDIT_EXPORT_SIGNING_KEY")
+        or current_app.config.get("SECRET_KEY")
+        or "change-me"
+    )
+    signature = hmac.new(
+        signing_key.encode("utf-8"),
+        payload_bytes,
+        hashlib.sha256,
+    ).hexdigest()
+    return digest, signature
+
+
+def log_admin_action(user_id, action, entity_type=None, entity_id=None, new_values=None):
+    try:
+        audit = AuditLog(
+            user_id=user_id,
+            action=action,
+            entity_type=entity_type,
+            entity_id=entity_id,
+            new_values=new_values,
+            ip_address=request.remote_addr,
+            user_agent=request.headers.get("User-Agent"),
+        )
+        db.session.add(audit)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
 
 
 # ============================================
@@ -30,6 +407,7 @@ def get_platform_stats():
     try:
         # User counts
         total_users = User.query.count()
+        active_users = User.query.filter_by(is_active=True).count()
         workers_count = Worker.query.count()
         employers_count = Employer.query.count()
         verified_workers = Worker.query.filter_by(is_verified=True).count()
@@ -68,14 +446,14 @@ def get_platform_stats():
         # Payment statistics
         total_revenue = db.session.query(
             func.sum(Payment.amount)
-        ).filter_by(status=PaymentStatus.PAID).scalar() or 0
+        ).filter_by(status=PaymentStatus.COMPLETED).scalar() or 0
         
         platform_fees_total = db.session.query(
             func.sum(Payment.platform_fee)
-        ).filter_by(status=PaymentStatus.PAID).scalar() or 0
+        ).filter_by(status=PaymentStatus.COMPLETED).scalar() or 0
         
         pending_payments = Payment.query.filter_by(status=PaymentStatus.PENDING).count()
-        completed_payments = Payment.query.filter_by(status=PaymentStatus.PAID).count()
+        completed_payments = Payment.query.filter_by(status=PaymentStatus.COMPLETED).count()
         
         avg_transaction = (total_revenue / completed_payments) if completed_payments > 0 else 0
         
@@ -85,12 +463,12 @@ def get_platform_stats():
         
         # Verification statistics
         pending_verifications = Verification.query.filter_by(
-            status=VerificationStatus.PENDING
+            status="pending"
         ).count()
         
         return jsonify({
             "total_users": total_users,
-            "active_users": total_users,  # For now, assume all are active
+            "active_users": active_users,
             "workers_count": workers_count,
             "employers_count": employers_count,
             "verified_users": verified_workers,
@@ -124,11 +502,26 @@ def get_platform_stats():
 def get_system_health():
     """Get system health metrics."""
     try:
-        # Simple health check
-        db.session.execute("SELECT 1")
+        started = time.perf_counter()
+        db.session.execute(text("SELECT 1"))
+        db_query_ms = round((time.perf_counter() - started) * 1000, 2)
+
+        redis_status = "disconnected"
+        redis_latency_ms = None
+        try:
+            if redis_cache and getattr(redis_cache, "_client", None):
+                redis_started = time.perf_counter()
+                redis_cache._client.ping()
+                redis_latency_ms = round((time.perf_counter() - redis_started) * 1000, 2)
+                redis_status = "connected"
+        except Exception:
+            redis_status = "degraded"
+
+        limiter_storage = current_app.config.get("RATELIMIT_STORAGE_URI", "memory://")
+        overall_status = "healthy" if redis_status in {"connected", "disconnected"} else "degraded"
         
         return jsonify({
-            "status": "healthy",
+            "status": overall_status,
             "uptime": 0,  # Would need to track this separately
             "response_time": 10,  # Placeholder
             "active_connections": 0,
@@ -140,13 +533,16 @@ def get_system_health():
             },
             "database": {
                 "status": "connected",
-                "query_time": 10,
+                "query_time": db_query_ms,
                 "connections": 0
             },
             "redis": {
-                "status": "disconnected",
-                "memory_usage": 0,
-                "hit_rate": 0
+                "status": redis_status,
+                "latency_ms": redis_latency_ms,
+                "memory_usage": 0
+            },
+            "rate_limiter": {
+                "storage_uri": limiter_storage
             },
             "storage": {
                 "total": 0,
@@ -187,6 +583,15 @@ def get_users():
                 query = query.filter_by(role=UserRole(role))
             except ValueError:
                 return jsonify({"error": "Invalid role"}), 400
+
+        if status:
+            normalized_status = status.strip().lower()
+            if normalized_status in {"active"}:
+                query = query.filter(User.is_active.is_(True))
+            elif normalized_status in {"inactive", "banned", "suspended"}:
+                query = query.filter(User.is_active.is_(False))
+            else:
+                return jsonify({"error": "Invalid status"}), 400
         
         if search:
             query = query.filter(
@@ -197,10 +602,15 @@ def get_users():
             )
         
         # Apply sorting
+        sort_field = sort[1:] if sort.startswith("-") else sort
+        allowed_sort_fields = {"created_at", "updated_at", "username", "email", "role"}
+        if sort_field not in allowed_sort_fields:
+            sort_field = "created_at"
+
         if sort.startswith("-"):
-            query = query.order_by(getattr(User, sort[1:]).desc())
+            query = query.order_by(getattr(User, sort_field).desc())
         else:
-            query = query.order_by(getattr(User, sort).asc())
+            query = query.order_by(getattr(User, sort_field).asc())
         
         # Paginate
         total = query.count()
@@ -287,21 +697,52 @@ def get_user_details(user_id):
 @admin_required
 def ban_user(user_id):
     """Ban a user."""
+    idempotency_key = None
     try:
-        user = User.query.get_or_404(user_id)
-        data = request.get_json()
-        
+        data = request.get_json(silent=True) or {}
         reason = data.get("reason", "No reason provided")
         duration = data.get("duration")  # In days, None for permanent
+        security_event_id = _new_security_event_id("user_ban")
+
+        idempotency_error, idempotency_key = _require_idempotency(
+            "ban_user",
+            {"user_id": user_id, "reason": reason, "duration": duration},
+        )
+        if idempotency_error:
+            return idempotency_error
+
+        user = User.query.get_or_404(user_id)
         
         # In a real implementation, you'd have a ban table
         # For now, we'll just mark the user as inactive
         user.is_active = False
         db.session.commit()
-        
-        return jsonify({"message": "User banned successfully"}), 200
+
+        admin_id = int(get_jwt_identity())
+        log_admin_action(
+            user_id=admin_id,
+            action="user_suspended",
+            entity_type="user",
+            entity_id=user.id,
+            new_values={
+                "is_active": False,
+                "reason": reason,
+                "duration": duration,
+                "security_event_id": security_event_id,
+                "event_type": "admin.user.ban",
+            },
+        )
+
+        response_body = {
+            "message": "User banned successfully",
+            "security_event_id": security_event_id,
+            "event_type": "admin.user.ban",
+        }
+        _finalize_idempotency(idempotency_key, response_body, 200)
+        return jsonify(response_body), 200
         
     except Exception as e:
+        _clear_idempotency(idempotency_key)
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
 
@@ -311,14 +752,43 @@ def ban_user(user_id):
 @admin_required
 def unban_user(user_id):
     """Unban a user."""
+    idempotency_key = None
     try:
+        security_event_id = _new_security_event_id("user_unban")
+        idempotency_error, idempotency_key = _require_idempotency(
+            "unban_user",
+            {"user_id": user_id},
+        )
+        if idempotency_error:
+            return idempotency_error
+
         user = User.query.get_or_404(user_id)
         user.is_active = True
         db.session.commit()
-        
-        return jsonify({"message": "User unbanned successfully"}), 200
+
+        admin_id = int(get_jwt_identity())
+        log_admin_action(
+            user_id=admin_id,
+            action="user_reactivated",
+            entity_type="user",
+            entity_id=user.id,
+            new_values={
+                "is_active": True,
+                "security_event_id": security_event_id,
+                "event_type": "admin.user.unban",
+            },
+        )
+
+        response_body = {
+            "message": "User unbanned successfully",
+            "security_event_id": security_event_id,
+            "event_type": "admin.user.unban",
+        }
+        _finalize_idempotency(idempotency_key, response_body, 200)
+        return jsonify(response_body), 200
         
     except Exception as e:
+        _clear_idempotency(idempotency_key)
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
 
@@ -328,7 +798,34 @@ def unban_user(user_id):
 @admin_required
 def delete_user(user_id):
     """Delete a user (soft delete recommended)."""
+    idempotency_key = None
     try:
+        security_event_id = _new_security_event_id("delete_user")
+        confirmation_error = _require_admin_confirmation("delete_user")
+        if confirmation_error:
+            return confirmation_error
+
+        idempotency_error, idempotency_key = _require_idempotency(
+            "delete_user",
+            {"user_id": user_id},
+        )
+        if idempotency_error:
+            return idempotency_error
+
+        current_admin_id = int(get_jwt_identity())
+        approval_error = _require_two_person_approval(
+            "delete_user",
+            {"user_id": user_id},
+            current_admin_id,
+        )
+        if approval_error:
+            return approval_error
+
+        if not current_app.config.get("ALLOW_DESTRUCTIVE_OPERATIONS", False):
+            return jsonify({
+                "error": "Destructive operations are disabled in this environment"
+            }), 403
+
         user = User.query.get_or_404(user_id)
         
         # Don't allow deleting other admins
@@ -338,10 +835,25 @@ def delete_user(user_id):
         # Soft delete - mark as inactive
         user.is_active = False
         db.session.commit()
-        
-        return jsonify({"message": "User deleted successfully"}), 200
+
+        admin_id = int(get_jwt_identity())
+        log_admin_action(
+            user_id=admin_id,
+            action="user_soft_deleted",
+            entity_type="user",
+            entity_id=user.id,
+            new_values={"is_active": False, "security_event_id": security_event_id},
+        )
+
+        response_body = {
+            "message": "User deleted successfully",
+            "security_event_id": security_event_id,
+        }
+        _finalize_idempotency(idempotency_key, response_body, 200)
+        return jsonify(response_body), 200
         
     except Exception as e:
+        _clear_idempotency(idempotency_key)
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
 
@@ -410,12 +922,21 @@ def get_all_jobs():
 @admin_required
 def moderate_job(job_id):
     """Moderate a job (approve, reject, flag)."""
+    idempotency_key = None
     try:
-        job = Job.query.get_or_404(job_id)
-        data = request.get_json()
-        
+        data = request.get_json(silent=True) or {}
         action = data.get("action")  # approve, reject, flag
         reason = data.get("reason")
+        security_event_id = _new_security_event_id("job_moderate")
+
+        idempotency_error, idempotency_key = _require_idempotency(
+            "moderate_job",
+            {"job_id": job_id, "action": action, "reason": reason},
+        )
+        if idempotency_error:
+            return idempotency_error
+
+        job = Job.query.get_or_404(job_id)
         
         if action == "reject":
             job.status = JobStatus.CANCELLED
@@ -424,10 +945,31 @@ def moderate_job(job_id):
         # Add more moderation actions as needed
         
         db.session.commit()
+
+        admin_id = int(get_jwt_identity())
+        log_admin_action(
+            user_id=admin_id,
+            action="job_moderated",
+            entity_type="job",
+            entity_id=job.id,
+            new_values={
+                "action": action,
+                "reason": reason,
+                "security_event_id": security_event_id,
+                "event_type": "admin.job.moderate",
+            },
+        )
         
-        return jsonify({"message": f"Job {action}ed successfully"}), 200
+        response_body = {
+            "message": f"Job {action}ed successfully",
+            "security_event_id": security_event_id,
+            "event_type": "admin.job.moderate",
+        }
+        _finalize_idempotency(idempotency_key, response_body, 200)
+        return jsonify(response_body), 200
         
     except Exception as e:
+        _clear_idempotency(idempotency_key)
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
 
@@ -437,16 +979,44 @@ def moderate_job(job_id):
 @admin_required
 def feature_job(job_id):
     """Mark job as featured."""
+    idempotency_key = None
     try:
+        security_event_id = _new_security_event_id("job_feature")
+        idempotency_error, idempotency_key = _require_idempotency(
+            "feature_job",
+            {"job_id": job_id},
+        )
+        if idempotency_error:
+            return idempotency_error
+
         job = Job.query.get_or_404(job_id)
         # Note: Would need to add is_featured column to Job model
         # For now, just return success
         # job.is_featured = True
         # db.session.commit()
         
-        return jsonify({"message": "Job featured successfully"}), 200
+        admin_id = int(get_jwt_identity())
+        log_admin_action(
+            user_id=admin_id,
+            action="job_featured",
+            entity_type="job",
+            entity_id=job.id,
+            new_values={
+                "security_event_id": security_event_id,
+                "event_type": "admin.job.feature",
+            },
+        )
+
+        response_body = {
+            "message": "Job featured successfully",
+            "security_event_id": security_event_id,
+            "event_type": "admin.job.feature",
+        }
+        _finalize_idempotency(idempotency_key, response_body, 200)
+        return jsonify(response_body), 200
         
     except Exception as e:
+        _clear_idempotency(idempotency_key)
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
 
@@ -456,16 +1026,44 @@ def feature_job(job_id):
 @admin_required
 def unfeature_job(job_id):
     """Remove featured status from job."""
+    idempotency_key = None
     try:
+        security_event_id = _new_security_event_id("job_unfeature")
+        idempotency_error, idempotency_key = _require_idempotency(
+            "unfeature_job",
+            {"job_id": job_id},
+        )
+        if idempotency_error:
+            return idempotency_error
+
         job = Job.query.get_or_404(job_id)
         # Note: Would need to add is_featured column to Job model
         # For now, just return success
         # job.is_featured = False
         # db.session.commit()
         
-        return jsonify({"message": "Job unfeatured successfully"}), 200
+        admin_id = int(get_jwt_identity())
+        log_admin_action(
+            user_id=admin_id,
+            action="job_unfeatured",
+            entity_type="job",
+            entity_id=job.id,
+            new_values={
+                "security_event_id": security_event_id,
+                "event_type": "admin.job.unfeature",
+            },
+        )
+
+        response_body = {
+            "message": "Job unfeatured successfully",
+            "security_event_id": security_event_id,
+            "event_type": "admin.job.unfeature",
+        }
+        _finalize_idempotency(idempotency_key, response_body, 200)
+        return jsonify(response_body), 200
         
     except Exception as e:
+        _clear_idempotency(idempotency_key)
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
 
@@ -530,13 +1128,22 @@ def get_verification_queue():
 @admin_required
 def review_verification(verification_id):
     """Approve or reject a verification request."""
+    idempotency_key = None
     try:
         current_user_id = get_current_user_id()
-        verification = Verification.query.get_or_404(verification_id)
-        data = request.get_json()
-        
+        data = request.get_json(silent=True) or {}
         status = data.get("status")  # "approved" or "rejected"
         notes = data.get("notes")
+        security_event_id = _new_security_event_id("verification_review")
+
+        idempotency_error, idempotency_key = _require_idempotency(
+            "review_verification",
+            {"verification_id": verification_id, "status": status, "notes": notes},
+        )
+        if idempotency_error:
+            return idempotency_error
+
+        verification = Verification.query.get_or_404(verification_id)
         
         if status not in ["approved", "rejected"]:
             return jsonify({"error": "Invalid status"}), 400
@@ -553,10 +1160,30 @@ def review_verification(verification_id):
                     worker.is_verified = True
         
         db.session.commit()
+
+        admin_id = int(get_jwt_identity())
+        log_admin_action(
+            user_id=admin_id,
+            action="verification_reviewed",
+            entity_type="verification",
+            entity_id=verification.id,
+            new_values={
+                "status": status,
+                "security_event_id": security_event_id,
+                "event_type": "admin.verification.review",
+            },
+        )
         
-        return jsonify({"message": "Verification reviewed successfully"}), 200
+        response_body = {
+            "message": "Verification reviewed successfully",
+            "security_event_id": security_event_id,
+            "event_type": "admin.verification.review",
+        }
+        _finalize_idempotency(idempotency_key, response_body, 200)
+        return jsonify(response_body), 200
         
     except Exception as e:
+        _clear_idempotency(idempotency_key)
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
 
@@ -586,13 +1213,369 @@ def get_platform_settings():
 @admin_required
 def update_platform_settings():
     """Update platform settings."""
+    idempotency_key = None
     try:
-        data = request.get_json()
+        data = request.get_json(silent=True) or {}
+        security_event_id = _new_security_event_id("platform_settings_update")
+
+        idempotency_error, idempotency_key = _require_idempotency(
+            "update_platform_settings",
+            {"data": data},
+        )
+        if idempotency_error:
+            return idempotency_error
+
         # In a real app, save to settings table
-        
-        return jsonify({"message": "Settings updated successfully"}), 200
+
+        admin_id = int(get_jwt_identity())
+        log_admin_action(
+            user_id=admin_id,
+            action="platform_settings_updated",
+            entity_type="settings",
+            entity_id=None,
+            new_values={
+                "changed_keys": sorted(list(data.keys())),
+                "security_event_id": security_event_id,
+                "event_type": "admin.settings.update",
+            },
+        )
+
+        response_body = {
+            "message": "Settings updated successfully",
+            "security_event_id": security_event_id,
+            "event_type": "admin.settings.update",
+        }
+        _finalize_idempotency(idempotency_key, response_body, 200)
+        return jsonify(response_body), 200
         
     except Exception as e:
+        _clear_idempotency(idempotency_key)
+        return jsonify({"error": str(e)}), 500
+
+
+# ============================================
+# TWO-PERSON APPROVAL WORKFLOW
+# ============================================
+
+@admin_bp.route("/approvals/request", methods=["POST"])
+@jwt_required()
+@admin_required
+@limiter.limit(lambda: current_app.config.get("ADMIN_APPROVAL_RATE_LIMIT", "30 per minute"), key_func=_approval_rate_limit_key)
+def request_approval():
+    idempotency_key = None
+    try:
+        security_event_id = _new_security_event_id("approval_request")
+        if not current_app.config.get("TWO_PERSON_APPROVAL_ENABLED", True):
+            return jsonify({"error": "Two-person approval is disabled"}), 403
+
+        data = request.get_json(silent=True) or {}
+        action = data.get("action")
+        payload = data.get("payload") or {}
+        reason = data.get("reason", "")
+
+        idempotency_error, idempotency_key = _require_idempotency(
+            "approval_request",
+            {"action": action, "payload": payload, "reason": reason},
+        )
+        if idempotency_error:
+            return idempotency_error
+
+        allowed_actions = {"delete_user", "bulk_delete_users"}
+        if action not in allowed_actions:
+            return jsonify({"error": "Unsupported approval action"}), 400
+
+        requester_id = int(get_jwt_identity())
+        requester_user = _get_admin_user(requester_id)
+        if not requester_user:
+            return jsonify({"error": "Admin user not found"}), 404
+
+        policy_error = _check_approval_policy(action, requester_user, "request")
+        if policy_error:
+            return policy_error
+
+        permission_error = _check_approval_permission(action, requester_user, "request")
+        if permission_error:
+            return permission_error
+
+        approval_id = str(uuid4())
+        ttl = current_app.config.get("ADMIN_APPROVAL_TTL_SECONDS", 1800)
+        now = datetime.utcnow()
+        record = {
+            "id": approval_id,
+            "action": action,
+            "payload_hash": _canonical_payload_hash(payload),
+            "payload_preview": payload,
+            "reason": reason,
+            "status": "pending",
+            "requested_by": requester_id,
+            "requested_by_role": _get_admin_role(requester_user).value,
+            "requested_at": now.isoformat(),
+            "expires_at": (now + timedelta(seconds=ttl)).isoformat(),
+            "approved_by": None,
+            "approved_at": None,
+        }
+        _store_approval(record, ttl)
+
+        log_admin_action(
+            user_id=requester_id,
+            action="approval_requested",
+            entity_type="approval",
+            entity_id=None,
+            new_values={
+                "approval_id": approval_id,
+                "action": action,
+                "security_event_id": security_event_id,
+            },
+        )
+
+        response_body = {
+            "approval_id": approval_id,
+            "status": "pending",
+            "expires_in_seconds": ttl,
+            "action": action,
+            "security_event_id": security_event_id,
+        }
+        _finalize_idempotency(idempotency_key, response_body, 201)
+        return jsonify(response_body), 201
+    except Exception as e:
+        _clear_idempotency(idempotency_key)
+        return jsonify({"error": str(e)}), 500
+
+
+@admin_bp.route("/approvals/<string:approval_id>", methods=["GET"])
+@jwt_required()
+@admin_required
+@limiter.limit(lambda: current_app.config.get("ADMIN_APPROVAL_REVIEW_RATE_LIMIT", "20 per minute"), key_func=_approval_rate_limit_key)
+def get_approval(approval_id):
+    approval = _load_approval(approval_id)
+    if not approval:
+        return jsonify({"error": "Approval not found or expired"}), 404
+    return jsonify(approval), 200
+
+
+@admin_bp.route("/approvals/pending", methods=["GET"])
+@jwt_required()
+@admin_required
+@limiter.limit(lambda: current_app.config.get("ADMIN_APPROVAL_REVIEW_RATE_LIMIT", "20 per minute"), key_func=_approval_rate_limit_key)
+def list_pending_approvals():
+    try:
+        limit = int(request.args.get("limit", 100))
+        pending = _list_approvals(status="pending", limit=limit)
+        return jsonify({"approvals": pending, "count": len(pending)}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@admin_bp.route("/approvals/mine", methods=["GET"])
+@jwt_required()
+@admin_required
+@limiter.limit(lambda: current_app.config.get("ADMIN_APPROVAL_REVIEW_RATE_LIMIT", "20 per minute"), key_func=_approval_rate_limit_key)
+def list_my_approvals():
+    try:
+        limit = int(request.args.get("limit", 100))
+        current_admin_id = int(get_jwt_identity())
+        mine = _list_approvals(requested_by=current_admin_id, limit=limit)
+        return jsonify({"approvals": mine, "count": len(mine)}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@admin_bp.route("/approvals/<string:approval_id>/approve", methods=["POST"])
+@jwt_required()
+@admin_required
+@limiter.limit(lambda: current_app.config.get("ADMIN_APPROVAL_REVIEW_RATE_LIMIT", "20 per minute"), key_func=_approval_rate_limit_key)
+def approve_approval(approval_id):
+    idempotency_key = None
+    try:
+        security_event_id = _new_security_event_id("approval_approve")
+        idempotency_error, idempotency_key = _require_idempotency(
+            "approval_approve",
+            {"approval_id": approval_id},
+        )
+        if idempotency_error:
+            return idempotency_error
+
+        approval = _load_approval(approval_id)
+        if not approval:
+            return jsonify({"error": "Approval not found or expired"}), 404
+
+        if approval.get("status") != "pending":
+            return jsonify({"error": "Approval is not pending"}), 400
+
+        approver_id = int(get_jwt_identity())
+        if int(approval.get("requested_by")) == approver_id:
+            return jsonify({"error": "Requester cannot approve their own request"}), 403
+
+        approver_user = _get_admin_user(approver_id)
+        if not approver_user:
+            return jsonify({"error": "Admin user not found"}), 404
+
+        action_name = approval.get("action")
+        policy_error = _check_approval_policy(action_name, approver_user, "approve")
+        if policy_error:
+            return policy_error
+
+        permission_error = _check_approval_permission(action_name, approver_user, "approve")
+        if permission_error:
+            return permission_error
+
+        approval["status"] = "approved"
+        approval["approved_by"] = approver_id
+        approval["approved_by_role"] = _get_admin_role(approver_user).value
+        approval["approved_at"] = datetime.utcnow().isoformat()
+        _store_approval(approval, current_app.config.get("ADMIN_APPROVAL_TTL_SECONDS", 1800))
+
+        log_admin_action(
+            user_id=approver_id,
+            action="approval_approved",
+            entity_type="approval",
+            entity_id=None,
+            new_values={
+                "approval_id": approval_id,
+                "action": approval.get("action"),
+                "security_event_id": security_event_id,
+            },
+        )
+
+        response_body = {
+            "approval_id": approval_id,
+            "status": "approved",
+            "security_event_id": security_event_id,
+        }
+        _finalize_idempotency(idempotency_key, response_body, 200)
+        return jsonify(response_body), 200
+    except Exception as e:
+        _clear_idempotency(idempotency_key)
+        return jsonify({"error": str(e)}), 500
+
+
+@admin_bp.route("/approvals/<string:approval_id>/reject", methods=["POST"])
+@jwt_required()
+@admin_required
+@limiter.limit(lambda: current_app.config.get("ADMIN_APPROVAL_REVIEW_RATE_LIMIT", "20 per minute"), key_func=_approval_rate_limit_key)
+def reject_approval(approval_id):
+    idempotency_key = None
+    try:
+        security_event_id = _new_security_event_id("approval_reject")
+        idempotency_error, idempotency_key = _require_idempotency(
+            "approval_reject",
+            {"approval_id": approval_id},
+        )
+        if idempotency_error:
+            return idempotency_error
+
+        approval = _load_approval(approval_id)
+        if not approval:
+            return jsonify({"error": "Approval not found or expired"}), 404
+
+        if approval.get("status") != "pending":
+            return jsonify({"error": "Approval is not pending"}), 400
+
+        approver_id = int(get_jwt_identity())
+        if int(approval.get("requested_by")) == approver_id:
+            return jsonify({"error": "Requester cannot reject their own request"}), 403
+
+        approver_user = _get_admin_user(approver_id)
+        if not approver_user:
+            return jsonify({"error": "Admin user not found"}), 404
+
+        action_name = approval.get("action")
+        policy_error = _check_approval_policy(action_name, approver_user, "approve")
+        if policy_error:
+            return policy_error
+
+        permission_error = _check_approval_permission(action_name, approver_user, "approve")
+        if permission_error:
+            return permission_error
+
+        approval["status"] = "rejected"
+        approval["approved_by"] = approver_id
+        approval["approved_by_role"] = _get_admin_role(approver_user).value
+        approval["approved_at"] = datetime.utcnow().isoformat()
+        _store_approval(approval, current_app.config.get("ADMIN_APPROVAL_TTL_SECONDS", 1800))
+
+        log_admin_action(
+            user_id=approver_id,
+            action="approval_rejected",
+            entity_type="approval",
+            entity_id=None,
+            new_values={
+                "approval_id": approval_id,
+                "action": approval.get("action"),
+                "security_event_id": security_event_id,
+            },
+        )
+
+        response_body = {
+            "approval_id": approval_id,
+            "status": "rejected",
+            "security_event_id": security_event_id,
+        }
+        _finalize_idempotency(idempotency_key, response_body, 200)
+        return jsonify(response_body), 200
+    except Exception as e:
+        _clear_idempotency(idempotency_key)
+        return jsonify({"error": str(e)}), 500
+
+
+@admin_bp.route("/approvals/<string:approval_id>/cancel", methods=["POST"])
+@jwt_required()
+@admin_required
+@limiter.limit(lambda: current_app.config.get("ADMIN_APPROVAL_REVIEW_RATE_LIMIT", "20 per minute"), key_func=_approval_rate_limit_key)
+def cancel_approval(approval_id):
+    idempotency_key = None
+    try:
+        security_event_id = _new_security_event_id("approval_cancel")
+        idempotency_error, idempotency_key = _require_idempotency(
+            "approval_cancel",
+            {"approval_id": approval_id},
+        )
+        if idempotency_error:
+            return idempotency_error
+
+        approval = _load_approval(approval_id)
+        if not approval:
+            return jsonify({"error": "Approval not found or expired"}), 404
+
+        if approval.get("status") != "pending":
+            return jsonify({"error": "Only pending approvals can be cancelled"}), 400
+
+        actor_id = int(get_jwt_identity())
+        actor_user = _get_admin_user(actor_id)
+        if not actor_user:
+            return jsonify({"error": "Admin user not found"}), 404
+
+        requester_id = int(approval.get("requested_by"))
+        if actor_id != requester_id and not _is_super_admin(actor_user):
+            return jsonify({"error": "Only requester or super admin can cancel this approval"}), 403
+
+        approval["status"] = "cancelled"
+        approval["cancelled_by"] = actor_id
+        approval["cancelled_by_role"] = _get_admin_role(actor_user).value
+        approval["cancelled_at"] = datetime.utcnow().isoformat()
+        _store_approval(approval, current_app.config.get("ADMIN_APPROVAL_TTL_SECONDS", 1800))
+
+        log_admin_action(
+            user_id=actor_id,
+            action="approval_cancelled",
+            entity_type="approval",
+            entity_id=None,
+            new_values={
+                "approval_id": approval_id,
+                "action": approval.get("action"),
+                "security_event_id": security_event_id,
+            },
+        )
+
+        response_body = {
+            "approval_id": approval_id,
+            "status": "cancelled",
+            "security_event_id": security_event_id,
+        }
+        _finalize_idempotency(idempotency_key, response_body, 200)
+        return jsonify(response_body), 200
+    except Exception as e:
+        _clear_idempotency(idempotency_key)
         return jsonify({"error": str(e)}), 500
 
 
@@ -605,11 +1588,236 @@ def update_platform_settings():
 @admin_required
 def get_audit_log():
     """Get audit log entries."""
-    # Placeholder - would need an audit_log table
-    return jsonify({
-        "entries": [],
-        "total": 0
-    }), 200
+    try:
+        current_user = User.query.get(int(get_jwt_identity()))
+        page = int(request.args.get("page", 1))
+        limit = int(request.args.get("limit", 20))
+        limit = min(max(limit, 1), current_app.config.get("AUDIT_LOG_MAX_PAGE_SIZE", 200))
+        admin_id = request.args.get("admin_id", type=int)
+        entity_type = request.args.get("entity_type")
+        start_date = request.args.get("start_date")
+        end_date = request.args.get("end_date")
+        sort_by = request.args.get("sort_by", "created_at")
+        sort_order = request.args.get("sort_order", "desc").lower()
+        response_format = request.args.get("format", "json").lower()
+        include_sensitive = request.args.get("include_sensitive", "false").lower() == "true"
+        download = request.args.get("download", "false").lower() == "true"
+
+        if include_sensitive and not _is_super_admin(current_user):
+            return jsonify({"error": "Sensitive audit fields require super admin role"}), 403
+
+        if (response_format == "csv" or download) and not _has_admin_permission(current_user, "audit:export"):
+            return jsonify({"error": "Audit export permission required"}), 403
+
+        if response_format not in {"json", "csv"}:
+            return jsonify({"error": "Invalid format. Use json or csv."}), 400
+
+        query = AuditLog.query
+
+        if admin_id:
+            query = query.filter(AuditLog.user_id == admin_id)
+
+        if entity_type:
+            query = query.filter(AuditLog.entity_type == entity_type)
+
+        if start_date:
+            try:
+                start_dt = datetime.fromisoformat(start_date)
+                query = query.filter(AuditLog.timestamp >= start_dt)
+            except ValueError:
+                return jsonify({"error": "Invalid start_date format. Use ISO format."}), 400
+
+        if end_date:
+            try:
+                end_dt = datetime.fromisoformat(end_date)
+                query = query.filter(AuditLog.timestamp <= end_dt)
+            except ValueError:
+                return jsonify({"error": "Invalid end_date format. Use ISO format."}), 400
+
+        sortable_fields = {
+            "created_at": AuditLog.timestamp,
+            "action": AuditLog.action,
+            "entity_type": AuditLog.entity_type,
+            "admin_id": AuditLog.user_id,
+        }
+        sort_column = sortable_fields.get(sort_by, AuditLog.timestamp)
+        if sort_order == "asc":
+            query = query.order_by(sort_column.asc())
+        else:
+            query = query.order_by(sort_column.desc())
+
+        total = query.count()
+        export_max = current_app.config.get("AUDIT_LOG_MAX_EXPORT_ROWS", 5000)
+        if response_format == "csv" or (response_format == "json" and download):
+            entries = query.limit(min(total, export_max)).all()
+        else:
+            entries = query.offset((page - 1) * limit).limit(limit).all()
+
+        audit_entries = []
+        for entry in entries:
+            admin_user = User.query.get(entry.user_id) if entry.user_id else None
+            audit_entries.append({
+                "id": int(entry.id) if entry.id is not None else None,
+                "admin_id": entry.user_id,
+                "admin_name": (
+                    admin_user.username if admin_user else "System"
+                ),
+                "action": entry.action,
+                "entity_type": entry.entity_type or "user",
+                "entity_id": entry.entity_id,
+                "changes": entry.new_values or {},
+                "ip_address": entry.ip_address if include_sensitive else None,
+                "user_agent": entry.user_agent if include_sensitive else None,
+                "created_at": (
+                    entry.timestamp.isoformat() if entry.timestamp else None
+                ),
+            })
+
+        if response_format == "csv":
+            security_event_id = _new_security_event_id("audit_export_csv")
+            output = io.StringIO()
+            writer = csv.writer(output)
+            writer.writerow([
+                "id",
+                "admin_id",
+                "admin_name",
+                "action",
+                "entity_type",
+                "entity_id",
+                "changes",
+                "ip_address",
+                "user_agent",
+                "created_at",
+            ])
+            for row in audit_entries:
+                writer.writerow([
+                    row.get("id"),
+                    row.get("admin_id"),
+                    row.get("admin_name"),
+                    row.get("action"),
+                    row.get("entity_type"),
+                    row.get("entity_id"),
+                    row.get("changes"),
+                    row.get("ip_address"),
+                    row.get("user_agent"),
+                    row.get("created_at"),
+                ])
+
+            csv_data = output.getvalue()
+            output.close()
+            filename = f"audit-log-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}.csv"
+            digest, signature = _sign_audit_export(csv_data.encode("utf-8"))
+            return Response(
+                csv_data,
+                mimetype="text/csv",
+                headers={
+                    "Content-Disposition": f"attachment; filename={filename}",
+                    "X-Audit-Content-SHA256": digest,
+                    "X-Audit-Signature": signature,
+                    "X-Security-Event-ID": security_event_id,
+                },
+            )
+
+        if response_format == "json" and download:
+            security_event_id = _new_security_event_id("audit_export_json")
+            json_data = json.dumps(audit_entries, separators=(",", ":"))
+            digest, signature = _sign_audit_export(json_data.encode("utf-8"))
+            filename = f"audit-log-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}.json"
+            return Response(
+                json_data,
+                mimetype="application/json",
+                headers={
+                    "Content-Disposition": f"attachment; filename={filename}",
+                    "X-Audit-Content-SHA256": digest,
+                    "X-Audit-Signature": signature,
+                    "X-Security-Event-ID": security_event_id,
+                },
+            )
+
+        return jsonify({
+            "entries": audit_entries,
+            "total": total,
+            "pages": (total + limit - 1) // limit if limit > 0 else 0,
+            "current_page": page,
+        }), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ============================================
+# SECURITY EVENTS (SIEM / SOC)
+# ============================================
+
+@admin_bp.route("/security/events", methods=["GET"])
+@jwt_required()
+@admin_required
+def get_security_events():
+    """Get security-focused event stream derived from audit logs."""
+    try:
+        current_user = User.query.get(int(get_jwt_identity()))
+        page = int(request.args.get("page", 1))
+        limit = int(request.args.get("limit", 50))
+        limit = min(max(limit, 1), 200)
+        event_type = request.args.get("event_type")
+        action = request.args.get("action")
+        since_hours = int(request.args.get("since_hours", 24))
+        since_hours = max(1, min(since_hours, 24 * 30))
+        include_sensitive = request.args.get("include_sensitive", "false").lower() == "true"
+
+        if include_sensitive and not _is_super_admin(current_user):
+            return jsonify({"error": "Sensitive fields require super admin role"}), 403
+
+        window_start = datetime.utcnow() - timedelta(hours=since_hours)
+        query = AuditLog.query.filter(AuditLog.timestamp >= window_start)
+
+        if action:
+            query = query.filter(AuditLog.action == action)
+
+        # Pull a bounded recent window then filter by JSON payload keys in Python
+        candidate_cap = 5000
+        candidates = query.order_by(AuditLog.timestamp.desc()).limit(candidate_cap).all()
+
+        events = []
+        for entry in candidates:
+            payload = entry.new_values or {}
+            security_event_id = payload.get("security_event_id")
+            security_event_type = payload.get("event_type")
+            if not security_event_id and not security_event_type:
+                continue
+            if event_type and security_event_type != event_type:
+                continue
+
+            admin_user = User.query.get(entry.user_id) if entry.user_id else None
+            events.append({
+                "id": int(entry.id) if entry.id is not None else None,
+                "security_event_id": security_event_id,
+                "event_type": security_event_type,
+                "action": entry.action,
+                "entity_type": entry.entity_type,
+                "entity_id": entry.entity_id,
+                "admin_id": entry.user_id,
+                "admin_name": admin_user.username if admin_user else "System",
+                "ip_address": entry.ip_address if include_sensitive else None,
+                "user_agent": entry.user_agent if include_sensitive else None,
+                "changes": payload,
+                "created_at": entry.timestamp.isoformat() if entry.timestamp else None,
+            })
+
+        total = len(events)
+        start_idx = (page - 1) * limit
+        end_idx = start_idx + limit
+        paged_events = events[start_idx:end_idx]
+
+        return jsonify({
+            "events": paged_events,
+            "total": total,
+            "pages": (total + limit - 1) // limit if limit > 0 else 0,
+            "current_page": page,
+            "since_hours": since_hours,
+        }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 # ============================================
@@ -621,8 +1829,38 @@ def get_audit_log():
 @admin_required
 def bulk_delete_users():
     """Bulk delete (soft delete) users."""
+    idempotency_key = None
     try:
-        data = request.get_json()
+        security_event_id = _new_security_event_id("bulk_delete_users")
+        confirmation_error = _require_admin_confirmation("bulk_delete_users")
+        if confirmation_error:
+            return confirmation_error
+
+        data = request.get_json(silent=True) or {}
+        user_ids = sorted(data.get("user_ids", []))
+
+        idempotency_error, idempotency_key = _require_idempotency(
+            "bulk_delete_users",
+            {"user_ids": user_ids},
+        )
+        if idempotency_error:
+            return idempotency_error
+
+        current_admin_id = int(get_jwt_identity())
+        approval_error = _require_two_person_approval(
+            "bulk_delete_users",
+            {"user_ids": user_ids},
+            current_admin_id,
+        )
+        if approval_error:
+            return approval_error
+
+        if not current_app.config.get("ALLOW_DESTRUCTIVE_OPERATIONS", False):
+            return jsonify({
+                "error": "Destructive operations are disabled in this environment"
+            }), 403
+
+        data = request.get_json(silent=True) or {}
         user_ids = data.get("user_ids", [])
         
         if not user_ids:
@@ -634,10 +1872,25 @@ def bulk_delete_users():
             synchronize_session=False
         )
         db.session.commit()
-        
-        return jsonify({"message": f"Deleted {len(user_ids)} users"}), 200
+
+        admin_id = int(get_jwt_identity())
+        log_admin_action(
+            user_id=admin_id,
+            action="users_bulk_soft_deleted",
+            entity_type="user",
+            entity_id=None,
+            new_values={"count": len(user_ids), "security_event_id": security_event_id},
+        )
+
+        response_body = {
+            "message": f"Deleted {len(user_ids)} users",
+            "security_event_id": security_event_id,
+        }
+        _finalize_idempotency(idempotency_key, response_body, 200)
+        return jsonify(response_body), 200
         
     except Exception as e:
+        _clear_idempotency(idempotency_key)
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
 
@@ -647,9 +1900,18 @@ def bulk_delete_users():
 @admin_required
 def bulk_verify_users():
     """Bulk verify workers."""
+    idempotency_key = None
     try:
-        data = request.get_json()
+        data = request.get_json(silent=True) or {}
         user_ids = data.get("user_ids", [])
+        security_event_id = _new_security_event_id("bulk_verify_users")
+
+        idempotency_error, idempotency_key = _require_idempotency(
+            "bulk_verify_users",
+            {"user_ids": sorted(user_ids)},
+        )
+        if idempotency_error:
+            return idempotency_error
         
         if not user_ids:
             return jsonify({"error": "No user IDs provided"}), 400
@@ -661,9 +1923,117 @@ def bulk_verify_users():
             worker.verification_score = 100
         
         db.session.commit()
+
+        admin_id = int(get_jwt_identity())
+        log_admin_action(
+            user_id=admin_id,
+            action="users_bulk_verified",
+            entity_type="user",
+            entity_id=None,
+            new_values={
+                "count": len(workers),
+                "security_event_id": security_event_id,
+                "event_type": "admin.user.bulk_verify",
+            },
+        )
         
-        return jsonify({"message": f"Verified {len(workers)} workers"}), 200
+        response_body = {
+            "message": f"Verified {len(workers)} workers",
+            "security_event_id": security_event_id,
+            "event_type": "admin.user.bulk_verify",
+        }
+        _finalize_idempotency(idempotency_key, response_body, 200)
+        return jsonify(response_body), 200
         
     except Exception as e:
+        _clear_idempotency(idempotency_key)
         db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+@admin_bp.route("/system/database/integrity", methods=["GET"])
+@jwt_required()
+@admin_required
+def get_database_integrity():
+    """Run database integrity checks and return diagnostics."""
+    try:
+        engine = db.engine
+        db_uri = str(engine.url)
+
+        if not db_uri.startswith("sqlite"):
+            return jsonify({
+                "engine": engine.name,
+                "status": "healthy",
+                "message": "Integrity endpoint currently provides detailed checks for SQLite.",
+            }), 200
+
+        integrity_result = db.session.execute(text("PRAGMA integrity_check;")).scalar()
+        fk_enabled = db.session.execute(text("PRAGMA foreign_keys;")).scalar()
+        journal_mode = db.session.execute(text("PRAGMA journal_mode;")).scalar()
+        busy_timeout = db.session.execute(text("PRAGMA busy_timeout;")).scalar()
+
+        tables = {
+            "users": User.query.count(),
+            "workers": Worker.query.count(),
+            "employers": Employer.query.count(),
+            "jobs": Job.query.count(),
+            "applications": Application.query.count(),
+            "payments": Payment.query.count(),
+            "audit_logs": AuditLog.query.count(),
+        }
+
+        return jsonify({
+            "engine": engine.name,
+            "status": "healthy" if integrity_result == "ok" else "degraded",
+            "integrity_check": integrity_result,
+            "foreign_keys_enabled": bool(fk_enabled),
+            "journal_mode": journal_mode,
+            "busy_timeout_ms": busy_timeout,
+            "protect_mode": current_app.config.get("DB_PROTECT_MODE", True),
+            "destructive_operations_allowed": current_app.config.get(
+                "ALLOW_DESTRUCTIVE_OPERATIONS", False
+            ),
+            "table_counts": tables,
+        }), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@admin_bp.route("/system/database/backup", methods=["POST"])
+@jwt_required()
+@admin_required
+def create_database_backup():
+    """Create a point-in-time backup for SQLite database."""
+    try:
+        db_uri = str(db.engine.url)
+        if not db_uri.startswith("sqlite"):
+            return jsonify({
+                "error": "Automated backup endpoint is currently implemented for SQLite only"
+            }), 400
+
+        db_path = db.engine.url.database
+        if not db_path or not os.path.exists(db_path):
+            return jsonify({"error": "Database file not found"}), 404
+
+        backup_dir = current_app.config.get("DB_BACKUP_DIR", "instance/backups")
+        os.makedirs(backup_dir, exist_ok=True)
+
+        timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
+        backup_path = os.path.join(backup_dir, f"dev-backup-{timestamp}.db")
+
+        with sqlite3.connect(db_path) as source_conn:
+            with sqlite3.connect(backup_path) as target_conn:
+                source_conn.backup(target_conn)
+
+        backup_size = os.path.getsize(backup_path)
+
+        return jsonify({
+            "message": "Database backup created successfully",
+            "backup_file": backup_path,
+            "backup_size_bytes": backup_size,
+            "created_at": datetime.utcnow().isoformat(),
+        }), 201
+
+    except Exception as e:
         return jsonify({"error": str(e)}), 500

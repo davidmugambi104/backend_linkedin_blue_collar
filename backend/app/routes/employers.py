@@ -154,12 +154,16 @@ def update_job(job_id):
 def delete_job(job_id):
     current_user_id = get_jwt_identity()
     employer = Employer.query.filter_by(user_id=current_user_id).first_or_404()
+    from ..models.job import JobStatus
 
     job = Job.query.filter_by(id=job_id, employer_id=employer.id).first_or_404()
-    db.session.delete(job)
+    if job.status in (JobStatus.COMPLETED, JobStatus.CANCELLED):
+        return jsonify({"error": "Only open or in-progress jobs can be cancelled"}), 400
+
+    job.status = JobStatus.CANCELLED
     db.session.commit()
 
-    return jsonify({"message": "Job deleted successfully"}), 200
+    return jsonify({"message": "Job cancelled successfully"}), 200
 
 
 @employers_bp.route("/jobs/<int:job_id>/applications", methods=["GET"])

@@ -240,9 +240,10 @@ def update_application(application_id):
 @applications_bp.route("/<int:application_id>", methods=["DELETE"])
 @jwt_required()
 def delete_application(application_id):
-    """Delete an application (worker or admin only)."""
+    """Archive an application (worker/admin) without deleting database records."""
     current_user_id = get_current_user_id()
     current_user = User.query.get(current_user_id)
+    from ..models.application import ApplicationStatus
 
     application = Application.query.get_or_404(application_id)
 
@@ -263,9 +264,10 @@ def delete_application(application_id):
             403,
         )
 
-    db.session.delete(application)
+    if application.status != ApplicationStatus.WITHDRAWN:
+        application.status = ApplicationStatus.WITHDRAWN
     db.session.commit()
-    return jsonify({"message": "Application deleted successfully"}), 200
+    return jsonify({"message": "Application withdrawn successfully"}), 200
 
 
 @applications_bp.route("/stats", methods=["GET"])

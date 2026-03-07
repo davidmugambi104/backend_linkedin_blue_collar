@@ -1,3 +1,6 @@
+/**
+ * Post Job Page - Unified Design System
+ */
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm, FormProvider } from 'react-hook-form';
@@ -12,6 +15,7 @@ import { JobLocation } from './components/JobLocation';
 import { JobPreview } from './components/JobPreview';
 import { useCreateJob } from '@hooks/useEmployerJobs';
 import { JobCreateRequest, PayType } from '@types';
+import { BriefcaseIcon } from '@heroicons/react/24/outline';
 
 const postJobSchema = z.object({
   title: z.string().min(5, 'Job title must be at least 5 characters'),
@@ -108,77 +112,100 @@ export const PostJobPage: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
+      {/* Page Header */}
       <div>
-        <h1 className="text-2xl font-bold text-[#0F172A]">
+        <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+          <BriefcaseIcon className="h-8 w-8" />
           Post a New Job
         </h1>
-        <p className="mt-1 text-sm text-[#64748B]">
+        <p className="mt-1 text-gray-500 dark:text-gray-400">
           Fill out the details below to create a job posting and find the perfect candidate.
         </p>
       </div>
 
       {/* Progress Steps */}
-      <div className="mb-8">
+      <Card className="p-4 lg:p-6">
         <div className="flex items-center justify-between">
           {steps.map((step, index) => (
-            <div key={step.id} className="flex-1 text-center">
+            <div key={step.id} className="flex-1 text-center relative">
               <div className="relative">
                 <div
                   className={`
-                      w-8 h-8 mx-auto rounded-full flex items-center justify-center
-                      ${index < currentStep 
-                        ? 'bg-[#2563EB] text-white' 
-                        : index === currentStep
-                        ? 'bg-[#2563EB] text-white ring-4 ring-[#DBEAFE]'
-                        : 'bg-[#E2E8F0] text-[#64748B]'
-                      }
-                    `}
+                    w-8 h-8 mx-auto rounded-full flex items-center justify-center text-sm font-medium transition-all
+                    ${index < currentStep 
+                      ? 'bg-blue-600 text-white' 
+                      : index === currentStep
+                      ? 'bg-blue-600 text-white ring-4 ring-blue-100 dark:ring-blue-900/30'
+                      : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+                    }
+                  `}
                 >
-                  {index + 1}
+                  {index < currentStep ? (
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  ) : (
+                    index + 1
+                  )}
                 </div>
-                <span className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs whitespace-nowrap text-[#64748B]">
-                  {step.title}
-                </span>
+                {/* Connector Line */}
+                {index < steps.length - 1 && (
+                  <div className={`
+                    absolute top-4 left-1/2 w-full h-0.5 -translate-y-1/2
+                    ${index < currentStep ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'}
+                  `} style={{ zIndex: -1 }} />
+                )}
               </div>
+              <span className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs whitespace-nowrap text-gray-500 dark:text-gray-400 hidden sm:block">
+                {step.title}
+              </span>
             </div>
           ))}
         </div>
-      </div>
+        {/* Mobile step indicator */}
+        <div className="sm:hidden mt-8 text-center text-sm text-gray-500">
+          Step {currentStep + 1} of {steps.length}: {steps[currentStep].title}
+        </div>
+      </Card>
 
+      {/* Form */}
       <FormProvider {...methods}>
         <form onSubmit={methods.handleSubmit(onSubmit)}>
-          <Card className="bg-white border border-[#E2E8F0] rounded-2xl">
-            <CardBody className="p-6">
+          <Card className="p-4 lg:p-6">
+            <CardBody>
               <CurrentStepComponent />
 
-              <div className="flex justify-between mt-8 pt-6 border-t border-[#E2E8F0]">
+              {/* Navigation Buttons */}
+              <div className="flex flex-col sm:flex-row justify-between gap-3 mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={prevStep}
                   disabled={currentStep === 0}
-                  className="rounded-xl border border-[#E2E8F0] bg-white text-[#0F172A] hover:bg-[#F8FAFC]"
+                  className="w-full sm:w-auto"
                 >
                   Previous
                 </Button>
                 
-                {currentStep === steps.length - 1 ? (
-                  <Button
-                    type="submit"
-                    isLoading={createJob.isPending}
-                    className="rounded-xl bg-[#2563EB] text-white shadow-sm hover:bg-[#1E3A8A] active:scale-95"
-                  >
-                    Post Job
-                  </Button>
-                ) : (
-                  <Button
-                    type="button"
-                    onClick={nextStep}
-                    className="rounded-xl bg-[#2563EB] text-white shadow-sm hover:bg-[#1E3A8A] active:scale-95"
-                  >
-                    Continue
-                  </Button>
-                )}
+                <div className="flex gap-3 w-full sm:w-auto">
+                  {currentStep === steps.length - 1 ? (
+                    <Button
+                      type="submit"
+                      isLoading={createJob.isPending}
+                      className="flex-1 sm:flex-none"
+                    >
+                      Post Job
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      onClick={nextStep}
+                      className="flex-1 sm:flex-none"
+                    >
+                      Continue
+                    </Button>
+                  )}
+                </div>
               </div>
             </CardBody>
           </Card>

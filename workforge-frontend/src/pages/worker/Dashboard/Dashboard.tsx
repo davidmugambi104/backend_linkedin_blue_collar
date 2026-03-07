@@ -1,3 +1,6 @@
+/**
+ * Worker Dashboard - Unified Design System
+ */
 import React from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -5,9 +8,9 @@ import {
   CheckCircleIcon,
   StarIcon,
   PlusIcon,
-  ArrowRightIcon,
   ClockIcon,
   MapPinIcon,
+  CurrencyDollarIcon,
 } from '@heroicons/react/24/outline';
 import { Card } from '@components/ui/Card';
 import { Button } from '@components/ui/Button';
@@ -16,8 +19,7 @@ import { Skeleton } from '@components/ui/Skeleton';
 import { useWorkerStats, useRecommendedJobs } from '@hooks/useWorker';
 import { useWorkerApplications } from '@hooks/useWorkerApplications';
 import { useAuth } from '@context/AuthContext';
-import { formatDate } from '@lib/utils/format';
-import { formatCurrency } from '@lib/utils/format';
+import { formatDate, formatCurrency } from '@lib/utils/format';
 import { APPLICATION_STATUS } from '@config/constants';
 
 const Dashboard: React.FC = () => {
@@ -29,7 +31,7 @@ const Dashboard: React.FC = () => {
   const recentApplications = applications?.slice(0, 5) || [];
   const topRecommendedJobs = recommendedJobs?.slice(0, 3) || [];
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string): string => {
     switch (status) {
       case APPLICATION_STATUS.ACCEPTED:
         return 'success';
@@ -42,90 +44,104 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  const getStatusIcon = (status: string): React.ReactNode => {
+    switch (status) {
+      case APPLICATION_STATUS.ACCEPTED:
+        return <CheckCircleIcon className="h-5 w-5" />;
+      case APPLICATION_STATUS.REJECTED:
+        return <BriefcaseIcon className="h-5 w-5" />;
+      case APPLICATION_STATUS.PENDING:
+        return <ClockIcon className="h-5 w-5" />;
+      default:
+        return null;
+    }
+  };
+
   return (
-    <div className="space-y-8">
-      {/* Welcome Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-slate-900">
-          Welcome back, {user?.email?.split('@')[0]}!
-        </h1>
-        <p className="mt-2 text-slate-600">
-          Here's what's happening with your job search today
-        </p>
+    <div className="space-y-6 lg:space-y-8">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
+            Welcome back, {user?.username || 'Worker'}!
+          </h1>
+          <p className="mt-1 text-gray-500 dark:text-gray-400">
+            Track your applications and discover new opportunities
+          </p>
+        </div>
+        <Link to="/worker/jobs">
+          <Button leftIcon={<BriefcaseIcon className="h-5 w-5" />}>
+            Browse Jobs
+          </Button>
+        </Link>
       </div>
 
-      {/* Stats Grid - Professional Blue/White Theme */}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
         {statsLoading ? (
-          <>
-            {[...Array(4)].map((_, i) => (
-              <Card key={i} className="p-6 bg-white/80 backdrop-blur-md border border-blue-100 shadow-soft">
-                <Skeleton className="h-20" />
-              </Card>
-            ))}
-          </>
+          [...Array(4)].map((_, i) => (
+            <Card key={i} className="p-4 lg:p-6">
+              <Skeleton className="h-20" />
+            </Card>
+          ))
         ) : (
           <>
-            <Card className="p-6 bg-white/80 backdrop-blur-md border border-blue-100 shadow-soft hover:shadow-lg transition-all duration-300">
+            {/* Total Applications */}
+            <Card className="p-4 lg:p-6" hoverable>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-slate-600">
-                    Total Applications
-                  </p>
-                  <p className="mt-2 text-3xl font-bold text-slate-900">
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Applications</p>
+                  <p className="mt-1 text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
                     {stats?.total_applications || 0}
                   </p>
                 </div>
-                <div className="rounded-xl bg-primary-500/10 p-3 border border-primary-500/20">
-                  <BriefcaseIcon className="h-8 w-8 text-primary-600" />
+                <div className="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                  <BriefcaseIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                 </div>
               </div>
             </Card>
 
-            <Card className="p-6 bg-white/80 backdrop-blur-md border border-blue-100 shadow-soft hover:shadow-lg transition-all duration-300">
+            {/* Pending Applications */}
+            <Card className="p-4 lg:p-6" hoverable>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-slate-600">
-                    Jobs Completed
-                  </p>
-                  <p className="mt-2 text-3xl font-bold text-slate-900">
-                    {stats?.completed_jobs || 0}
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Pending</p>
+                  <p className="mt-1 text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
+                    {stats?.pending_count || 0}
                   </p>
                 </div>
-                <div className="rounded-xl bg-success-500/10 p-3 border border-success-500/20">
-                  <CheckCircleIcon className="h-8 w-8 text-success-600" />
+                <div className="w-12 h-12 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                  <ClockIcon className="h-6 w-6 text-amber-600 dark:text-amber-400" />
                 </div>
               </div>
             </Card>
 
-            <Card className="p-6 bg-white/80 backdrop-blur-md border border-blue-100 shadow-soft hover:shadow-lg transition-all duration-300">
+            {/* Accepted */}
+            <Card className="p-4 lg:p-6" hoverable>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-slate-600">
-                    Verification Score
-                  </p>
-                  <p className="mt-2 text-3xl font-bold text-slate-900">
-                    {stats?.verification_score || 0}%
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Accepted</p>
+                  <p className="mt-1 text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
+                    {stats?.accepted_count || 0}
                   </p>
                 </div>
-                <div className="rounded-xl bg-primary-500/10 p-3 border border-primary-500/20">
-                  <CheckCircleIcon className="h-8 w-8 text-primary-600" />
+                <div className="w-12 h-12 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                  <CheckCircleIcon className="h-6 w-6 text-green-600 dark:text-green-400" />
                 </div>
               </div>
             </Card>
 
-            <Card className="p-6 bg-white/80 backdrop-blur-md border border-blue-100 shadow-soft hover:shadow-lg transition-all duration-300">
+            {/* Average Rating */}
+            <Card className="p-4 lg:p-6" hoverable>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-slate-600">
-                    Average Rating
-                  </p>
-                  <p className="mt-2 text-3xl font-bold text-slate-900">
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Average Rating</p>
+                  <p className="mt-1 text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
                     {stats?.average_rating?.toFixed(1) || '0.0'}
                   </p>
                 </div>
-                <div className="rounded-xl bg-warning-500/10 p-3 border border-warning-500/20">
-                  <StarIcon className="h-8 w-8 text-warning-600" />
+                <div className="w-12 h-12 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+                  <StarIcon className="h-6 w-6 text-purple-600 dark:text-purple-400" />
                 </div>
               </div>
             </Card>
@@ -133,164 +149,128 @@ const Dashboard: React.FC = () => {
         )}
       </div>
 
-      {/* Quick Actions */}
-      <Card className="p-6 bg-white/80 backdrop-blur-md border border-blue-100 shadow-soft hover:shadow-lg transition-all duration-300">
-        <h2 className="text-lg font-semibold text-slate-900 mb-4">
-          Quick Actions
-        </h2>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <Link to="/worker/jobs">
-            <Button variant="outline" className="w-full justify-start border-primary-200 text-primary-700 hover:bg-primary-50 hover:border-primary-300">
-              <BriefcaseIcon className="h-5 w-5 mr-2 text-primary-600" />
-              Browse Jobs
-            </Button>
-          </Link>
-          <Link to="/worker/profile">
-            <Button variant="outline" className="w-full justify-start border-primary-200 text-primary-700 hover:bg-primary-50 hover:border-primary-300">
-              <PlusIcon className="h-5 w-5 mr-2 text-primary-600" />
-              Update Profile
-            </Button>
-          </Link>
-          <Link to="/worker/applications">
-            <Button variant="outline" className="w-full justify-start border-primary-200 text-primary-700 hover:bg-primary-50 hover:border-primary-300">
-              <ClockIcon className="h-5 w-5 mr-2 text-primary-600" />
-              View Applications
-            </Button>
-          </Link>
-        </div>
-      </Card>
-
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Applications */}
-        <Card className="p-6 bg-white/80 backdrop-blur-md border border-blue-100 shadow-soft hover:shadow-lg transition-all duration-300">
+        <Card className="p-4 lg:p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-slate-900">
-              Recent Applications
-            </h2>
-            <Link to="/worker/applications">
-              <Button variant="ghost" size="sm" className="text-primary-600 hover:text-primary-700 hover:bg-primary-50">
-                View All
-                <ArrowRightIcon className="h-4 w-4 ml-2" />
-              </Button>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Recent Applications</h2>
+            <Link to="/worker/applications" className="text-sm text-blue-600 dark:text-blue-400 hover:underline">
+              View All
             </Link>
           </div>
-
+          
           {appsLoading ? (
-            <div className="space-y-4">
-              {[...Array(3)].map((_, i) => (
-                <Skeleton key={i} className="h-20" />
-              ))}
+            <div className="space-y-3">
+              {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-16" />)}
             </div>
           ) : recentApplications.length === 0 ? (
-            <div className="text-center py-12">
-              <BriefcaseIcon className="h-12 w-12 mx-auto text-slate-400 mb-4" />
-              <p className="text-slate-600">
-                No applications yet
-              </p>
+            <div className="text-center py-8">
+              <BriefcaseIcon className="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+              <p className="text-gray-500 dark:text-gray-400">No applications yet</p>
               <Link to="/worker/jobs">
-                <Button className="mt-4 bg-primary-600 hover:bg-primary-700 text-white shadow-soft">Browse Jobs</Button>
+                <Button size="sm" className="mt-4">Find Your First Job</Button>
               </Link>
             </div>
           ) : (
-            <div className="space-y-4">
-              {recentApplications.map((application: any) => (
-                <div
-                  key={application.id}
-                  className="border border-slate-200 rounded-xl p-4 hover:border-primary-400 hover:shadow-md transition-all duration-200"
+            <div className="space-y-3">
+              {recentApplications.map((app: any) => (
+                <Link 
+                  key={app.id} 
+                  to={`/worker/applications/${app.id}`}
+                  className="block p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-slate-900">
-                        {application.job?.title || 'Job Title'}
-                      </h3>
-                      <p className="text-sm text-slate-600 mt-1">
-                        {application.job?.employer?.company_name || 'Company'}
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-medium text-gray-900 dark:text-white truncate">{app.job?.title || 'Job'}</h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        {app.employer?.company_name || 'Employer'} • {formatDate(app.created_at)}
                       </p>
-                      <div className="flex items-center gap-4 mt-2 text-sm text-slate-500">
-                        <span>Applied {formatDate(application.created_at)}</span>
-                      </div>
                     </div>
-                    <Badge variant={getStatusColor(application.status)}>
-                      {application.status}
+                    <Badge variant={getStatusColor(app.status) as any} className="flex items-center gap-1">
+                      {getStatusIcon(app.status)}
+                      {app.status}
                     </Badge>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           )}
         </Card>
 
         {/* Recommended Jobs */}
-        <Card className="p-6 bg-white/80 backdrop-blur-md border border-blue-100 shadow-soft hover:shadow-lg transition-all duration-300">
+        <Card className="p-4 lg:p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-slate-900">
-              Recommended for You
-            </h2>
-            <Link to="/worker/jobs">
-              <Button variant="ghost" size="sm" className="text-primary-600 hover:text-primary-700 hover:bg-primary-50">
-                View All
-                <ArrowRightIcon className="h-4 w-4 ml-2" />
-              </Button>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Recommended Jobs</h2>
+            <Link to="/worker/jobs" className="text-sm text-blue-600 dark:text-blue-400 hover:underline">
+              View All
             </Link>
           </div>
-
+          
           {jobsLoading ? (
-            <div className="space-y-4">
-              {[...Array(3)].map((_, i) => (
-                <Skeleton key={i} className="h-32" />
-              ))}
+            <div className="space-y-3">
+              {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-20" />)}
             </div>
           ) : topRecommendedJobs.length === 0 ? (
-            <div className="text-center py-12">
-              <BriefcaseIcon className="h-12 w-12 mx-auto text-slate-400 mb-4" />
-              <p className="text-slate-600">
-                No recommendations yet
-              </p>
-              <Link to="/worker/profile">
-                <Button className="mt-4 bg-primary-600 hover:bg-primary-700 text-white shadow-soft">Complete Your Profile</Button>
-              </Link>
+            <div className="text-center py-8">
+              <StarIcon className="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+              <p className="text-gray-500 dark:text-gray-400">No recommendations yet</p>
+              <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Complete your profile to get personalized job suggestions</p>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {topRecommendedJobs.map((job: any) => (
-                <Link
-                  key={job.id}
-                  to={`/jobs/${job.id}`}
-                  className="block border border-slate-200 rounded-xl p-4 hover:border-primary-400 hover:shadow-md transition-all duration-200"
+                <Link 
+                  key={job.id} 
+                  to={`/worker/jobs/${job.id}`}
+                  className="block p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-slate-900">
-                        {job.title}
-                      </h3>
-                      <p className="text-sm text-slate-600 mt-1">
-                        {job.employer?.company_name || 'Company'}
-                      </p>
-                      <div className="flex items-center gap-4 mt-2 text-sm text-slate-500">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-medium text-gray-900 dark:text-white truncate">{job.title}</h3>
+                      <div className="flex flex-wrap items-center gap-2 mt-1 text-sm text-gray-500 dark:text-gray-400">
                         {job.address && (
-                          <span className="flex items-center">
-                            <MapPinIcon className="h-4 w-4 mr-1" />
+                          <span className="flex items-center gap-1">
+                            <MapPinIcon className="h-3.5 w-3.5" />
                             {job.address}
                           </span>
                         )}
                         {job.pay_min && job.pay_max && (
-                          <span className="font-medium text-primary-700 bg-primary-50 px-2 py-1 rounded-lg">
+                          <span className="flex items-center gap-1 font-medium text-green-600 dark:text-green-400">
+                            <CurrencyDollarIcon className="h-3.5 w-3.5" />
                             {formatCurrency(job.pay_min)} - {formatCurrency(job.pay_max)}
                           </span>
                         )}
                       </div>
                     </div>
-                    <Badge variant="default" className="bg-primary-500 text-white border-none">{job.pay_type}</Badge>
+                    <Button size="sm" variant="outline">Apply</Button>
                   </div>
-                  <p className="mt-3 text-sm text-slate-600 line-clamp-2">
-                    {job.description}
-                  </p>
                 </Link>
               ))}
             </div>
           )}
         </Card>
       </div>
+
+      {/* Profile Completion Prompt */}
+      {stats?.profile_completed === false && (
+        <Card className="p-4 lg:p-6 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
+              <StarIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-gray-900 dark:text-white">Complete Your Profile</h3>
+              <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                Add your skills and verify your profile to get more job recommendations and increase your chances of being hired.
+              </p>
+              <Link to="/worker/profile">
+                <Button size="sm" className="mt-4">Update Profile</Button>
+              </Link>
+            </div>
+          </div>
+        </Card>
+      )}
     </div>
   );
 };

@@ -163,7 +163,7 @@ def update_review(review_id):
 @reviews_bp.route("/<int:review_id>", methods=["DELETE"])
 @jwt_required()
 def delete_review(review_id):
-    """Delete a review (only by the employer who created it or admin)."""
+    """Redact a review without deleting database records."""
     current_user_id = get_current_user_id()
     current_user = User.query.get(current_user_id)
     review = Review.query.get_or_404(review_id)
@@ -175,22 +175,11 @@ def delete_review(review_id):
     elif current_user.role.value != "admin":
         return jsonify({"error": "You do not have permission to delete reviews"}), 403
 
-    worker_id = review.worker_id
-    db.session.delete(review)
-
-    worker = Worker.query.get(worker_id)
-    if worker:
-        reviews = Review.query.filter_by(worker_id=worker_id).all()
-        if reviews:
-            worker.average_rating = sum(r.rating for r in reviews) / len(reviews)
-            worker.total_ratings = len(reviews)
-        else:
-            worker.average_rating = 0.0
-            worker.total_ratings = 0
+    review.comment = "[redacted]"
 
     db.session.commit()
 
-    return jsonify({"message": "Review deleted successfully"}), 200
+    return jsonify({"message": "Review redacted successfully"}), 200
 
 
 @reviews_bp.route("/worker/<int:worker_id>/average", methods=["GET"])

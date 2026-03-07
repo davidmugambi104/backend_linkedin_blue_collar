@@ -6,7 +6,7 @@ from flask_socketio import SocketIO
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 import redis
-import json
+import time as time_module
 
 db = SQLAlchemy()
 jwt = JWTManager()
@@ -38,6 +38,17 @@ class RedisCache:
     def __init__(self, client=None):
         self._client = client
         self._memory = {}  # Fallback
+        self._expires = {}
+
+    def _is_expired(self, key):
+        expires_at = self._expires.get(key)
+        if expires_at is None:
+            return False
+        if time_module.time() >= expires_at:
+            self._memory.pop(key, None)
+            self._expires.pop(key, None)
+            return True
+        return False
     
     def get(self, key):
         if self._client:
@@ -45,6 +56,8 @@ class RedisCache:
                 return self._client.get(key)
             except:
                 pass
+        if self._is_expired(key):
+            return None
         return self._memory.get(key)
     
     def set(self, key, value, ex=None):
@@ -54,6 +67,10 @@ class RedisCache:
             except:
                 pass
         self._memory[key] = value
+        if ex:
+            self._expires[key] = time_module.time() + int(ex)
+        else:
+            self._expires.pop(key, None)
     
     def setex(self, key, time, value):
         if self._client:
@@ -62,6 +79,7 @@ class RedisCache:
             except:
                 pass
         self._memory[key] = value
+        self._expires[key] = int(time_module.time()) + int(time)
     
     def delete(self, key):
         if self._client:
@@ -70,6 +88,7 @@ class RedisCache:
             except:
                 pass
         self._memory.pop(key, None)
+        self._expires.pop(key, None)
     
     def sadd(self, key, *values):
         if self._client:
@@ -77,6 +96,8 @@ class RedisCache:
                 return self._client.sadd(key, *values)
             except:
                 pass
+        if self._is_expired(key):
+            self._memory.pop(key, None)
         if key not in self._memory:
             self._memory[key] = set()
         self._memory[key].update(values)
@@ -87,6 +108,8 @@ class RedisCache:
                 return self._client.smembers(key)
             except:
                 pass
+        if self._is_expired(key):
+            return set()
         return self._memory.get(key, set())
     
     def srem(self, key, *values):

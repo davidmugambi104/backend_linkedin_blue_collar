@@ -1,291 +1,109 @@
-import { apiClient } from '@lib/api-client';
-import type {
-  TimeSeriesData,
-  RevenueAnalytics,
-  UserAnalytics,
-  UserGrowthPoint,
-  UserRetentionPoint,
-} from '../types/admin.types';
+import { axiosClient } from '@lib/axios';
+import { ENDPOINTS } from '@config/endpoints';
+
+// ============ ANALYTICS SERVICE ============
+export interface AnalyticsOverview {
+  total_users: number;
+  total_workers: number;
+  total_employers: number;
+  total_jobs: number;
+  total_applications: number;
+  total_payments: number;
+  revenue: number;
+}
+
+export interface RevenueData {
+  date: string;
+  amount: number;
+  value?: number;
+}
+
+export interface WorkerRanking {
+  worker_id: number;
+  worker_name: string;
+  score: number;
+  rank: number;
+}
+
+export interface SkillAnalytics {
+  skill_id: number;
+  skill_name: string;
+  job_count: number;
+  avg_rate: number;
+}
 
 class AnalyticsService {
-  // Revenue Analytics
-  async getRevenueAnalytics(params?: {
-    start_date?: string;
-    end_date?: string;
-    interval?: 'day' | 'week' | 'month';
-  }): Promise<RevenueAnalytics> {
-    return apiClient.get<RevenueAnalytics>('/admin/analytics/revenue', { params });
+  // Overview
+  async getOverview(): Promise<AnalyticsOverview> {
+    return axiosClient.get(ENDPOINTS.ANALYTICS.OVERVIEW);
   }
 
-  async getDailyRevenue(days: number = 30): Promise<TimeSeriesData[]> {
-    type PaymentItem = {
-      amount?: number;
-      status?: string;
-      created_at?: string;
-      paid_at?: string;
-    };
-
-    try {
-      const payments = await apiClient.get<PaymentItem[]>('/payments', {
-        params: { status: 'paid' },
-        silentError: true,
-      } as any);
-
-      const today = new Date();
-      const series: TimeSeriesData[] = [];
-      const revenueByDate = new Map<string, number>();
-
-      for (let i = days - 1; i >= 0; i -= 1) {
-        const date = new Date(today);
-        date.setDate(today.getDate() - i);
-        const key = date.toISOString().slice(0, 10);
-        revenueByDate.set(key, 0);
-      }
-
-      payments.forEach((payment) => {
-        const timestamp = payment.paid_at || payment.created_at;
-        if (!timestamp) {
-          return;
-        }
-        const key = new Date(timestamp).toISOString().slice(0, 10);
-        if (!revenueByDate.has(key)) {
-          return;
-        }
-        revenueByDate.set(key, (revenueByDate.get(key) || 0) + (payment.amount || 0));
-      });
-
-      revenueByDate.forEach((value, date) => {
-        series.push({ date, value });
-      });
-
-      return series;
-    } catch (error) {
-      console.warn('Failed to fetch daily revenue:', error);
-      // Return empty time series
-      const today = new Date();
-      const series: TimeSeriesData[] = [];
-      for (let i = days - 1; i >= 0; i -= 1) {
-        const date = new Date(today);
-        date.setDate(today.getDate() - i);
-        series.push({ date: date.toISOString().slice(0, 10), value: 0 });
-      }
-      return series;
-    }
+  async getDashboard(): Promise<any> {
+    return axiosClient.get(ENDPOINTS.ANALYTICS.DASHBOARD);
   }
 
-  async getMonthlyRevenue(months: number = 12): Promise<TimeSeriesData[]> {
-    return apiClient.get<TimeSeriesData[]>('/admin/analytics/revenue/monthly', {
-      params: { months },
-    });
+  // Revenue
+  async getRevenue(params?: { start_date?: string; end_date?: string }): Promise<RevenueData[]> {
+    return axiosClient.get(ENDPOINTS.ANALYTICS.REVENUE, { params });
   }
 
-  // User Analytics
-  async getUserAnalytics(params?: {
-    start_date?: string;
-    end_date?: string;
-  }): Promise<UserAnalytics> {
-    return apiClient.get<UserAnalytics>('/admin/analytics/users', { params });
+  // Jobs analytics
+  async getJobsAnalytics(params?: { period?: string }): Promise<any> {
+    return axiosClient.get(ENDPOINTS.ANALYTICS.JOBS, { params });
   }
 
-  async getUserGrowth(days: number = 30): Promise<UserGrowthPoint[]> {
-    type WorkerItem = { created_at?: string };
-    type JobItem = { created_at?: string; employer_id?: number };
-
-    const fetchJobsByStatus = async (status: string): Promise<JobItem[]> => {
-      try {
-        return await apiClient.get<JobItem[]>('/jobs', { params: { status }, silentError: true } as any);
-      } catch (error) {
-        console.warn(`Failed to fetch jobs with status ${status}:`, error);
-        return [];
-      }
-    };
-
-    try {
-      const [
-        workers,
-        openJobs,
-        inProgressJobs,
-        completedJobs,
-        cancelledJobs,
-        expiredJobs,
-      ] = await Promise.all([
-        apiClient.get<WorkerItem[]>('/workers', { silentError: true } as any).catch(() => []),
-        fetchJobsByStatus('open'),
-        fetchJobsByStatus('in_progress'),
-        fetchJobsByStatus('completed'),
-        fetchJobsByStatus('cancelled'),
-        fetchJobsByStatus('expired'),
-      ]);
-
-      const today = new Date();
-      const workerCounts = new Map<string, number>();
-      const employerSets = new Map<string, Set<number>>();
-
-      for (let i = days - 1; i >= 0; i -= 1) {
-        const date = new Date(today);
-        date.setDate(today.getDate() - i);
-        const key = date.toISOString().slice(0, 10);
-        workerCounts.set(key, 0);
-        employerSets.set(key, new Set());
-      }
-
-      workers.forEach((worker) => {
-        if (!worker.created_at) {
-          return;
-        }
-        const key = new Date(worker.created_at).toISOString().slice(0, 10);
-        if (!workerCounts.has(key)) {
-          return;
-        }
-        workerCounts.set(key, (workerCounts.get(key) || 0) + 1);
-      });
-
-      const allJobs = [
-        ...openJobs,
-        ...inProgressJobs,
-        ...completedJobs,
-        ...cancelledJobs,
-        ...expiredJobs,
-      ];
-      allJobs.forEach((job) => {
-        if (!job.created_at || typeof job.employer_id !== 'number') {
-          return;
-        }
-        const key = new Date(job.created_at).toISOString().slice(0, 10);
-        const set = employerSets.get(key);
-        if (set) {
-          set.add(job.employer_id);
-        }
-      });
-
-      const series: UserGrowthPoint[] = [];
-      let cumulativeWorkers = 0;
-      let cumulativeEmployers = 0;
-
-      workerCounts.forEach((count, date) => {
-        const employersToday = employerSets.get(date)?.size || 0;
-        cumulativeWorkers += count;
-        cumulativeEmployers += employersToday;
-        series.push({
-          date,
-          workers: cumulativeWorkers,
-          employers: cumulativeEmployers,
-        });
-      });
-
-      return series;
-    } catch (error) {
-      console.warn('Failed to fetch user growth:', error);
-      // Return empty time series
-      const today = new Date();
-      const series: UserGrowthPoint[] = [];
-      for (let i = days - 1; i >= 0; i -= 1) {
-        const date = new Date(today);
-        date.setDate(today.getDate() - i);
-        series.push({
-          date: date.toISOString().slice(0, 10),
-          workers: 0,
-          employers: 0,
-        });
-      }
-      return series;
-    }
+  // Users analytics
+  async getUsersAnalytics(params?: { period?: string }): Promise<any> {
+    return axiosClient.get(ENDPOINTS.ANALYTICS.USERS, { params });
   }
 
-  async getUserRetention(days: number = 90): Promise<UserRetentionPoint[]> {
-    const series: UserRetentionPoint[] = [];
-    const minRetention = 40;
-    const decay = days > 1 ? 60 / (days - 1) : 0;
-
-    for (let day = 1; day <= days; day += 1) {
-      const retention = Math.max(minRetention, 100 - decay * (day - 1));
-      series.push({
-        date: String(day),
-        retention: Number(retention.toFixed(1)),
-      });
-    }
-
-    return series;
+  // Workers analytics
+  async getWorkersAnalytics(params?: { period?: string }): Promise<any> {
+    return axiosClient.get(ENDPOINTS.ANALYTICS.WORKERS, { params });
   }
 
-  // Job Analytics
-  async getJobAnalytics(params?: {
-    start_date?: string;
-    end_date?: string;
-  }): Promise<{
-    total_jobs: number;
-    active_jobs: number;
-    completed_jobs: number;
-    avg_completion_time: number;
-    jobs_by_category: Record<string, number>;
-    jobs_by_status: Record<string, number>;
-  }> {
-    return apiClient.get('/admin/analytics/jobs', { params });
+  // Specific worker analytics
+  async getWorkerAnalytics(workerId: number): Promise<any> {
+    return axiosClient.get(ENDPOINTS.ANALYTICS.WORKER(workerId));
   }
 
-  async getPopularSkills(limit: number = 10): Promise<Array<{ skill: string; count: number }>> {
-    return apiClient.get('/admin/analytics/skills/popular', {
-      params: { limit },
-    });
+  // Worker ranking
+  async getWorkerRanking(workerId: number): Promise<WorkerRanking> {
+    return axiosClient.get(ENDPOINTS.ANALYTICS.WORKER_RANKING(workerId));
   }
 
-  // Payment Analytics
-  async getPaymentAnalytics(params?: {
-    start_date?: string;
-    end_date?: string;
-  }): Promise<{
-    total_transactions: number;
-    total_volume: number;
-    average_transaction: number;
-    success_rate: number;
-    payments_by_method: Record<string, number>;
-    payments_by_status: Record<string, number>;
-  }> {
-    return apiClient.get('/admin/analytics/payments', { params });
+  // Employer analytics
+  async getEmployerAnalytics(employerId: number): Promise<any> {
+    return axiosClient.get(ENDPOINTS.ANALYTICS.EMPLOYER(employerId));
   }
 
-  // Geographic Analytics
-  async getGeographicDistribution(): Promise<{
-    users_by_country: Record<string, number>;
-    jobs_by_country: Record<string, number>;
-    revenue_by_country: Record<string, number>;
-  }> {
-    return apiClient.get('/admin/analytics/geographic');
+  // Job analytics
+  async getJobAnalytics(jobId: number): Promise<any> {
+    return axiosClient.get(ENDPOINTS.ANALYTICS.JOB_ANALYTICS(jobId));
   }
 
-  // Performance Metrics
-  async getPerformanceMetrics(params?: {
-    start_date?: string;
-    end_date?: string;
-  }): Promise<{
-    avg_response_time: number;
-    uptime_percentage: number;
-    error_rate: number;
-    api_usage: TimeSeriesData[];
-  }> {
-    return apiClient.get('/admin/analytics/performance', { params });
+  // Skills analytics
+  async getSkillsAnalytics(): Promise<SkillAnalytics[]> {
+    return axiosClient.get(ENDPOINTS.ANALYTICS.SKILLS);
   }
 
-  // Custom Reports
-  async generateCustomReport(params: {
-    metrics: string[];
-    dimensions: string[];
-    filters: Record<string, any>;
-    date_range: { start: string; end: string };
-  }): Promise<any> {
-    return apiClient.post('/admin/analytics/custom-report', params);
+  // Growth analytics
+  async getGrowth(params?: { period?: string }): Promise<any> {
+    return axiosClient.get(ENDPOINTS.ANALYTICS.GROWTH, { params });
   }
 
-  // Export Analytics
-  async exportAnalytics(params: {
-    report_type: string;
-    format: 'csv' | 'excel' | 'pdf' | 'json';
-    date_range?: { start: string; end: string };
-  }): Promise<Blob> {
-    return apiClient.get('/admin/analytics/export', {
-      params,
-      responseType: 'blob',
-    });
+  // Legacy - for backward compatibility
+  async getUserGrowth(params?: { period?: string }): Promise<any> {
+    return this.getGrowth(params);
+  }
+
+  async getUserRetention(params?: { period?: string }): Promise<any> {
+    return this.getGrowth(params);
+  }
+
+  // Location analytics
+  async getLocationAnalytics(): Promise<any> {
+    return axiosClient.get(ENDPOINTS.ANALYTICS.LOCATION);
   }
 }
 

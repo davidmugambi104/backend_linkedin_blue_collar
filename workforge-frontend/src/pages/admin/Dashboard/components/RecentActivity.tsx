@@ -1,5 +1,5 @@
 // workforge-frontend/src/pages/admin/Dashboard/components/RecentActivity.tsx
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import {
   UserIcon,
@@ -9,11 +9,12 @@ import {
   FlagIcon,
 } from '@heroicons/react/24/outline';
 import { Card, CardHeader, CardBody } from '@components/ui/Card';
-import { Avatar } from '@components/ui/Avatar';
-import { Badge } from '@components/ui/Badge';
 import { Skeleton } from '@components/ui/Skeleton';
 import { useAuditLog } from '@hooks/useAdmin';
 import { cn } from '@lib/utils/cn';
+import { adminService } from '@services/admin.service';
+
+type ActivityFilter = 'all' | 'user' | 'job' | 'payment' | 'verification' | 'moderation';
 
 const activityIcons = {
   user: UserIcon,
@@ -32,7 +33,43 @@ const activityColors = {
 };
 
 export const RecentActivity: React.FC = () => {
-  const { data: auditLog, isLoading } = useAuditLog({ page: 1, limit: 5 });
+  const [filter, setFilter] = useState<ActivityFilter>('all');
+  const [isExporting, setIsExporting] = useState(false);
+
+  const queryParams = useMemo(
+    () => ({
+      page: 1,
+      limit: 5,
+      sort_by: 'created_at' as const,
+      sort_order: 'desc' as const,
+      ...(filter !== 'all' ? { entity_type: filter } : {}),
+    }),
+    [filter]
+  );
+
+  const { data: auditLog, isLoading } = useAuditLog(queryParams);
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      const blob = await adminService.exportAuditLogCsv({
+        sort_by: 'created_at',
+        sort_order: 'desc',
+        ...(filter !== 'all' ? { entity_type: filter } : {}),
+      });
+
+      const url = window.URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = `audit-log-${filter}-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.URL.revokeObjectURL(url);
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -54,7 +91,31 @@ export const RecentActivity: React.FC = () => {
   return (
     <Card>
       <CardHeader>
-        <h3 className="text-lg font-semibold">Recent Activity</h3>
+        <div className="flex items-center justify-between gap-3">
+          <h3 className="text-lg font-semibold">Recent Activity</h3>
+          <div className="flex items-center gap-2">
+            <select
+              value={filter}
+              onChange={(event) => setFilter(event.target.value as ActivityFilter)}
+              className="h-9 rounded-md border border-gray-300 bg-white px-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
+            >
+              <option value="all">All</option>
+              <option value="user">Users</option>
+              <option value="job">Jobs</option>
+              <option value="payment">Payments</option>
+              <option value="verification">Verifications</option>
+              <option value="moderation">Moderation</option>
+            </select>
+            <button
+              type="button"
+              onClick={handleExport}
+              disabled={isExporting}
+              className="h-9 rounded-md border border-gray-300 px-3 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+            >
+              {isExporting ? 'Exporting…' : 'Export CSV'}
+            </button>
+          </div>
+        </div>
       </CardHeader>
       <CardBody>
         <div className="flow-root">
@@ -84,7 +145,8 @@ export const RecentActivity: React.FC = () => {
                             <span className="font-medium">{entry.admin_name}</span>{' '}
                             {entry.action}{' '}
                             <span className="font-medium text-gray-900 dark:text-white">
-                              {entry.entity_type} #{entry.entity_id}
+                              {entry.entity_type}
+                              {entry.entity_id !== null ? ` #${entry.entity_id}` : ''}
                             </span>
                           </p>
                           {entry.changes && Object.keys(entry.changes).length > 0 && (
