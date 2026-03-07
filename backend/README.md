@@ -140,9 +140,16 @@ Use `GET /api/admin/security/events` for SOC/SIEM ingestion of security-tagged e
 
 Supported query params:
 
-- `page` (default `1`)
 - `limit` (default `50`, max `200`)
 - `since_hours` (default `24`, max `720`)
 - `action` (exact audit action match)
 - `event_type` (exact security event type)
+- `cursor` (signed continuation token for incremental pull)
 - `include_sensitive=true` (super-admin only; includes IP and user-agent)
+
+Behavior notes:
+
+- Results are ordered by `(timestamp asc, id asc)` for stable incremental ingestion.
+- When `has_more=true`, use `next_cursor` on the next request and keep filters unchanged.
+- Cursor tokens are HMAC-signed and expire after 24h.
+- Responses include `X-Security-Feed-Signature` (HMAC over canonical JSON body) for transport integrity verification.

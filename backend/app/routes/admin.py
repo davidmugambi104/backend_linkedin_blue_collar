@@ -3,6 +3,7 @@ from flask import Blueprint, request, jsonify, Response, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime, timedelta
 from sqlalchemy import func, or_, and_, text
+import base64
 import csv
 import io
 import os
@@ -376,6 +377,73 @@ def _sign_audit_export(payload_bytes):
         hashlib.sha256,
     ).hexdigest()
     return digest, signature
+
+
+def _security_feed_signing_key():
+    return (
+        current_app.config.get("AUDIT_EXPORT_SIGNING_KEY")
+        or current_app.config.get("SECRET_KEY")
+        or "change-me"
+    )
+
+
+def _encode_security_feed_cursor(payload):
+    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    signature = hmac.new(
+        _security_feed_signing_key().encode("utf-8"),
+        canonical,
+        hashlib.sha256,
+    ).hexdigest().encode("utf-8")
+    return (
+        base64.urlsafe_b64encode(canonical).decode("utf-8").rstrip("=")
+        + "."
+        + base64.urlsafe_b64encode(signature).decode("utf-8").rstrip("=")
+    )
+
+
+def _decode_security_feed_cursor(token):
+    try:
+        data_b64, sig_b64 = token.split(".", 1)
+    except ValueError:
+        raise ValueError("Invalid cursor format")
+
+    def _b64decode(value):
+        padding = "=" * (-len(value) % 4)
+        return base64.urlsafe_b64decode((value + padding).encode("utf-8"))
+
+    try:
+        canonical = _b64decode(data_b64)
+        provided_sig = _b64decode(sig_b64).decode("utf-8")
+    except Exception as exc:
+        raise ValueError("Invalid cursor encoding") from exc
+
+    expected_sig = hmac.new(
+        _security_feed_signing_key().encode("utf-8"),
+        canonical,
+        hashlib.sha256,
+    ).hexdigest()
+    if not hmac.compare_digest(provided_sig, expected_sig):
+        raise ValueError("Invalid cursor signature")
+
+    try:
+        payload = json.loads(canonical.decode("utf-8"))
+    except Exception as exc:
+        raise ValueError("Invalid cursor payload") from exc
+
+    exp = payload.get("exp")
+    if exp and int(exp) < int(time.time()):
+        raise ValueError("Cursor expired")
+
+    return payload
+
+
+def _security_feed_signature(payload):
+    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return hmac.new(
+        _security_feed_signing_key().encode("utf-8"),
+        canonical,
+        hashlib.sha256,
+    ).hexdigest()
 
 
 def log_admin_action(user_id, action, entity_type=None, entity_id=None, new_values=None):
@@ -1756,17 +1824,40 @@ def get_security_events():
     """Get security-focused event stream derived from audit logs."""
     try:
         current_user = User.query.get(int(get_jwt_identity()))
-        page = int(request.args.get("page", 1))
         limit = int(request.args.get("limit", 50))
         limit = min(max(limit, 1), 200)
         event_type = request.args.get("event_type")
         action = request.args.get("action")
         since_hours = int(request.args.get("since_hours", 24))
         since_hours = max(1, min(since_hours, 24 * 30))
+        cursor_token = request.args.get("cursor")
         include_sensitive = request.args.get("include_sensitive", "false").lower() == "true"
 
         if include_sensitive and not _is_super_admin(current_user):
             return jsonify({"error": "Sensitive fields require super admin role"}), 403
+
+        if cursor_token:
+            try:
+                cursor_payload = _decode_security_feed_cursor(cursor_token)
+            except ValueError as exc:
+                return jsonify({"error": str(exc)}), 400
+
+            if (cursor_payload.get("event_type") or None) != event_type:
+                return jsonify({"error": "Cursor does not match event_type filter"}), 400
+            if (cursor_payload.get("action") or None) != action:
+                return jsonify({"error": "Cursor does not match action filter"}), 400
+            if int(cursor_payload.get("since_hours", since_hours)) != since_hours:
+                return jsonify({"error": "Cursor does not match since_hours filter"}), 400
+
+            try:
+                cursor_ts = datetime.fromisoformat(cursor_payload.get("last_ts"))
+                cursor_id = int(cursor_payload.get("last_id"))
+            except Exception:
+                return jsonify({"error": "Cursor is missing required position fields"}), 400
+        else:
+            cursor_payload = None
+            cursor_ts = None
+            cursor_id = None
 
         window_start = datetime.utcnow() - timedelta(hours=since_hours)
         query = AuditLog.query.filter(AuditLog.timestamp >= window_start)
@@ -1774,9 +1865,18 @@ def get_security_events():
         if action:
             query = query.filter(AuditLog.action == action)
 
-        # Pull a bounded recent window then filter by JSON payload keys in Python
-        candidate_cap = 5000
-        candidates = query.order_by(AuditLog.timestamp.desc()).limit(candidate_cap).all()
+        if cursor_payload:
+            query = query.filter(
+                or_(
+                    AuditLog.timestamp > cursor_ts,
+                    and_(AuditLog.timestamp == cursor_ts, AuditLog.id > cursor_id),
+                )
+            )
+
+        query = query.order_by(AuditLog.timestamp.asc(), AuditLog.id.asc())
+
+        candidate_cap = min(max(limit * 50, 1000), 10000)
+        candidates = query.limit(candidate_cap).all()
 
         events = []
         for entry in candidates:
@@ -1804,18 +1904,36 @@ def get_security_events():
                 "created_at": entry.timestamp.isoformat() if entry.timestamp else None,
             })
 
-        total = len(events)
-        start_idx = (page - 1) * limit
-        end_idx = start_idx + limit
-        paged_events = events[start_idx:end_idx]
+            if len(events) > limit:
+                break
 
-        return jsonify({
+        has_more = len(events) > limit
+        paged_events = events[:limit]
+        next_cursor = None
+        if has_more and paged_events:
+            cursor_ttl = 60 * 60 * 24
+            tail = paged_events[-1]
+            next_cursor = _encode_security_feed_cursor({
+                "v": 1,
+                "last_ts": tail.get("created_at"),
+                "last_id": tail.get("id"),
+                "event_type": event_type,
+                "action": action,
+                "since_hours": since_hours,
+                "exp": int(time.time()) + cursor_ttl,
+            })
+
+        response_body = {
             "events": paged_events,
-            "total": total,
-            "pages": (total + limit - 1) // limit if limit > 0 else 0,
-            "current_page": page,
+            "count": len(paged_events),
+            "limit": limit,
             "since_hours": since_hours,
-        }), 200
+            "has_more": has_more,
+            "next_cursor": next_cursor,
+        }
+        response = jsonify(response_body)
+        response.headers["X-Security-Feed-Signature"] = _security_feed_signature(response_body)
+        return response, 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
