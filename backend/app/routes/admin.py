@@ -1763,11 +1763,22 @@ def request_approval():
         data = request.get_json(silent=True) or {}
         action = data.get("action")
         payload = data.get("payload") or {}
-        reason = data.get("reason", "")
+        governance_error, reason, change_ticket = _require_action_governance(
+            "approval_request",
+            data=data,
+            fallback_reason_fields=["reason"],
+        )
+        if governance_error:
+            return governance_error
 
         idempotency_error, idempotency_key = _require_idempotency(
             "approval_request",
-            {"action": action, "payload": payload, "reason": reason},
+            {
+                "action": action,
+                "payload": payload,
+                "reason": reason,
+                "change_ticket": change_ticket,
+            },
         )
         if idempotency_error:
             return idempotency_error
@@ -1797,6 +1808,7 @@ def request_approval():
             "payload_hash": _canonical_payload_hash(payload),
             "payload_preview": payload,
             "reason": reason,
+            "change_ticket": change_ticket,
             "status": "pending",
             "requested_by": requester_id,
             "requested_by_role": _get_admin_role(requester_user).value,
@@ -1815,7 +1827,10 @@ def request_approval():
             new_values={
                 "approval_id": approval_id,
                 "action": action,
+                "reason": reason,
+                "change_ticket": change_ticket,
                 "security_event_id": security_event_id,
+                "event_type": "admin.approval.request",
             },
         )
 
@@ -1824,7 +1839,10 @@ def request_approval():
             "status": "pending",
             "expires_in_seconds": ttl,
             "action": action,
+            "reason": reason,
+            "change_ticket": change_ticket,
             "security_event_id": security_event_id,
+            "event_type": "admin.approval.request",
         }
         _finalize_idempotency(idempotency_key, response_body, 201)
         return jsonify(response_body), 201
@@ -1878,10 +1896,23 @@ def list_my_approvals():
 def approve_approval(approval_id):
     idempotency_key = None
     try:
+        data = request.get_json(silent=True) or {}
+        governance_error, reason, change_ticket = _require_action_governance(
+            "approval_approve",
+            data=data,
+            fallback_reason_fields=["reason"],
+        )
+        if governance_error:
+            return governance_error
+
         security_event_id = _new_security_event_id("approval_approve")
         idempotency_error, idempotency_key = _require_idempotency(
             "approval_approve",
-            {"approval_id": approval_id},
+            {
+                "approval_id": approval_id,
+                "reason": reason,
+                "change_ticket": change_ticket,
+            },
         )
         if idempotency_error:
             return idempotency_error
@@ -1914,6 +1945,8 @@ def approve_approval(approval_id):
         approval["approved_by"] = approver_id
         approval["approved_by_role"] = _get_admin_role(approver_user).value
         approval["approved_at"] = datetime.utcnow().isoformat()
+        approval["approval_reason"] = reason
+        approval["approval_change_ticket"] = change_ticket
         _store_approval(approval, current_app.config.get("ADMIN_APPROVAL_TTL_SECONDS", 1800))
 
         log_admin_action(
@@ -1924,14 +1957,20 @@ def approve_approval(approval_id):
             new_values={
                 "approval_id": approval_id,
                 "action": approval.get("action"),
+                "reason": reason,
+                "change_ticket": change_ticket,
                 "security_event_id": security_event_id,
+                "event_type": "admin.approval.approve",
             },
         )
 
         response_body = {
             "approval_id": approval_id,
             "status": "approved",
+            "reason": reason,
+            "change_ticket": change_ticket,
             "security_event_id": security_event_id,
+            "event_type": "admin.approval.approve",
         }
         _finalize_idempotency(idempotency_key, response_body, 200)
         return jsonify(response_body), 200
@@ -1947,10 +1986,23 @@ def approve_approval(approval_id):
 def reject_approval(approval_id):
     idempotency_key = None
     try:
+        data = request.get_json(silent=True) or {}
+        governance_error, reason, change_ticket = _require_action_governance(
+            "approval_reject",
+            data=data,
+            fallback_reason_fields=["reason"],
+        )
+        if governance_error:
+            return governance_error
+
         security_event_id = _new_security_event_id("approval_reject")
         idempotency_error, idempotency_key = _require_idempotency(
             "approval_reject",
-            {"approval_id": approval_id},
+            {
+                "approval_id": approval_id,
+                "reason": reason,
+                "change_ticket": change_ticket,
+            },
         )
         if idempotency_error:
             return idempotency_error
@@ -1983,6 +2035,8 @@ def reject_approval(approval_id):
         approval["approved_by"] = approver_id
         approval["approved_by_role"] = _get_admin_role(approver_user).value
         approval["approved_at"] = datetime.utcnow().isoformat()
+        approval["rejection_reason"] = reason
+        approval["rejection_change_ticket"] = change_ticket
         _store_approval(approval, current_app.config.get("ADMIN_APPROVAL_TTL_SECONDS", 1800))
 
         log_admin_action(
@@ -1993,14 +2047,20 @@ def reject_approval(approval_id):
             new_values={
                 "approval_id": approval_id,
                 "action": approval.get("action"),
+                "reason": reason,
+                "change_ticket": change_ticket,
                 "security_event_id": security_event_id,
+                "event_type": "admin.approval.reject",
             },
         )
 
         response_body = {
             "approval_id": approval_id,
             "status": "rejected",
+            "reason": reason,
+            "change_ticket": change_ticket,
             "security_event_id": security_event_id,
+            "event_type": "admin.approval.reject",
         }
         _finalize_idempotency(idempotency_key, response_body, 200)
         return jsonify(response_body), 200
@@ -2016,10 +2076,23 @@ def reject_approval(approval_id):
 def cancel_approval(approval_id):
     idempotency_key = None
     try:
+        data = request.get_json(silent=True) or {}
+        governance_error, reason, change_ticket = _require_action_governance(
+            "approval_cancel",
+            data=data,
+            fallback_reason_fields=["reason"],
+        )
+        if governance_error:
+            return governance_error
+
         security_event_id = _new_security_event_id("approval_cancel")
         idempotency_error, idempotency_key = _require_idempotency(
             "approval_cancel",
-            {"approval_id": approval_id},
+            {
+                "approval_id": approval_id,
+                "reason": reason,
+                "change_ticket": change_ticket,
+            },
         )
         if idempotency_error:
             return idempotency_error
@@ -2044,6 +2117,8 @@ def cancel_approval(approval_id):
         approval["cancelled_by"] = actor_id
         approval["cancelled_by_role"] = _get_admin_role(actor_user).value
         approval["cancelled_at"] = datetime.utcnow().isoformat()
+        approval["cancellation_reason"] = reason
+        approval["cancellation_change_ticket"] = change_ticket
         _store_approval(approval, current_app.config.get("ADMIN_APPROVAL_TTL_SECONDS", 1800))
 
         log_admin_action(
@@ -2054,14 +2129,20 @@ def cancel_approval(approval_id):
             new_values={
                 "approval_id": approval_id,
                 "action": approval.get("action"),
+                "reason": reason,
+                "change_ticket": change_ticket,
                 "security_event_id": security_event_id,
+                "event_type": "admin.approval.cancel",
             },
         )
 
         response_body = {
             "approval_id": approval_id,
             "status": "cancelled",
+            "reason": reason,
+            "change_ticket": change_ticket,
             "security_event_id": security_event_id,
+            "event_type": "admin.approval.cancel",
         }
         _finalize_idempotency(idempotency_key, response_body, 200)
         return jsonify(response_body), 200
@@ -2630,7 +2711,14 @@ def get_governance_compliance_report():
 
         reason_enabled = bool(current_app.config.get("ADMIN_REASON_ENFORCEMENT_ENABLED", True))
         required_reason_actions = set(_sorted_csv_items(current_app.config.get("ADMIN_REASON_REQUIRED_ACTIONS", "")))
-        governance_critical_actions = approval_policy_actions | {"audit_export", "incident_timeline_export"}
+        governance_critical_actions = approval_policy_actions | {
+            "audit_export",
+            "incident_timeline_export",
+            "approval_request",
+            "approval_approve",
+            "approval_reject",
+            "approval_cancel",
+        }
         missing_reason_actions = sorted(list(governance_critical_actions - required_reason_actions)) if reason_enabled else []
         checks.append({
             "id": "reason_policy_coverage",

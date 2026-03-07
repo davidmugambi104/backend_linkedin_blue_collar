@@ -147,6 +147,20 @@ Mandatory change tickets:
 	- query parameter `change_ticket` (or `ticket`)
 	- header `X-Change-Ticket`
 
+Approval lifecycle governance:
+
+- Approval workflow endpoints now follow governance enforcement:
+	- `POST /api/admin/approvals/request`
+	- `POST /api/admin/approvals/<approval_id>/approve`
+	- `POST /api/admin/approvals/<approval_id>/reject`
+	- `POST /api/admin/approvals/<approval_id>/cancel`
+- These actions are included in default required lists for reason and change-ticket enforcement.
+- Approval audit entries include normalized event types:
+	- `admin.approval.request`
+	- `admin.approval.approve`
+	- `admin.approval.reject`
+	- `admin.approval.cancel`
+
 ### Governance policy snapshots
 
 Use signed policy snapshots to prove active governance controls at a point in time.

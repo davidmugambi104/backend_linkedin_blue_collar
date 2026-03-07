@@ -27,13 +27,13 @@ class Config:
     ADMIN_REASON_MIN_LENGTH = int(os.environ.get("ADMIN_REASON_MIN_LENGTH", "8"))
     ADMIN_REASON_REQUIRED_ACTIONS = os.environ.get(
         "ADMIN_REASON_REQUIRED_ACTIONS",
-        "ban_user,unban_user,delete_user,bulk_delete_users,bulk_verify_users,moderate_job,feature_job,unfeature_job,review_verification,update_platform_settings,database_backup_prune,audit_export,incident_timeline_export",
+        "ban_user,unban_user,delete_user,bulk_delete_users,bulk_verify_users,moderate_job,feature_job,unfeature_job,review_verification,update_platform_settings,database_backup_prune,audit_export,incident_timeline_export,approval_request,approval_approve,approval_reject,approval_cancel",
     )
     ADMIN_CHANGE_TICKET_ENFORCEMENT_ENABLED = os.environ.get("ADMIN_CHANGE_TICKET_ENFORCEMENT_ENABLED", "true").lower() == "true"
     ADMIN_CHANGE_TICKET_MIN_LENGTH = int(os.environ.get("ADMIN_CHANGE_TICKET_MIN_LENGTH", "3"))
     ADMIN_CHANGE_TICKET_REQUIRED_ACTIONS = os.environ.get(
         "ADMIN_CHANGE_TICKET_REQUIRED_ACTIONS",
-        "ban_user,unban_user,delete_user,bulk_delete_users,bulk_verify_users,moderate_job,feature_job,unfeature_job,review_verification,update_platform_settings,database_backup_prune,audit_export,incident_timeline_export",
+        "ban_user,unban_user,delete_user,bulk_delete_users,bulk_verify_users,moderate_job,feature_job,unfeature_job,review_verification,update_platform_settings,database_backup_prune,audit_export,incident_timeline_export,approval_request,approval_approve,approval_reject,approval_cancel",
     )
     GOVERNANCE_SNAPSHOT_RATE_LIMIT = os.environ.get("GOVERNANCE_SNAPSHOT_RATE_LIMIT", "30 per minute")
     GOVERNANCE_SNAPSHOT_HISTORY_MAX_PAGE_SIZE = int(
