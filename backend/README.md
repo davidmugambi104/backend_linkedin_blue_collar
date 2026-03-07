@@ -158,3 +158,47 @@ Operational controls:
 
 - Feed endpoint throttling is configured by `SECURITY_EVENTS_RATE_LIMIT` (default `60 per minute`).
 - Maximum lookback window is configured by `SECURITY_EVENTS_MAX_SINCE_HOURS`.
+
+### Audit integrity verification
+
+Audit entries are now tamper-evident using a hash-chain stamp stored in `new_values._integrity`:
+
+- `algo`: `hmac-sha256`
+- `prev_hash`: previous entry hash in chronological order
+- `hash`: current entry hash over canonical audit content + previous hash
+
+Use `GET /api/admin/security/events/verify` to validate chain integrity over a bounded window.
+
+Supported query params:
+
+- `since_hours` (bounded by `SECURITY_EVENTS_MAX_SINCE_HOURS`)
+- `limit` (default `1000`, max `5000`)
+- `include_samples=true` (include expected/stored hash details in mismatches)
+
+Response includes:
+
+- `valid` (overall integrity state)
+- `verified_entries`
+- `mismatch_count` and bounded `mismatches`
+- `last_verified_hash`
+
+### Signed database backups
+
+`POST /api/admin/system/database/backup` now creates:
+
+- SQLite backup file (for SQLite deployments)
+- signed manifest file at `<backup>.manifest.json`
+
+Manifest fields include `backup_sha256`, `backup_size_bytes`, `created_at`, and `signature` (HMAC over canonical manifest payload).
+
+Use `GET /api/admin/system/database/backup/verify?backup_file=<filename>` to verify:
+
+- manifest signature validity
+- backup file checksum match
+- backup file size match
+
+Operational settings:
+
+- `DB_BACKUP_DIR` (backup storage directory)
+- `DB_BACKUP_RATE_LIMIT` (default `5 per hour`)
+- `DB_BACKUP_VERIFY_RATE_LIMIT` (default `30 per minute`)

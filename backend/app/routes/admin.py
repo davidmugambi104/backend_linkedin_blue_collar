@@ -14,6 +14,7 @@ import hashlib
 import hmac
 from uuid import uuid4
 from ..extensions import db, redis_cache, limiter
+from ..db_safety import compute_audit_integrity_hash, strip_audit_integrity
 from ..models import (
     User, Worker, Employer, Job, Application, Payment, 
     Review, Verification, Skill, WorkerSkill, Message
@@ -454,6 +455,36 @@ def _security_feed_signature(payload):
         canonical,
         hashlib.sha256,
     ).hexdigest()
+
+
+def _file_sha256(path):
+    digest = hashlib.sha256()
+    with open(path, "rb") as file_handle:
+        for chunk in iter(lambda: file_handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _sign_manifest_payload(payload_dict):
+    canonical = json.dumps(payload_dict, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return hmac.new(
+        _security_feed_signing_key().encode("utf-8"),
+        canonical,
+        hashlib.sha256,
+    ).hexdigest()
+
+
+def _safe_backup_path(backup_dir, provided_name):
+    if not provided_name:
+        return None
+    safe_name = os.path.basename(str(provided_name).strip())
+    if not safe_name:
+        return None
+    candidate = os.path.abspath(os.path.join(backup_dir, safe_name))
+    backup_dir_abs = os.path.abspath(backup_dir)
+    if not candidate.startswith(backup_dir_abs + os.sep):
+        return None
+    return candidate
 
 
 def log_admin_action(user_id, action, entity_type=None, entity_id=None, new_values=None):
@@ -1955,6 +1986,95 @@ def get_security_events():
         return jsonify({"error": str(e)}), 500
 
 
+@admin_bp.route("/security/events/verify", methods=["GET"])
+@limiter.limit(
+    lambda: current_app.config.get("SECURITY_EVENTS_RATE_LIMIT", "60 per minute"),
+    key_func=_security_events_rate_limit_key,
+)
+@jwt_required()
+@admin_required
+def verify_security_event_chain():
+    """Verify tamper-evident audit integrity chain over a bounded time window."""
+    try:
+        limit = int(request.args.get("limit", 1000))
+        limit = max(1, min(limit, 5000))
+        since_hours = int(request.args.get("since_hours", 24))
+        max_since_hours = int(current_app.config.get("SECURITY_EVENTS_MAX_SINCE_HOURS", 24 * 30))
+        max_since_hours = max(1, min(max_since_hours, 24 * 365))
+        since_hours = max(1, min(since_hours, max_since_hours))
+        include_samples = request.args.get("include_samples", "false").lower() == "true"
+
+        signing_key = (
+            current_app.config.get("AUDIT_EXPORT_SIGNING_KEY")
+            or current_app.config.get("SECRET_KEY")
+            or "change-me"
+        )
+
+        window_start = datetime.utcnow() - timedelta(hours=since_hours)
+        entries = (
+            AuditLog.query
+            .filter(AuditLog.timestamp >= window_start)
+            .order_by(AuditLog.timestamp.asc(), AuditLog.id.asc())
+            .limit(limit)
+            .all()
+        )
+
+        previous_hash = None
+        mismatches = []
+        verified_count = 0
+
+        for entry in entries:
+            payload = entry.new_values if isinstance(entry.new_values, dict) else {}
+            integrity = payload.get("_integrity") if isinstance(payload, dict) else None
+            stored_hash = (integrity or {}).get("hash") if isinstance(integrity, dict) else None
+            stored_prev_hash = (integrity or {}).get("prev_hash") if isinstance(integrity, dict) else None
+
+            expected_hash = compute_audit_integrity_hash(
+                signing_key,
+                audit_id=entry.id,
+                user_id=entry.user_id,
+                action=entry.action,
+                entity_type=entry.entity_type,
+                entity_id=entry.entity_id,
+                timestamp=entry.timestamp,
+                old_values=entry.old_values,
+                new_values=strip_audit_integrity(payload),
+                prev_hash=previous_hash,
+            )
+
+            entry_valid = bool(stored_hash) and hmac.compare_digest(str(stored_hash), str(expected_hash))
+            chain_valid = (stored_prev_hash == previous_hash)
+            if not entry_valid or not chain_valid:
+                mismatch = {
+                    "id": int(entry.id) if entry.id is not None else None,
+                    "created_at": entry.timestamp.isoformat() if entry.timestamp else None,
+                    "reason": "hash_mismatch" if not entry_valid else "prev_hash_mismatch",
+                }
+                if include_samples:
+                    mismatch["stored_hash"] = stored_hash
+                    mismatch["expected_hash"] = expected_hash
+                    mismatch["stored_prev_hash"] = stored_prev_hash
+                    mismatch["expected_prev_hash"] = previous_hash
+                mismatches.append(mismatch)
+
+            previous_hash = stored_hash or expected_hash
+            verified_count += 1
+
+        response = {
+            "valid": len(mismatches) == 0,
+            "verified_entries": verified_count,
+            "mismatch_count": len(mismatches),
+            "since_hours": since_hours,
+            "limit": limit,
+            "mismatches": mismatches[:50],
+            "has_more_mismatches": len(mismatches) > 50,
+            "last_verified_hash": previous_hash,
+        }
+        return jsonify(response), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 # ============================================
 # BULK OPERATIONS
 # ============================================
@@ -2136,6 +2256,7 @@ def get_database_integrity():
 
 
 @admin_bp.route("/system/database/backup", methods=["POST"])
+@limiter.limit(lambda: current_app.config.get("DB_BACKUP_RATE_LIMIT", "5 per hour"))
 @jwt_required()
 @admin_required
 def create_database_backup():
@@ -2162,13 +2283,148 @@ def create_database_backup():
                 source_conn.backup(target_conn)
 
         backup_size = os.path.getsize(backup_path)
+        backup_sha256 = _file_sha256(backup_path)
+        security_event_id = _new_security_event_id("database_backup_create")
+        created_at = datetime.utcnow().isoformat()
+
+        manifest_payload = {
+            "version": 1,
+            "backup_file": os.path.basename(backup_path),
+            "backup_size_bytes": int(backup_size),
+            "backup_sha256": backup_sha256,
+            "created_at": created_at,
+            "source_db": os.path.basename(db_path),
+            "engine": db.engine.name,
+            "security_event_id": security_event_id,
+        }
+        manifest_signature = _sign_manifest_payload(manifest_payload)
+        manifest_document = {**manifest_payload, "signature": manifest_signature}
+        manifest_path = f"{backup_path}.manifest.json"
+        with open(manifest_path, "w", encoding="utf-8") as manifest_file:
+            json.dump(manifest_document, manifest_file, separators=(",", ":"), sort_keys=True)
+
+        admin_id = int(get_jwt_identity())
+        log_admin_action(
+            user_id=admin_id,
+            action="database_backup_created",
+            entity_type="database_backup",
+            entity_id=None,
+            new_values={
+                "backup_file": os.path.basename(backup_path),
+                "manifest_file": os.path.basename(manifest_path),
+                "backup_size_bytes": int(backup_size),
+                "backup_sha256": backup_sha256,
+                "security_event_id": security_event_id,
+                "event_type": "admin.db.backup.create",
+            },
+        )
 
         return jsonify({
             "message": "Database backup created successfully",
             "backup_file": backup_path,
+            "manifest_file": manifest_path,
             "backup_size_bytes": backup_size,
-            "created_at": datetime.utcnow().isoformat(),
+            "backup_sha256": backup_sha256,
+            "manifest_signature": manifest_signature,
+            "security_event_id": security_event_id,
+            "event_type": "admin.db.backup.create",
+            "created_at": created_at,
         }), 201
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@admin_bp.route("/system/database/backup/verify", methods=["GET"])
+@limiter.limit(lambda: current_app.config.get("DB_BACKUP_VERIFY_RATE_LIMIT", "30 per minute"))
+@jwt_required()
+@admin_required
+def verify_database_backup():
+    """Verify backup integrity from signed manifest and current file checksum."""
+    try:
+        backup_dir = current_app.config.get("DB_BACKUP_DIR", "instance/backups")
+        os.makedirs(backup_dir, exist_ok=True)
+
+        backup_file = request.args.get("backup_file")
+        if not backup_file:
+            return jsonify({"error": "backup_file query parameter is required"}), 400
+
+        backup_path = _safe_backup_path(backup_dir, backup_file)
+        if not backup_path:
+            return jsonify({"error": "Invalid backup_file"}), 400
+        if not os.path.exists(backup_path):
+            return jsonify({"error": "Backup file not found"}), 404
+
+        manifest_file = request.args.get("manifest_file")
+        if manifest_file:
+            manifest_path = _safe_backup_path(backup_dir, manifest_file)
+        else:
+            manifest_path = f"{backup_path}.manifest.json"
+
+        if not manifest_path:
+            return jsonify({"error": "Invalid manifest_file"}), 400
+        if not os.path.exists(manifest_path):
+            return jsonify({"error": "Manifest file not found"}), 404
+
+        with open(manifest_path, "r", encoding="utf-8") as manifest_handle:
+            manifest = json.load(manifest_handle)
+
+        stored_signature = manifest.get("signature")
+        if not stored_signature:
+            return jsonify({"error": "Manifest missing signature"}), 400
+
+        manifest_payload = dict(manifest)
+        manifest_payload.pop("signature", None)
+        expected_signature = _sign_manifest_payload(manifest_payload)
+        signature_valid = hmac.compare_digest(str(stored_signature), str(expected_signature))
+
+        computed_sha256 = _file_sha256(backup_path)
+        declared_sha256 = manifest_payload.get("backup_sha256")
+        hash_valid = bool(declared_sha256) and hmac.compare_digest(str(declared_sha256), str(computed_sha256))
+
+        actual_size = os.path.getsize(backup_path)
+        declared_size = manifest_payload.get("backup_size_bytes")
+        try:
+            size_valid = int(declared_size) == int(actual_size)
+        except Exception:
+            size_valid = False
+
+        verification_security_event_id = _new_security_event_id("database_backup_verify")
+        overall_valid = signature_valid and hash_valid and size_valid
+
+        admin_id = int(get_jwt_identity())
+        log_admin_action(
+            user_id=admin_id,
+            action="database_backup_verified",
+            entity_type="database_backup",
+            entity_id=None,
+            new_values={
+                "backup_file": os.path.basename(backup_path),
+                "manifest_file": os.path.basename(manifest_path),
+                "signature_valid": signature_valid,
+                "hash_valid": hash_valid,
+                "size_valid": size_valid,
+                "valid": overall_valid,
+                "security_event_id": verification_security_event_id,
+                "event_type": "admin.db.backup.verify",
+            },
+        )
+
+        return jsonify({
+            "valid": overall_valid,
+            "backup_file": backup_path,
+            "manifest_file": manifest_path,
+            "signature_valid": signature_valid,
+            "hash_valid": hash_valid,
+            "size_valid": size_valid,
+            "computed_sha256": computed_sha256,
+            "declared_sha256": declared_sha256,
+            "computed_size_bytes": int(actual_size),
+            "declared_size_bytes": declared_size,
+            "security_event_id": verification_security_event_id,
+            "event_type": "admin.db.backup.verify",
+            "verified_at": datetime.utcnow().isoformat(),
+        }), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
