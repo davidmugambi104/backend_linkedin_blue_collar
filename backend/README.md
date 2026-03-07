@@ -127,6 +127,113 @@ Current routes with idempotency + security event metadata include:
 - verification review
 - platform settings update
 
+Mandatory action reasons:
+
+- Sensitive admin actions require a reason when `ADMIN_REASON_ENFORCEMENT_ENABLED=true`.
+- Minimum reason length is controlled by `ADMIN_REASON_MIN_LENGTH` (default `8`).
+- Required actions are controlled by `ADMIN_REASON_REQUIRED_ACTIONS` (comma-separated list or `*`).
+- Reason can be supplied via:
+	- request JSON body `reason`
+	- query parameter `reason` (for export/download style GET operations)
+	- header `X-Action-Reason`
+
+Mandatory change tickets:
+
+- Sensitive admin actions can require a change ticket when `ADMIN_CHANGE_TICKET_ENFORCEMENT_ENABLED=true`.
+- Minimum ticket length is controlled by `ADMIN_CHANGE_TICKET_MIN_LENGTH` (default `3`).
+- Required actions are controlled by `ADMIN_CHANGE_TICKET_REQUIRED_ACTIONS` (comma-separated list or `*`).
+- Change ticket can be supplied via:
+	- request JSON body `change_ticket` (or `ticket`)
+	- query parameter `change_ticket` (or `ticket`)
+	- header `X-Change-Ticket`
+
+### Governance policy snapshots
+
+Use signed policy snapshots to prove active governance controls at a point in time.
+
+- `GET /api/admin/governance/policy-snapshot`
+	- Returns current policy snapshot + `snapshot_hash` + `snapshot_signature`.
+	- By default (`record=true`), records a historical snapshot in immutable audit logs.
+	- Response headers include `X-Policy-Snapshot-Hash` and `X-Policy-Snapshot-Signature`.
+
+- `GET /api/admin/governance/policy-snapshots`
+	- Returns historical recorded snapshots from audit trail.
+	- Query params:
+		- `page`, `limit`
+		- `include_snapshot=true` (super-admin only) to include full snapshot payloads.
+
+Operational settings:
+
+- `GOVERNANCE_SNAPSHOT_RATE_LIMIT` (default `30 per minute`)
+- `GOVERNANCE_SNAPSHOT_HISTORY_MAX_PAGE_SIZE` (default `200`)
+
+Governance compliance report endpoint:
+
+- `GET /api/admin/governance/compliance/report`
+- Runs continuous governance checks and returns `overall_status` (`healthy`, `degraded`, `critical`).
+- Checks include:
+	- approval request coverage for all approval-policy actions
+	- reason-policy and change-ticket policy coverage on governance-critical actions
+	- default secret detection
+	- destructive operation posture
+	- DB integrity guard posture
+- Query param:
+	- `include_details=true` (full details; super-admin receives full details)
+- Emits audited SIEM event type: `admin.governance.compliance.report`.
+- Rate limit controlled by `GOVERNANCE_COMPLIANCE_RATE_LIMIT` (default `30 per minute`).
+
+### Signed incident timeline export
+
+Use `GET /api/admin/governance/incident-timeline/export` to export a signed incident bundle containing:
+
+- security-tagged events
+- approval lifecycle events
+- governance policy snapshot events
+
+Query params:
+
+- `since_hours` (bounded by `SECURITY_EVENTS_MAX_SINCE_HOURS`)
+- `limit` (bounded by `INCIDENT_TIMELINE_EXPORT_MAX_ROWS`)
+- `include_sensitive=true` (super-admin only)
+
+Governance requirements:
+
+- Requires `audit:export` permission.
+- Uses mandatory reason and change-ticket policy when enabled.
+
+Response integrity headers:
+
+- `X-Audit-Content-SHA256`
+- `X-Audit-Signature`
+- `X-Security-Event-ID`
+
+Operational settings:
+
+- `INCIDENT_TIMELINE_EXPORT_RATE_LIMIT` (default `20 per minute`)
+- `INCIDENT_TIMELINE_EXPORT_MAX_ROWS` (default `5000`)
+
+Incident timeline verification endpoint:
+
+- `POST /api/admin/governance/incident-timeline/verify`
+- Body: raw incident timeline JSON bundle bytes.
+- Required integrity inputs:
+	- `X-Audit-Content-SHA256`
+	- `X-Audit-Signature`
+	- (alternatively via query params `content_sha256` and `signature`)
+- Optional query param:
+	- `check_db=true` to validate bundle event references against current audit DB rows.
+
+Verification response includes:
+
+- cryptographic validation (`digest_valid`, `signature_valid`)
+- structural validation (`event_type_valid`, `count_matches`)
+- optional DB consistency report (`db_check`)
+
+Additional settings:
+
+- `INCIDENT_TIMELINE_VERIFY_RATE_LIMIT` (default `30 per minute`)
+- `INCIDENT_TIMELINE_VERIFY_MAX_EVENTS` (default `500`)
+
 Each returns a normalized `event_type` such as:
 
 - `admin.user.ban`

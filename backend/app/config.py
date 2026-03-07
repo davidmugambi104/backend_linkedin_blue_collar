@@ -23,6 +23,27 @@ class Config:
     ADMIN_APPROVAL_PERMISSION_OVERRIDES = os.environ.get("ADMIN_APPROVAL_PERMISSION_OVERRIDES", "")
     ADMIN_APPROVAL_RATE_LIMIT = os.environ.get("ADMIN_APPROVAL_RATE_LIMIT", "30 per minute")
     ADMIN_APPROVAL_REVIEW_RATE_LIMIT = os.environ.get("ADMIN_APPROVAL_REVIEW_RATE_LIMIT", "20 per minute")
+    ADMIN_REASON_ENFORCEMENT_ENABLED = os.environ.get("ADMIN_REASON_ENFORCEMENT_ENABLED", "true").lower() == "true"
+    ADMIN_REASON_MIN_LENGTH = int(os.environ.get("ADMIN_REASON_MIN_LENGTH", "8"))
+    ADMIN_REASON_REQUIRED_ACTIONS = os.environ.get(
+        "ADMIN_REASON_REQUIRED_ACTIONS",
+        "ban_user,unban_user,delete_user,bulk_delete_users,bulk_verify_users,moderate_job,feature_job,unfeature_job,review_verification,update_platform_settings,database_backup_prune,audit_export,incident_timeline_export",
+    )
+    ADMIN_CHANGE_TICKET_ENFORCEMENT_ENABLED = os.environ.get("ADMIN_CHANGE_TICKET_ENFORCEMENT_ENABLED", "true").lower() == "true"
+    ADMIN_CHANGE_TICKET_MIN_LENGTH = int(os.environ.get("ADMIN_CHANGE_TICKET_MIN_LENGTH", "3"))
+    ADMIN_CHANGE_TICKET_REQUIRED_ACTIONS = os.environ.get(
+        "ADMIN_CHANGE_TICKET_REQUIRED_ACTIONS",
+        "ban_user,unban_user,delete_user,bulk_delete_users,bulk_verify_users,moderate_job,feature_job,unfeature_job,review_verification,update_platform_settings,database_backup_prune,audit_export,incident_timeline_export",
+    )
+    GOVERNANCE_SNAPSHOT_RATE_LIMIT = os.environ.get("GOVERNANCE_SNAPSHOT_RATE_LIMIT", "30 per minute")
+    GOVERNANCE_SNAPSHOT_HISTORY_MAX_PAGE_SIZE = int(
+        os.environ.get("GOVERNANCE_SNAPSHOT_HISTORY_MAX_PAGE_SIZE", "200")
+    )
+    GOVERNANCE_COMPLIANCE_RATE_LIMIT = os.environ.get("GOVERNANCE_COMPLIANCE_RATE_LIMIT", "30 per minute")
+    INCIDENT_TIMELINE_EXPORT_RATE_LIMIT = os.environ.get("INCIDENT_TIMELINE_EXPORT_RATE_LIMIT", "20 per minute")
+    INCIDENT_TIMELINE_EXPORT_MAX_ROWS = int(os.environ.get("INCIDENT_TIMELINE_EXPORT_MAX_ROWS", "5000"))
+    INCIDENT_TIMELINE_VERIFY_RATE_LIMIT = os.environ.get("INCIDENT_TIMELINE_VERIFY_RATE_LIMIT", "30 per minute")
+    INCIDENT_TIMELINE_VERIFY_MAX_EVENTS = int(os.environ.get("INCIDENT_TIMELINE_VERIFY_MAX_EVENTS", "500"))
     SECURITY_EVENTS_RATE_LIMIT = os.environ.get("SECURITY_EVENTS_RATE_LIMIT", "60 per minute")
     SECURITY_EVENTS_MAX_SINCE_HOURS = int(os.environ.get("SECURITY_EVENTS_MAX_SINCE_HOURS", "720"))
     SECURITY_EVENTS_CURSOR_TTL_SECONDS = int(os.environ.get("SECURITY_EVENTS_CURSOR_TTL_SECONDS", str(60 * 60 * 24)))

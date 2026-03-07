@@ -63,6 +63,9 @@ ACTION_PERMISSION_POLICY = {
 }
 
 
+SUPPORTED_APPROVAL_ACTIONS = set(ACTION_APPROVAL_POLICY.keys())
+
+
 def _is_super_admin(user):
     return (
         user
@@ -204,6 +207,130 @@ def _require_admin_confirmation(action_name):
             "message": f"Missing or invalid X-Admin-Confirm for action '{action_name}'"
         }), 403
     return None
+
+
+def _reason_required_for(action_name):
+    if not current_app.config.get("ADMIN_REASON_ENFORCEMENT_ENABLED", True):
+        return False
+    raw = current_app.config.get("ADMIN_REASON_REQUIRED_ACTIONS", "")
+    configured = {
+        str(item).strip()
+        for item in str(raw).split(",")
+        if str(item).strip()
+    }
+    return "*" in configured or action_name in configured
+
+
+def _extract_reason_from_request(data=None, fallback_fields=None):
+    candidate_fields = ["reason"] + list(fallback_fields or [])
+
+    if isinstance(data, dict):
+        for field in candidate_fields:
+            value = data.get(field)
+            if isinstance(value, str) and value.strip():
+                return value.strip()
+
+    args_reason = request.args.get("reason")
+    if isinstance(args_reason, str) and args_reason.strip():
+        return args_reason.strip()
+
+    header_reason = request.headers.get("X-Action-Reason")
+    if isinstance(header_reason, str) and header_reason.strip():
+        return header_reason.strip()
+
+    return None
+
+
+def _require_action_reason(action_name, data=None, fallback_fields=None):
+    if not _reason_required_for(action_name):
+        return None, None
+
+    reason = _extract_reason_from_request(data=data, fallback_fields=fallback_fields)
+    if not reason:
+        return jsonify({
+            "error": "Action reason required",
+            "message": "Provide reason in request body, query parameter, or X-Action-Reason header",
+            "action": action_name,
+        }), None
+
+    min_length = max(1, int(current_app.config.get("ADMIN_REASON_MIN_LENGTH", 8)))
+    if len(reason) < min_length:
+        return jsonify({
+            "error": "Action reason too short",
+            "message": f"Reason must be at least {min_length} characters",
+            "action": action_name,
+        }), None
+
+    return None, reason
+
+
+def _change_ticket_required_for(action_name):
+    if not current_app.config.get("ADMIN_CHANGE_TICKET_ENFORCEMENT_ENABLED", True):
+        return False
+    raw = current_app.config.get("ADMIN_CHANGE_TICKET_REQUIRED_ACTIONS", "")
+    configured = {
+        str(item).strip()
+        for item in str(raw).split(",")
+        if str(item).strip()
+    }
+    return "*" in configured or action_name in configured
+
+
+def _extract_change_ticket(data=None):
+    if isinstance(data, dict):
+        for field in ("change_ticket", "ticket"):
+            value = data.get(field)
+            if isinstance(value, str) and value.strip():
+                return value.strip()
+
+    query_ticket = request.args.get("change_ticket") or request.args.get("ticket")
+    if isinstance(query_ticket, str) and query_ticket.strip():
+        return query_ticket.strip()
+
+    header_ticket = request.headers.get("X-Change-Ticket")
+    if isinstance(header_ticket, str) and header_ticket.strip():
+        return header_ticket.strip()
+
+    return None
+
+
+def _require_change_ticket(action_name, data=None):
+    if not _change_ticket_required_for(action_name):
+        return None, None
+
+    change_ticket = _extract_change_ticket(data=data)
+    if not change_ticket:
+        return jsonify({
+            "error": "Change ticket required",
+            "message": "Provide change ticket in request body, query parameter, or X-Change-Ticket header",
+            "action": action_name,
+        }), None
+
+    min_length = max(1, int(current_app.config.get("ADMIN_CHANGE_TICKET_MIN_LENGTH", 3)))
+    if len(change_ticket) < min_length:
+        return jsonify({
+            "error": "Change ticket too short",
+            "message": f"Change ticket must be at least {min_length} characters",
+            "action": action_name,
+        }), None
+
+    return None, change_ticket
+
+
+def _require_action_governance(action_name, data=None, fallback_reason_fields=None):
+    reason_error, reason = _require_action_reason(
+        action_name,
+        data=data,
+        fallback_fields=fallback_reason_fields,
+    )
+    if reason_error:
+        return reason_error, None, None
+
+    ticket_error, change_ticket = _require_change_ticket(action_name, data=data)
+    if ticket_error:
+        return ticket_error, None, None
+
+    return None, reason, change_ticket
 
 
 def _canonical_payload_hash(payload):
@@ -460,6 +587,74 @@ def _security_feed_signature(payload):
         canonical,
         hashlib.sha256,
     ).hexdigest()
+
+
+def _serialize_role(role):
+    if hasattr(role, "value"):
+        return role.value
+    return str(role)
+
+
+def _sorted_csv_items(raw):
+    return sorted(
+        [item.strip() for item in str(raw or "").split(",") if item.strip()]
+    )
+
+
+def _build_governance_policy_snapshot():
+    action_names = sorted(
+        set(ACTION_APPROVAL_POLICY.keys())
+        | set(ACTION_PERMISSION_POLICY.keys())
+        | set(_sorted_csv_items(current_app.config.get("ADMIN_REASON_REQUIRED_ACTIONS", "")))
+        | set(_sorted_csv_items(current_app.config.get("ADMIN_CHANGE_TICKET_REQUIRED_ACTIONS", "")))
+    )
+
+    approval_policy = {}
+    permission_policy = {}
+    for action_name in action_names:
+        resolved_roles = _resolve_action_approval_policy(action_name)
+        approval_policy[action_name] = {
+            "request_roles": sorted([_serialize_role(r) for r in resolved_roles.get("request_roles", set())]),
+            "approve_roles": sorted([_serialize_role(r) for r in resolved_roles.get("approve_roles", set())]),
+            "execute_roles": sorted([_serialize_role(r) for r in resolved_roles.get("execute_roles", set())]),
+        }
+
+        resolved_permissions = _resolve_action_permission_policy(action_name)
+        permission_policy[action_name] = {
+            "request_permission": resolved_permissions.get("request_permission"),
+            "approve_permission": resolved_permissions.get("approve_permission"),
+            "execute_permission": resolved_permissions.get("execute_permission"),
+        }
+
+    snapshot = {
+        "version": 1,
+        "generated_at": datetime.utcnow().isoformat(),
+        "security_controls": {
+            "require_admin_confirmation": bool(current_app.config.get("REQUIRE_ADMIN_CONFIRMATION", True)),
+            "allow_destructive_operations": bool(current_app.config.get("ALLOW_DESTRUCTIVE_OPERATIONS", False)),
+            "two_person_approval_enabled": bool(current_app.config.get("TWO_PERSON_APPROVAL_ENABLED", True)),
+            "admin_idempotency_enabled": bool(current_app.config.get("ADMIN_IDEMPOTENCY_ENABLED", True)),
+            "admin_reason_enforcement_enabled": bool(current_app.config.get("ADMIN_REASON_ENFORCEMENT_ENABLED", True)),
+            "admin_reason_min_length": int(current_app.config.get("ADMIN_REASON_MIN_LENGTH", 8)),
+            "admin_change_ticket_enforcement_enabled": bool(current_app.config.get("ADMIN_CHANGE_TICKET_ENFORCEMENT_ENABLED", True)),
+            "admin_change_ticket_min_length": int(current_app.config.get("ADMIN_CHANGE_TICKET_MIN_LENGTH", 3)),
+        },
+        "required_actions": {
+            "reason": _sorted_csv_items(current_app.config.get("ADMIN_REASON_REQUIRED_ACTIONS", "")),
+            "change_ticket": _sorted_csv_items(current_app.config.get("ADMIN_CHANGE_TICKET_REQUIRED_ACTIONS", "")),
+        },
+        "approval_policy": approval_policy,
+        "permission_policy": permission_policy,
+    }
+
+    canonical = json.dumps(snapshot, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    snapshot_hash = hashlib.sha256(canonical).hexdigest()
+    snapshot_signature = hmac.new(
+        _security_feed_signing_key().encode("utf-8"),
+        canonical,
+        hashlib.sha256,
+    ).hexdigest()
+    return snapshot, snapshot_hash, snapshot_signature
 
 
 def _file_sha256(path):
@@ -912,13 +1107,20 @@ def ban_user(user_id):
     idempotency_key = None
     try:
         data = request.get_json(silent=True) or {}
-        reason = data.get("reason", "No reason provided")
+        governance_error, reason, change_ticket = _require_action_governance("ban_user", data=data)
+        if governance_error:
+            return governance_error
         duration = data.get("duration")  # In days, None for permanent
         security_event_id = _new_security_event_id("user_ban")
 
         idempotency_error, idempotency_key = _require_idempotency(
             "ban_user",
-            {"user_id": user_id, "reason": reason, "duration": duration},
+            {
+                "user_id": user_id,
+                "reason": reason,
+                "change_ticket": change_ticket,
+                "duration": duration,
+            },
         )
         if idempotency_error:
             return idempotency_error
@@ -939,6 +1141,7 @@ def ban_user(user_id):
             new_values={
                 "is_active": False,
                 "reason": reason,
+                "change_ticket": change_ticket,
                 "duration": duration,
                 "security_event_id": security_event_id,
                 "event_type": "admin.user.ban",
@@ -947,6 +1150,8 @@ def ban_user(user_id):
 
         response_body = {
             "message": "User banned successfully",
+            "reason": reason,
+            "change_ticket": change_ticket,
             "security_event_id": security_event_id,
             "event_type": "admin.user.ban",
         }
@@ -966,10 +1171,15 @@ def unban_user(user_id):
     """Unban a user."""
     idempotency_key = None
     try:
+        data = request.get_json(silent=True) or {}
+        governance_error, reason, change_ticket = _require_action_governance("unban_user", data=data)
+        if governance_error:
+            return governance_error
+
         security_event_id = _new_security_event_id("user_unban")
         idempotency_error, idempotency_key = _require_idempotency(
             "unban_user",
-            {"user_id": user_id},
+            {"user_id": user_id, "reason": reason, "change_ticket": change_ticket},
         )
         if idempotency_error:
             return idempotency_error
@@ -986,6 +1196,8 @@ def unban_user(user_id):
             entity_id=user.id,
             new_values={
                 "is_active": True,
+                "reason": reason,
+                "change_ticket": change_ticket,
                 "security_event_id": security_event_id,
                 "event_type": "admin.user.unban",
             },
@@ -993,6 +1205,8 @@ def unban_user(user_id):
 
         response_body = {
             "message": "User unbanned successfully",
+            "reason": reason,
+            "change_ticket": change_ticket,
             "security_event_id": security_event_id,
             "event_type": "admin.user.unban",
         }
@@ -1012,6 +1226,11 @@ def delete_user(user_id):
     """Delete a user (soft delete recommended)."""
     idempotency_key = None
     try:
+        data = request.get_json(silent=True) or {}
+        governance_error, reason, change_ticket = _require_action_governance("delete_user", data=data)
+        if governance_error:
+            return governance_error
+
         security_event_id = _new_security_event_id("delete_user")
         confirmation_error = _require_admin_confirmation("delete_user")
         if confirmation_error:
@@ -1019,7 +1238,7 @@ def delete_user(user_id):
 
         idempotency_error, idempotency_key = _require_idempotency(
             "delete_user",
-            {"user_id": user_id},
+            {"user_id": user_id, "reason": reason, "change_ticket": change_ticket},
         )
         if idempotency_error:
             return idempotency_error
@@ -1027,7 +1246,7 @@ def delete_user(user_id):
         current_admin_id = int(get_jwt_identity())
         approval_error = _require_two_person_approval(
             "delete_user",
-            {"user_id": user_id},
+            {"user_id": user_id, "reason": reason, "change_ticket": change_ticket},
             current_admin_id,
         )
         if approval_error:
@@ -1054,12 +1273,21 @@ def delete_user(user_id):
             action="user_soft_deleted",
             entity_type="user",
             entity_id=user.id,
-            new_values={"is_active": False, "security_event_id": security_event_id},
+            new_values={
+                "is_active": False,
+                "reason": reason,
+                "change_ticket": change_ticket,
+                "security_event_id": security_event_id,
+                "event_type": "admin.user.delete",
+            },
         )
 
         response_body = {
             "message": "User deleted successfully",
+            "reason": reason,
+            "change_ticket": change_ticket,
             "security_event_id": security_event_id,
+            "event_type": "admin.user.delete",
         }
         _finalize_idempotency(idempotency_key, response_body, 200)
         return jsonify(response_body), 200
@@ -1138,12 +1366,19 @@ def moderate_job(job_id):
     try:
         data = request.get_json(silent=True) or {}
         action = data.get("action")  # approve, reject, flag
-        reason = data.get("reason")
+        governance_error, reason, change_ticket = _require_action_governance("moderate_job", data=data)
+        if governance_error:
+            return governance_error
         security_event_id = _new_security_event_id("job_moderate")
 
         idempotency_error, idempotency_key = _require_idempotency(
             "moderate_job",
-            {"job_id": job_id, "action": action, "reason": reason},
+            {
+                "job_id": job_id,
+                "action": action,
+                "reason": reason,
+                "change_ticket": change_ticket,
+            },
         )
         if idempotency_error:
             return idempotency_error
@@ -1167,6 +1402,7 @@ def moderate_job(job_id):
             new_values={
                 "action": action,
                 "reason": reason,
+                "change_ticket": change_ticket,
                 "security_event_id": security_event_id,
                 "event_type": "admin.job.moderate",
             },
@@ -1174,6 +1410,8 @@ def moderate_job(job_id):
         
         response_body = {
             "message": f"Job {action}ed successfully",
+            "reason": reason,
+            "change_ticket": change_ticket,
             "security_event_id": security_event_id,
             "event_type": "admin.job.moderate",
         }
@@ -1193,10 +1431,15 @@ def feature_job(job_id):
     """Mark job as featured."""
     idempotency_key = None
     try:
+        data = request.get_json(silent=True) or {}
+        governance_error, reason, change_ticket = _require_action_governance("feature_job", data=data)
+        if governance_error:
+            return governance_error
+
         security_event_id = _new_security_event_id("job_feature")
         idempotency_error, idempotency_key = _require_idempotency(
             "feature_job",
-            {"job_id": job_id},
+            {"job_id": job_id, "reason": reason, "change_ticket": change_ticket},
         )
         if idempotency_error:
             return idempotency_error
@@ -1214,6 +1457,8 @@ def feature_job(job_id):
             entity_type="job",
             entity_id=job.id,
             new_values={
+                "reason": reason,
+                "change_ticket": change_ticket,
                 "security_event_id": security_event_id,
                 "event_type": "admin.job.feature",
             },
@@ -1221,6 +1466,8 @@ def feature_job(job_id):
 
         response_body = {
             "message": "Job featured successfully",
+            "reason": reason,
+            "change_ticket": change_ticket,
             "security_event_id": security_event_id,
             "event_type": "admin.job.feature",
         }
@@ -1240,10 +1487,15 @@ def unfeature_job(job_id):
     """Remove featured status from job."""
     idempotency_key = None
     try:
+        data = request.get_json(silent=True) or {}
+        governance_error, reason, change_ticket = _require_action_governance("unfeature_job", data=data)
+        if governance_error:
+            return governance_error
+
         security_event_id = _new_security_event_id("job_unfeature")
         idempotency_error, idempotency_key = _require_idempotency(
             "unfeature_job",
-            {"job_id": job_id},
+            {"job_id": job_id, "reason": reason, "change_ticket": change_ticket},
         )
         if idempotency_error:
             return idempotency_error
@@ -1261,6 +1513,8 @@ def unfeature_job(job_id):
             entity_type="job",
             entity_id=job.id,
             new_values={
+                "reason": reason,
+                "change_ticket": change_ticket,
                 "security_event_id": security_event_id,
                 "event_type": "admin.job.unfeature",
             },
@@ -1268,6 +1522,8 @@ def unfeature_job(job_id):
 
         response_body = {
             "message": "Job unfeatured successfully",
+            "reason": reason,
+            "change_ticket": change_ticket,
             "security_event_id": security_event_id,
             "event_type": "admin.job.unfeature",
         }
@@ -1345,12 +1601,25 @@ def review_verification(verification_id):
         current_user_id = get_current_user_id()
         data = request.get_json(silent=True) or {}
         status = data.get("status")  # "approved" or "rejected"
+        governance_error, reason, change_ticket = _require_action_governance(
+            "review_verification",
+            data=data,
+            fallback_reason_fields=["notes"],
+        )
+        if governance_error:
+            return governance_error
         notes = data.get("notes")
         security_event_id = _new_security_event_id("verification_review")
 
         idempotency_error, idempotency_key = _require_idempotency(
             "review_verification",
-            {"verification_id": verification_id, "status": status, "notes": notes},
+            {
+                "verification_id": verification_id,
+                "status": status,
+                "notes": notes,
+                "reason": reason,
+                "change_ticket": change_ticket,
+            },
         )
         if idempotency_error:
             return idempotency_error
@@ -1381,6 +1650,8 @@ def review_verification(verification_id):
             entity_id=verification.id,
             new_values={
                 "status": status,
+                "reason": reason,
+                "change_ticket": change_ticket,
                 "security_event_id": security_event_id,
                 "event_type": "admin.verification.review",
             },
@@ -1388,6 +1659,8 @@ def review_verification(verification_id):
         
         response_body = {
             "message": "Verification reviewed successfully",
+            "reason": reason,
+            "change_ticket": change_ticket,
             "security_event_id": security_event_id,
             "event_type": "admin.verification.review",
         }
@@ -1428,11 +1701,14 @@ def update_platform_settings():
     idempotency_key = None
     try:
         data = request.get_json(silent=True) or {}
+        governance_error, reason, change_ticket = _require_action_governance("update_platform_settings", data=data)
+        if governance_error:
+            return governance_error
         security_event_id = _new_security_event_id("platform_settings_update")
 
         idempotency_error, idempotency_key = _require_idempotency(
             "update_platform_settings",
-            {"data": data},
+            {"data": data, "reason": reason, "change_ticket": change_ticket},
         )
         if idempotency_error:
             return idempotency_error
@@ -1447,6 +1723,8 @@ def update_platform_settings():
             entity_id=None,
             new_values={
                 "changed_keys": sorted(list(data.keys())),
+                "reason": reason,
+                "change_ticket": change_ticket,
                 "security_event_id": security_event_id,
                 "event_type": "admin.settings.update",
             },
@@ -1454,6 +1732,8 @@ def update_platform_settings():
 
         response_body = {
             "message": "Settings updated successfully",
+            "reason": reason,
+            "change_ticket": change_ticket,
             "security_event_id": security_event_id,
             "event_type": "admin.settings.update",
         }
@@ -1492,8 +1772,7 @@ def request_approval():
         if idempotency_error:
             return idempotency_error
 
-        allowed_actions = {"delete_user", "bulk_delete_users"}
-        if action not in allowed_actions:
+        if action not in SUPPORTED_APPROVAL_ACTIONS:
             return jsonify({"error": "Unsupported approval action"}), 400
 
         requester_id = int(get_jwt_identity())
@@ -1814,11 +2093,19 @@ def get_audit_log():
         response_format = request.args.get("format", "json").lower()
         include_sensitive = request.args.get("include_sensitive", "false").lower() == "true"
         download = request.args.get("download", "false").lower() == "true"
+        is_export = response_format == "csv" or download
+        export_reason = None
+        export_change_ticket = None
+
+        if is_export:
+            governance_error, export_reason, export_change_ticket = _require_action_governance("audit_export")
+            if governance_error:
+                return governance_error
 
         if include_sensitive and not _is_super_admin(current_user):
             return jsonify({"error": "Sensitive audit fields require super admin role"}), 403
 
-        if (response_format == "csv" or download) and not _has_admin_permission(current_user, "audit:export"):
+        if is_export and not _has_admin_permission(current_user, "audit:export"):
             return jsonify({"error": "Audit export permission required"}), 403
 
         if response_format not in {"json", "csv"}:
@@ -1887,6 +2174,21 @@ def get_audit_log():
 
         if response_format == "csv":
             security_event_id = _new_security_event_id("audit_export_csv")
+            log_admin_action(
+                user_id=int(get_jwt_identity()),
+                action="audit_export_csv",
+                entity_type="audit_log",
+                entity_id=None,
+                new_values={
+                    "format": "csv",
+                    "row_count": len(audit_entries),
+                    "include_sensitive": include_sensitive,
+                    "reason": export_reason,
+                    "change_ticket": export_change_ticket,
+                    "security_event_id": security_event_id,
+                    "event_type": "admin.audit.export.csv",
+                },
+            )
             output = io.StringIO()
             writer = csv.writer(output)
             writer.writerow([
@@ -1932,6 +2234,21 @@ def get_audit_log():
 
         if response_format == "json" and download:
             security_event_id = _new_security_event_id("audit_export_json")
+            log_admin_action(
+                user_id=int(get_jwt_identity()),
+                action="audit_export_json",
+                entity_type="audit_log",
+                entity_id=None,
+                new_values={
+                    "format": "json",
+                    "row_count": len(audit_entries),
+                    "include_sensitive": include_sensitive,
+                    "reason": export_reason,
+                    "change_ticket": export_change_ticket,
+                    "security_event_id": security_event_id,
+                    "event_type": "admin.audit.export.json",
+                },
+            )
             json_data = json.dumps(audit_entries, separators=(",", ":"))
             digest, signature = _sign_audit_export(json_data.encode("utf-8"))
             filename = f"audit-log-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}.json"
@@ -2178,6 +2495,559 @@ def verify_security_event_chain():
         return jsonify({"error": str(e)}), 500
 
 
+@admin_bp.route("/governance/policy-snapshot", methods=["GET"])
+@limiter.limit(lambda: current_app.config.get("GOVERNANCE_SNAPSHOT_RATE_LIMIT", "30 per minute"))
+@jwt_required()
+@admin_required
+def get_governance_policy_snapshot():
+    """Get signed snapshot of active governance/security policy controls."""
+    try:
+        current_user = User.query.get(int(get_jwt_identity()))
+        record = request.args.get("record", "true").lower() == "true"
+
+        snapshot, snapshot_hash, snapshot_signature = _build_governance_policy_snapshot()
+        security_event_id = _new_security_event_id("governance_policy_snapshot")
+
+        if record:
+            log_admin_action(
+                user_id=int(get_jwt_identity()),
+                action="governance_policy_snapshot",
+                entity_type="governance_policy",
+                entity_id=None,
+                new_values={
+                    "snapshot_hash": snapshot_hash,
+                    "snapshot_signature": snapshot_signature,
+                    "policy_version": snapshot.get("version"),
+                    "recorded_by": current_user.username if current_user else None,
+                    "security_event_id": security_event_id,
+                    "event_type": "admin.governance.policy.snapshot",
+                    "snapshot": snapshot,
+                },
+            )
+
+        response_body = {
+            "recorded": record,
+            "snapshot": snapshot,
+            "snapshot_hash": snapshot_hash,
+            "snapshot_signature": snapshot_signature,
+            "security_event_id": security_event_id,
+            "event_type": "admin.governance.policy.snapshot",
+        }
+        response = jsonify(response_body)
+        response.headers["X-Policy-Snapshot-Hash"] = snapshot_hash
+        response.headers["X-Policy-Snapshot-Signature"] = snapshot_signature
+        return response, 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@admin_bp.route("/governance/policy-snapshots", methods=["GET"])
+@limiter.limit(lambda: current_app.config.get("GOVERNANCE_SNAPSHOT_RATE_LIMIT", "30 per minute"))
+@jwt_required()
+@admin_required
+def list_governance_policy_snapshots():
+    """List historical governance policy snapshots recorded in audit logs."""
+    try:
+        current_user = User.query.get(int(get_jwt_identity()))
+        page = int(request.args.get("page", 1))
+        limit = int(request.args.get("limit", 20))
+        max_page_size = int(current_app.config.get("GOVERNANCE_SNAPSHOT_HISTORY_MAX_PAGE_SIZE", 200))
+        limit = min(max(limit, 1), max_page_size)
+        include_snapshot = request.args.get("include_snapshot", "false").lower() == "true"
+
+        if include_snapshot and not _is_super_admin(current_user):
+            return jsonify({"error": "include_snapshot requires super admin role"}), 403
+
+        query = (
+            AuditLog.query
+            .filter(AuditLog.action == "governance_policy_snapshot")
+            .order_by(AuditLog.timestamp.desc(), AuditLog.id.desc())
+        )
+        total = query.count()
+        entries = query.offset((page - 1) * limit).limit(limit).all()
+
+        snapshots = []
+        for entry in entries:
+            payload = entry.new_values if isinstance(entry.new_values, dict) else {}
+            admin_user = User.query.get(entry.user_id) if entry.user_id else None
+            row = {
+                "id": int(entry.id) if entry.id is not None else None,
+                "admin_id": entry.user_id,
+                "admin_name": admin_user.username if admin_user else "System",
+                "snapshot_hash": payload.get("snapshot_hash"),
+                "snapshot_signature": payload.get("snapshot_signature"),
+                "policy_version": payload.get("policy_version"),
+                "security_event_id": payload.get("security_event_id"),
+                "event_type": payload.get("event_type"),
+                "created_at": entry.timestamp.isoformat() if entry.timestamp else None,
+            }
+            if include_snapshot:
+                row["snapshot"] = payload.get("snapshot")
+            snapshots.append(row)
+
+        return jsonify({
+            "items": snapshots,
+            "total": total,
+            "pages": (total + limit - 1) // limit if limit > 0 else 0,
+            "current_page": page,
+            "limit": limit,
+        }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@admin_bp.route("/governance/compliance/report", methods=["GET"])
+@limiter.limit(lambda: current_app.config.get("GOVERNANCE_COMPLIANCE_RATE_LIMIT", "30 per minute"))
+@jwt_required()
+@admin_required
+def get_governance_compliance_report():
+    """Run governance/compliance checks for enterprise hardening controls."""
+    try:
+        current_user = User.query.get(int(get_jwt_identity()))
+        include_details = request.args.get("include_details", "true").lower() == "true"
+        if include_details and not _is_super_admin(current_user):
+            include_details = False
+
+        checks = []
+
+        approval_policy_actions = set(ACTION_APPROVAL_POLICY.keys())
+        non_requestable_approval_actions = sorted(list(approval_policy_actions - SUPPORTED_APPROVAL_ACTIONS))
+        checks.append({
+            "id": "approval_request_coverage",
+            "severity": "high",
+            "status": "pass" if not non_requestable_approval_actions else "fail",
+            "message": (
+                "All approval-policy actions are requestable"
+                if not non_requestable_approval_actions
+                else "Some approval-policy actions cannot be requested via approval API"
+            ),
+            "details": {
+                "policy_actions": sorted(list(approval_policy_actions)),
+                "requestable_actions": sorted(list(SUPPORTED_APPROVAL_ACTIONS)),
+                "missing_requestable_actions": non_requestable_approval_actions,
+            } if include_details else None,
+        })
+
+        reason_enabled = bool(current_app.config.get("ADMIN_REASON_ENFORCEMENT_ENABLED", True))
+        required_reason_actions = set(_sorted_csv_items(current_app.config.get("ADMIN_REASON_REQUIRED_ACTIONS", "")))
+        governance_critical_actions = approval_policy_actions | {"audit_export", "incident_timeline_export"}
+        missing_reason_actions = sorted(list(governance_critical_actions - required_reason_actions)) if reason_enabled else []
+        checks.append({
+            "id": "reason_policy_coverage",
+            "severity": "medium",
+            "status": "pass" if (not reason_enabled or not missing_reason_actions) else "warn",
+            "message": (
+                "Reason policy covers governance-critical actions"
+                if (not reason_enabled or not missing_reason_actions)
+                else "Reason policy misses some governance-critical actions"
+            ),
+            "details": {
+                "required_actions": sorted(list(required_reason_actions)),
+                "missing_actions": missing_reason_actions,
+            } if include_details else None,
+        })
+
+        ticket_enabled = bool(current_app.config.get("ADMIN_CHANGE_TICKET_ENFORCEMENT_ENABLED", True))
+        required_ticket_actions = set(_sorted_csv_items(current_app.config.get("ADMIN_CHANGE_TICKET_REQUIRED_ACTIONS", "")))
+        missing_ticket_actions = sorted(list(governance_critical_actions - required_ticket_actions)) if ticket_enabled else []
+        checks.append({
+            "id": "change_ticket_policy_coverage",
+            "severity": "medium",
+            "status": "pass" if (not ticket_enabled or not missing_ticket_actions) else "warn",
+            "message": (
+                "Change-ticket policy covers governance-critical actions"
+                if (not ticket_enabled or not missing_ticket_actions)
+                else "Change-ticket policy misses some governance-critical actions"
+            ),
+            "details": {
+                "required_actions": sorted(list(required_ticket_actions)),
+                "missing_actions": missing_ticket_actions,
+            } if include_details else None,
+        })
+
+        default_secret_values = {
+            "dev-secret-key-change-in-production",
+            "jwt-secret-key-change-in-production",
+        }
+        secret_key_value = str(current_app.config.get("SECRET_KEY") or "")
+        jwt_secret_key_value = str(current_app.config.get("JWT_SECRET_KEY") or "")
+        default_secrets_in_use = (
+            secret_key_value in default_secret_values
+            or jwt_secret_key_value in default_secret_values
+        )
+        checks.append({
+            "id": "default_secrets",
+            "severity": "critical",
+            "status": "fail" if default_secrets_in_use else "pass",
+            "message": (
+                "Default security secrets are in use"
+                if default_secrets_in_use
+                else "Non-default secrets configured"
+            ),
+            "details": {
+                "secret_key_default": secret_key_value in default_secret_values,
+                "jwt_secret_key_default": jwt_secret_key_value in default_secret_values,
+            } if include_details else None,
+        })
+
+        destructive_enabled = bool(current_app.config.get("ALLOW_DESTRUCTIVE_OPERATIONS", False))
+        checks.append({
+            "id": "destructive_operations",
+            "severity": "high",
+            "status": "warn" if destructive_enabled else "pass",
+            "message": (
+                "Destructive operations are enabled"
+                if destructive_enabled
+                else "Destructive operations are disabled"
+            ),
+            "details": {
+                "allow_destructive_operations": destructive_enabled,
+            } if include_details else None,
+        })
+
+        soft_delete_enforced = bool(current_app.config.get("DB_ENFORCE_SOFT_DELETE", True))
+        hard_delete_enabled = bool(current_app.config.get("ALLOW_HARD_DELETE", False))
+        checks.append({
+            "id": "database_integrity_guards",
+            "severity": "high",
+            "status": "pass" if (soft_delete_enforced and not hard_delete_enabled) else "fail",
+            "message": (
+                "Database integrity guards are enforced"
+                if (soft_delete_enforced and not hard_delete_enabled)
+                else "Database integrity guards are weakened"
+            ),
+            "details": {
+                "db_enforce_soft_delete": soft_delete_enforced,
+                "allow_hard_delete": hard_delete_enabled,
+            } if include_details else None,
+        })
+
+        severity_rank = {"pass": 0, "warn": 1, "fail": 2}
+        max_rank = max((severity_rank.get(check.get("status"), 0) for check in checks), default=0)
+        overall_status = "healthy" if max_rank == 0 else "degraded" if max_rank == 1 else "critical"
+
+        security_event_id = _new_security_event_id("governance_compliance_report")
+        log_admin_action(
+            user_id=int(get_jwt_identity()),
+            action="governance_compliance_report_generated",
+            entity_type="governance_compliance",
+            entity_id=None,
+            new_values={
+                "overall_status": overall_status,
+                "check_count": len(checks),
+                "fail_count": len([c for c in checks if c.get("status") == "fail"]),
+                "warn_count": len([c for c in checks if c.get("status") == "warn"]),
+                "security_event_id": security_event_id,
+                "event_type": "admin.governance.compliance.report",
+            },
+        )
+
+        return jsonify({
+            "overall_status": overall_status,
+            "checks": checks,
+            "generated_at": datetime.utcnow().isoformat(),
+            "security_event_id": security_event_id,
+            "event_type": "admin.governance.compliance.report",
+        }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@admin_bp.route("/governance/incident-timeline/export", methods=["GET"])
+@limiter.limit(lambda: current_app.config.get("INCIDENT_TIMELINE_EXPORT_RATE_LIMIT", "20 per minute"))
+@jwt_required()
+@admin_required
+def export_incident_timeline():
+    """Export signed incident timeline bundle for audits and incident response."""
+    try:
+        current_user = User.query.get(int(get_jwt_identity()))
+        include_sensitive = request.args.get("include_sensitive", "false").lower() == "true"
+        if include_sensitive and not _is_super_admin(current_user):
+            return jsonify({"error": "Sensitive timeline export requires super admin role"}), 403
+
+        if not _has_admin_permission(current_user, "audit:export"):
+            return jsonify({"error": "Audit export permission required"}), 403
+
+        governance_error, reason, change_ticket = _require_action_governance("incident_timeline_export")
+        if governance_error:
+            return governance_error
+
+        since_hours = int(request.args.get("since_hours", 24))
+        max_since_hours = int(current_app.config.get("SECURITY_EVENTS_MAX_SINCE_HOURS", 24 * 30))
+        max_since_hours = max(1, min(max_since_hours, 24 * 365))
+        since_hours = max(1, min(since_hours, max_since_hours))
+
+        max_rows = int(current_app.config.get("INCIDENT_TIMELINE_EXPORT_MAX_ROWS", 5000))
+        limit = int(request.args.get("limit", min(1000, max_rows)))
+        limit = max(1, min(limit, max_rows))
+
+        start_dt = datetime.utcnow() - timedelta(hours=since_hours)
+        entries = (
+            AuditLog.query
+            .filter(AuditLog.timestamp >= start_dt)
+            .order_by(AuditLog.timestamp.asc(), AuditLog.id.asc())
+            .limit(max_rows)
+            .all()
+        )
+
+        timeline = []
+        for entry in entries:
+            payload = entry.new_values if isinstance(entry.new_values, dict) else {}
+            action_name = str(entry.action or "")
+            event_type = payload.get("event_type")
+            security_event_id = payload.get("security_event_id")
+            is_approval = action_name.startswith("approval_")
+            is_snapshot = action_name == "governance_policy_snapshot"
+            is_security_event = bool(security_event_id or event_type)
+
+            if not (is_security_event or is_approval or is_snapshot):
+                continue
+
+            category = "security_event"
+            if is_approval:
+                category = "approval"
+            elif is_snapshot:
+                category = "policy_snapshot"
+
+            admin_user = User.query.get(entry.user_id) if entry.user_id else None
+            integrity_data = payload.get("_integrity") if isinstance(payload.get("_integrity"), dict) else {}
+
+            timeline.append({
+                "id": int(entry.id) if entry.id is not None else None,
+                "category": category,
+                "action": action_name,
+                "event_type": event_type,
+                "security_event_id": security_event_id,
+                "entity_type": entry.entity_type,
+                "entity_id": entry.entity_id,
+                "admin_id": entry.user_id,
+                "admin_name": admin_user.username if admin_user else "System",
+                "reason": payload.get("reason"),
+                "change_ticket": payload.get("change_ticket"),
+                "changes": payload,
+                "integrity_hash": integrity_data.get("hash"),
+                "created_at": entry.timestamp.isoformat() if entry.timestamp else None,
+                "ip_address": entry.ip_address if include_sensitive else None,
+                "user_agent": entry.user_agent if include_sensitive else None,
+            })
+
+            if len(timeline) >= limit:
+                break
+
+        security_event_id = _new_security_event_id("incident_timeline_export")
+        event_type = "admin.governance.incident_timeline.export"
+        generated_at = datetime.utcnow().isoformat()
+        export_bundle = {
+            "version": 1,
+            "generated_at": generated_at,
+            "generated_by": {
+                "admin_id": int(get_jwt_identity()),
+                "admin_name": current_user.username if current_user else None,
+            },
+            "filters": {
+                "since_hours": since_hours,
+                "limit": limit,
+                "include_sensitive": include_sensitive,
+            },
+            "governance": {
+                "reason": reason,
+                "change_ticket": change_ticket,
+            },
+            "security_event_id": security_event_id,
+            "event_type": event_type,
+            "events": timeline,
+            "count": len(timeline),
+        }
+
+        json_data = json.dumps(export_bundle, separators=(",", ":"))
+        digest, signature = _sign_audit_export(json_data.encode("utf-8"))
+
+        log_admin_action(
+            user_id=int(get_jwt_identity()),
+            action="incident_timeline_exported",
+            entity_type="incident_timeline",
+            entity_id=None,
+            new_values={
+                "since_hours": since_hours,
+                "limit": limit,
+                "count": len(timeline),
+                "include_sensitive": include_sensitive,
+                "reason": reason,
+                "change_ticket": change_ticket,
+                "content_sha256": digest,
+                "signature": signature,
+                "security_event_id": security_event_id,
+                "event_type": event_type,
+            },
+        )
+
+        filename = f"incident-timeline-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}.json"
+        return Response(
+            json_data,
+            mimetype="application/json",
+            headers={
+                "Content-Disposition": f"attachment; filename={filename}",
+                "X-Audit-Content-SHA256": digest,
+                "X-Audit-Signature": signature,
+                "X-Security-Event-ID": security_event_id,
+            },
+        )
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@admin_bp.route("/governance/incident-timeline/verify", methods=["POST"])
+@limiter.limit(lambda: current_app.config.get("INCIDENT_TIMELINE_VERIFY_RATE_LIMIT", "30 per minute"))
+@jwt_required()
+@admin_required
+def verify_incident_timeline_bundle():
+    """Verify signed incident timeline bundle integrity and optional DB authenticity checks."""
+    try:
+        current_user = User.query.get(int(get_jwt_identity()))
+        if not _has_admin_permission(current_user, "audit:export"):
+            return jsonify({"error": "Audit export permission required"}), 403
+
+        raw_body = request.get_data(cache=False, as_text=False) or b""
+        if not raw_body:
+            return jsonify({"error": "Request body must contain incident timeline JSON bundle"}), 400
+
+        provided_digest = (
+            request.headers.get("X-Audit-Content-SHA256")
+            or request.args.get("content_sha256")
+        )
+        provided_signature = (
+            request.headers.get("X-Audit-Signature")
+            or request.args.get("signature")
+        )
+        if not provided_digest or not provided_signature:
+            return jsonify({
+                "error": "Missing bundle integrity headers",
+                "message": "Provide X-Audit-Content-SHA256 and X-Audit-Signature (or equivalent query parameters)",
+            }), 400
+
+        computed_digest = hashlib.sha256(raw_body).hexdigest()
+        signing_key = _security_feed_signing_key().encode("utf-8")
+        computed_signature = hmac.new(signing_key, raw_body, hashlib.sha256).hexdigest()
+
+        digest_valid = hmac.compare_digest(str(provided_digest), str(computed_digest))
+        signature_valid = hmac.compare_digest(str(provided_signature), str(computed_signature))
+
+        try:
+            bundle = json.loads(raw_body.decode("utf-8"))
+        except Exception:
+            return jsonify({"error": "Invalid JSON bundle format"}), 400
+
+        if not isinstance(bundle, dict):
+            return jsonify({"error": "Bundle root must be an object"}), 400
+
+        events = bundle.get("events") if isinstance(bundle.get("events"), list) else []
+        declared_count = bundle.get("count")
+        count_matches = declared_count == len(events)
+        event_type_ok = bundle.get("event_type") == "admin.governance.incident_timeline.export"
+
+        check_db = request.args.get("check_db", "false").lower() == "true"
+        db_check = {
+            "enabled": check_db,
+            "checked": 0,
+            "matched": 0,
+            "mismatches": [],
+            "truncated": False,
+        }
+
+        if check_db:
+            max_events_to_check = int(current_app.config.get("INCIDENT_TIMELINE_VERIFY_MAX_EVENTS", 500))
+            max_events_to_check = max(1, min(max_events_to_check, 5000))
+            if len(events) > max_events_to_check:
+                db_check["truncated"] = True
+
+            for event in events[:max_events_to_check]:
+                event_id = event.get("id") if isinstance(event, dict) else None
+                if event_id is None:
+                    db_check["mismatches"].append({
+                        "id": None,
+                        "reason": "missing_event_id",
+                    })
+                    continue
+
+                audit_row = AuditLog.query.get(event_id)
+                db_check["checked"] += 1
+                if not audit_row:
+                    db_check["mismatches"].append({
+                        "id": event_id,
+                        "reason": "not_found",
+                    })
+                    continue
+
+                row_payload = audit_row.new_values if isinstance(audit_row.new_values, dict) else {}
+                event_action = event.get("action")
+                event_security_id = event.get("security_event_id")
+                action_match = str(audit_row.action or "") == str(event_action or "")
+                security_id_match = True
+                if event_security_id is not None:
+                    security_id_match = str(row_payload.get("security_event_id")) == str(event_security_id)
+
+                if action_match and security_id_match:
+                    db_check["matched"] += 1
+                else:
+                    db_check["mismatches"].append({
+                        "id": event_id,
+                        "reason": "content_mismatch",
+                        "action_match": action_match,
+                        "security_event_id_match": security_id_match,
+                    })
+
+            mismatch_count = len(db_check["mismatches"])
+            db_check["mismatch_count"] = mismatch_count
+            db_check["mismatches"] = db_check["mismatches"][:50]
+            db_check["has_more_mismatches"] = mismatch_count > len(db_check["mismatches"])
+
+        cryptographic_valid = digest_valid and signature_valid
+        structural_valid = event_type_ok and count_matches
+        db_valid = (not check_db) or (db_check.get("mismatch_count", 0) == 0)
+        valid = cryptographic_valid and structural_valid and db_valid
+
+        verification_security_event_id = _new_security_event_id("incident_timeline_verify")
+        log_admin_action(
+            user_id=int(get_jwt_identity()),
+            action="incident_timeline_verified",
+            entity_type="incident_timeline",
+            entity_id=None,
+            new_values={
+                "valid": valid,
+                "cryptographic_valid": cryptographic_valid,
+                "digest_valid": digest_valid,
+                "signature_valid": signature_valid,
+                "structural_valid": structural_valid,
+                "db_check_enabled": check_db,
+                "db_check_mismatch_count": db_check.get("mismatch_count") if check_db else None,
+                "provided_digest": provided_digest,
+                "computed_digest": computed_digest,
+                "security_event_id": verification_security_event_id,
+                "event_type": "admin.governance.incident_timeline.verify",
+            },
+        )
+
+        return jsonify({
+            "valid": valid,
+            "cryptographic_valid": cryptographic_valid,
+            "digest_valid": digest_valid,
+            "signature_valid": signature_valid,
+            "structural_valid": structural_valid,
+            "event_type_valid": event_type_ok,
+            "count_matches": count_matches,
+            "declared_count": declared_count,
+            "actual_count": len(events),
+            "provided_digest": provided_digest,
+            "computed_digest": computed_digest,
+            "db_check": db_check,
+            "security_event_id": verification_security_event_id,
+            "event_type": "admin.governance.incident_timeline.verify",
+            "verified_at": datetime.utcnow().isoformat(),
+        }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 # ============================================
 # BULK OPERATIONS
 # ============================================
@@ -2195,11 +3065,14 @@ def bulk_delete_users():
             return confirmation_error
 
         data = request.get_json(silent=True) or {}
+        governance_error, reason, change_ticket = _require_action_governance("bulk_delete_users", data=data)
+        if governance_error:
+            return governance_error
         user_ids = sorted(data.get("user_ids", []))
 
         idempotency_error, idempotency_key = _require_idempotency(
             "bulk_delete_users",
-            {"user_ids": user_ids},
+            {"user_ids": user_ids, "reason": reason, "change_ticket": change_ticket},
         )
         if idempotency_error:
             return idempotency_error
@@ -2207,7 +3080,7 @@ def bulk_delete_users():
         current_admin_id = int(get_jwt_identity())
         approval_error = _require_two_person_approval(
             "bulk_delete_users",
-            {"user_ids": user_ids},
+            {"user_ids": user_ids, "reason": reason, "change_ticket": change_ticket},
             current_admin_id,
         )
         if approval_error:
@@ -2237,11 +3110,18 @@ def bulk_delete_users():
             action="users_bulk_soft_deleted",
             entity_type="user",
             entity_id=None,
-            new_values={"count": len(user_ids), "security_event_id": security_event_id},
+            new_values={
+                "count": len(user_ids),
+                "reason": reason,
+                "change_ticket": change_ticket,
+                "security_event_id": security_event_id,
+            },
         )
 
         response_body = {
             "message": f"Deleted {len(user_ids)} users",
+            "reason": reason,
+            "change_ticket": change_ticket,
             "security_event_id": security_event_id,
         }
         _finalize_idempotency(idempotency_key, response_body, 200)
@@ -2261,12 +3141,15 @@ def bulk_verify_users():
     idempotency_key = None
     try:
         data = request.get_json(silent=True) or {}
+        governance_error, reason, change_ticket = _require_action_governance("bulk_verify_users", data=data)
+        if governance_error:
+            return governance_error
         user_ids = data.get("user_ids", [])
         security_event_id = _new_security_event_id("bulk_verify_users")
 
         idempotency_error, idempotency_key = _require_idempotency(
             "bulk_verify_users",
-            {"user_ids": sorted(user_ids)},
+            {"user_ids": sorted(user_ids), "reason": reason, "change_ticket": change_ticket},
         )
         if idempotency_error:
             return idempotency_error
@@ -2290,6 +3173,8 @@ def bulk_verify_users():
             entity_id=None,
             new_values={
                 "count": len(workers),
+                "reason": reason,
+                "change_ticket": change_ticket,
                 "security_event_id": security_event_id,
                 "event_type": "admin.user.bulk_verify",
             },
@@ -2297,6 +3182,8 @@ def bulk_verify_users():
         
         response_body = {
             "message": f"Verified {len(workers)} workers",
+            "reason": reason,
+            "change_ticket": change_ticket,
             "security_event_id": security_event_id,
             "event_type": "admin.user.bulk_verify",
         }
@@ -2741,6 +3628,9 @@ def prune_database_backups():
             return confirmation_error
 
         data = request.get_json(silent=True) or {}
+        governance_error, reason, change_ticket = _require_action_governance("database_backup_prune", data=data)
+        if governance_error:
+            return governance_error
         dry_run = bool(data.get("dry_run", True))
 
         backup_dir = current_app.config.get("DB_BACKUP_DIR", "instance/backups")
@@ -2764,6 +3654,8 @@ def prune_database_backups():
             "retention_days": retention_days,
             "max_files": max_files,
             "candidates": sorted(candidate_names),
+            "reason": reason,
+            "change_ticket": change_ticket,
         }
 
         idempotency_error, idempotency_key = _require_idempotency(
@@ -2814,6 +3706,8 @@ def prune_database_backups():
                 "candidate_count": len(prune_candidates),
                 "deleted_count": len(deleted),
                 "error_count": len(errors),
+                "reason": reason,
+                "change_ticket": change_ticket,
                 "security_event_id": security_event_id,
                 "event_type": event_type,
             },
@@ -2826,6 +3720,8 @@ def prune_database_backups():
                 "max_files": max_files,
             },
             "candidate_count": len(prune_candidates),
+            "reason": reason,
+            "change_ticket": change_ticket,
             "candidates": [
                 {
                     "backup_file": os.path.basename(path),
