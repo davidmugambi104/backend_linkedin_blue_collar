@@ -59,7 +59,7 @@ export const RecentApplications: React.FC = () => {
             recentApplications.map((application) => (
               <Link
                 key={application.id}
-                to={`/worker/applications/${application.id}`}
+                to={application.job_id ? `/jobs/${application.job_id}` : '/worker/applications'}
                 className="block p-4 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               >
                 <div className="flex items-start justify-between">

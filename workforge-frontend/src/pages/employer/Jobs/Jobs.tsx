@@ -108,10 +108,12 @@ const Jobs: React.FC = () => {
                 </div>
               </div>
               <div className="flex items-center space-x-2 ml-4">
-                <Button variant="ghost" size="sm" title="View job" className="text-[#2563EB]">
-                  <EyeIcon className="h-4 w-4" />
-                </Button>
-                <Link to={`/employer/jobs/${job.id}/edit`}>
+                <Link to={`/employer/jobs/${job.id}`}>
+                  <Button variant="ghost" size="sm" title="View job" className="text-[#2563EB]">
+                    <EyeIcon className="h-4 w-4" />
+                  </Button>
+                </Link>
+                <Link to={`/employer/jobs/${job.id}`}>
                   <Button variant="ghost" size="sm" title="Edit job" className="text-[#2563EB]">
                     <PencilIcon className="h-4 w-4" />
                   </Button>

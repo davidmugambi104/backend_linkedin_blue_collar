@@ -30,7 +30,7 @@ export const UserMenu: React.FC = () => {
         <div className="absolute right-0 mt-2 w-56 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl rounded-2xl border border-gray-200/50 dark:border-gray-800/50 shadow-xl z-50">
           <div className="p-2">
             <button
-              onClick={() => navigate('/admin/settings')}
+              onClick={() => navigate('/admin/dashboard')}
               className="w-full flex items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors"
             >
               <Cog6ToothIcon className="w-5 h-5 mr-2" />

@@ -154,8 +154,8 @@ export const WorkerSettings: React.FC = () => {
             </Button>
           </div>
 
-          {/* Two          <div class-Factor Authentication */}
-Name="flex items-center justify-between py-4">
+          {/* Two-Factor Authentication */}
+          <div className="flex items-center justify-between py-4">
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
                 <DevicePhoneMobileIcon className="h-5 w-5 text-gray-500" />

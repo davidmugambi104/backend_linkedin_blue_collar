@@ -86,7 +86,7 @@ class Config:
     JWT_BLACKLIST_TOKEN_CHECKS = ["access", "refresh"]
     CORS_ORIGINS = os.environ.get(
         "CORS_ORIGINS",
-        "http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173"
+        "http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174"
     ).split(",")
     SOCKETIO_MESSAGE_QUEUE = os.environ.get(
         "SOCKETIO_MESSAGE_QUEUE", "redis://localhost:6379/0"

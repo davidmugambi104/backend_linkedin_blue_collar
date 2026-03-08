@@ -33,7 +33,8 @@ const ForgotPasswordPage = lazy(() => import('@pages/auth/ForgotPassword/ForgotP
 const EmployerDashboard = lazy(() => import('@pages/employer/Dashboard/Dashboard'));
 const EmployerProfile = lazy(() => import('@pages/employer/Profile/Profile'));
 const EmployerJobs = lazy(() => import('@pages/employer/Jobs/Jobs'));
-const EmployerJobDetail = lazy(() => import('@pages/employer/JobDetail/JobDetail'));
+const EmployerJobDetail = lazy(() => import('@pages/employer/Applications/EmployerJobDetail'));
+const EmployerJobDetailPreview = lazy(() => import('@pages/employer/JobDetail/JobDetail'));
 const EmployerApplications = lazy(() => import('@pages/employer/Applications/Applications'));
 const EmployerWorkers = lazy(() => import('@pages/employer/Workers/Workers'));
 const EmployerReviews = lazy(() => import('@pages/employer/Reviews/Reviews'));
@@ -61,6 +62,7 @@ const AdminUsers = lazy(() => import('@pages/admin/Users/Users'));
 const AdminVerifications = lazy(() => import('@pages/admin/Verifications/Verifications'));
 const AdminPayments = lazy(() => import('@pages/admin/Payments/Payments'));
 const AdminReports = lazy(() => import('@pages/admin/Reports/Reports'));
+const AdminSettings = lazy(() => import('@pages/admin/Settings/Settings'));
 
 /**
  * LAZY LOADED COMPONENTS - SHARED PAGES
@@ -188,7 +190,9 @@ export const AppRouter = () => {
           {/* Jobs Management */}
           <Route path="jobs">
             <Route index element={<EmployerJobs />} />
+            <Route path="post" element={<EmployerPostJob />} />
             <Route path=":jobId" element={<EmployerJobDetail />} />
+            <Route path=":jobId/preview" element={<EmployerJobDetailPreview />} />
           </Route>
 
           {/* Post New Job */}
@@ -267,6 +271,9 @@ export const AppRouter = () => {
 
           {/* Platform Reports */}
           <Route path="reports" element={<AdminReports />} />
+
+          {/* Platform Settings */}
+          <Route path="settings" element={<AdminSettings />} />
         </Route>
 
         {/* ========================================

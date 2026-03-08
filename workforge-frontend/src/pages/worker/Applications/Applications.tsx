@@ -158,7 +158,7 @@ export const WorkerApplications: React.FC = () => {
             return (
               <Link
                 key={application.id}
-                to={`/worker/applications/${application.id}`}
+                to={application.job_id ? `/jobs/${application.job_id}` : '/worker/applications'}
                 className="block"
               >
                 <Card 

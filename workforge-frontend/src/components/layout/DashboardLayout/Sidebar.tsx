@@ -65,6 +65,11 @@ export const Sidebar: React.FC = () => {
     return [...(roleItems[user.role] || []), ...commonItems];
   }, [user, baseRolePath]);
 
+  const settingsPath = useMemo(() => {
+    if (!user) return '/';
+    return user.role === UserRole.ADMIN ? '/admin/dashboard' : `${baseRolePath}/settings`;
+  }, [user, baseRolePath]);
+
   return (
     // Fixed Sidebar - Always visible on desktop
     <aside className="hidden lg:flex lg:flex-col w-64 bg-slate-900 border-r border-slate-800 h-screen overflow-hidden">
@@ -107,7 +112,7 @@ export const Sidebar: React.FC = () => {
       <div className="border-t border-slate-800 p-4 space-y-2 flex-shrink-0">
         {/* Settings */}
         <NavLink
-          to={`${baseRolePath}/settings`}
+          to={settingsPath}
           className={({ isActive }) =>
             `flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
               isActive

@@ -84,7 +84,7 @@ export const EmployerJobDetail: React.FC = () => {
         <div className="flex items-center space-x-2">
           <Button
             variant="outline"
-            onClick={() => navigate(`/employer/jobs/${jobId}/edit`)}
+            onClick={() => navigate(`/employer/jobs/${jobId}/preview`)}
             leftIcon={<PencilIcon className="w-4 h-4" />}
             className="rounded-xl border border-[#E2E8F0] bg-white text-[#0F172A] hover:bg-[#F8FAFC]"
           >

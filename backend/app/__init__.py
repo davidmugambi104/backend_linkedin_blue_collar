@@ -6,6 +6,7 @@ from flask_migrate import Migrate
 import logging
 from logging.handlers import RotatingFileHandler
 import os
+from sqlalchemy import text
 
 from .config import config_by_name
 from .extensions import db, jwt, migrate, socketio, limiter
@@ -13,6 +14,58 @@ from .routes import register_blueprints
 from .db_safety import register_database_safety
 from .security_middleware import register_security_middleware
 from flasgger import Swagger
+
+
+def _configure_limiter_storage_fallback(app):
+    configured_uri = app.config.get("RATELIMIT_STORAGE_URI", "")
+    if not isinstance(configured_uri, str) or not configured_uri.startswith("redis://"):
+        return
+
+    try:
+        import redis
+        client = redis.Redis.from_url(configured_uri, decode_responses=True)
+        client.ping()
+    except Exception as exc:
+        app.config["RATELIMIT_STORAGE_URI"] = "memory://"
+        app.logger.warning(
+            "Rate limiter storage fallback enabled (memory://) because Redis is unavailable: %s",
+            str(exc),
+        )
+
+
+def _ensure_sqlite_schema_compatibility(app):
+    db_uri = str(app.config.get("SQLALCHEMY_DATABASE_URI") or "")
+    if not db_uri.startswith("sqlite"):
+        return
+
+    try:
+        with app.app_context():
+            columns = db.session.execute(text("PRAGMA table_info(users)")).fetchall()
+            column_names = {str(row[1]) for row in columns}
+            if "admin_role" not in column_names:
+                db.session.execute(
+                    text("ALTER TABLE users ADD COLUMN admin_role VARCHAR(20) DEFAULT 'OPS_ADMIN'")
+                )
+
+            db.session.execute(
+                text("UPDATE users SET admin_role='SUPER_ADMIN' WHERE admin_role='super_admin'")
+            )
+            db.session.execute(
+                text("UPDATE users SET admin_role='OPS_ADMIN' WHERE admin_role='ops_admin'")
+            )
+            db.session.execute(
+                text("UPDATE users SET admin_role='TRUST_SAFETY' WHERE admin_role='trust_safety'")
+            )
+            db.session.execute(
+                text("UPDATE users SET admin_role='FINANCE' WHERE admin_role='finance'")
+            )
+            db.session.execute(
+                text("UPDATE users SET admin_role='OPS_ADMIN' WHERE lower(role)='admin' AND (admin_role IS NULL OR admin_role='')")
+            )
+            db.session.commit()
+            app.logger.warning("Applied SQLite schema compatibility fix for users.admin_role")
+    except Exception as exc:
+        app.logger.warning("SQLite schema compatibility check skipped/failed: %s", str(exc))
 
 
 def create_app(config_name=None):
@@ -24,8 +77,11 @@ def create_app(config_name=None):
         config_name = os.getenv("FLASK_ENV", "development")
     app.config.from_object(config_by_name[config_name])
 
+    _configure_limiter_storage_fallback(app)
+
     # Initialize extensions
     db.init_app(app)
+    _ensure_sqlite_schema_compatibility(app)
     register_database_safety(app)
     jwt.init_app(app)
     migrate.init_app(app, db)

@@ -30,6 +30,9 @@ const Dashboard: React.FC = () => {
 
   const recentApplications = applications?.slice(0, 5) || [];
   const topRecommendedJobs = recommendedJobs?.slice(0, 3) || [];
+  const pendingApplicationsCount = stats?.application_status_counts?.[APPLICATION_STATUS.PENDING] || 0;
+  const acceptedApplicationsCount = stats?.application_status_counts?.[APPLICATION_STATUS.ACCEPTED] || 0;
+  const profileCompleted = !!stats?.verification_status;
 
   const getStatusColor = (status: string): string => {
     switch (status) {
@@ -107,7 +110,7 @@ const Dashboard: React.FC = () => {
                 <div>
                   <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Pending</p>
                   <p className="mt-1 text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
-                    {stats?.pending_count || 0}
+                    {pendingApplicationsCount}
                   </p>
                 </div>
                 <div className="w-12 h-12 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
@@ -122,7 +125,7 @@ const Dashboard: React.FC = () => {
                 <div>
                   <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Accepted</p>
                   <p className="mt-1 text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
-                    {stats?.accepted_count || 0}
+                    {acceptedApplicationsCount}
                   </p>
                 </div>
                 <div className="w-12 h-12 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
@@ -177,7 +180,7 @@ const Dashboard: React.FC = () => {
               {recentApplications.map((app: any) => (
                 <Link 
                   key={app.id} 
-                  to={`/worker/applications/${app.id}`}
+                  to={app.job_id ? `/jobs/${app.job_id}` : '/worker/applications'}
                   className="block p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
                 >
                   <div className="flex items-center justify-between gap-3">
@@ -222,7 +225,7 @@ const Dashboard: React.FC = () => {
               {topRecommendedJobs.map((job: any) => (
                 <Link 
                   key={job.id} 
-                  to={`/worker/jobs/${job.id}`}
+                  to={`/jobs/${job.id}`}
                   className="block p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
                 >
                   <div className="flex items-start justify-between gap-3">
@@ -253,7 +256,7 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Profile Completion Prompt */}
-      {stats?.profile_completed === false && (
+      {!profileCompleted && (
         <Card className="p-4 lg:p-6 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">

@@ -69,7 +69,7 @@ export const Sidebar: React.FC = () => {
     { name: 'Payments', to: '/admin/payments', icon: CurrencyDollarIcon },
     { name: 'Verifications', to: '/admin/verifications', icon: ShieldCheckIcon, badge: 8 },
     { name: 'Reports', to: '/admin/reports', icon: ChartBarIcon },
-    { name: 'Settings', to: '/admin/settings', icon: Cog6ToothIcon },
+    { name: 'Settings', to: '/admin/dashboard', icon: Cog6ToothIcon },
   ];
 
   return (

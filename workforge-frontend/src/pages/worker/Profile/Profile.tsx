@@ -246,13 +246,13 @@ export const WorkerProfile: React.FC = () => {
                 </div>
                 <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50">
                   <p className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
-                    {profile?.success_rate || 0}%
+                    {profile?.is_verified ? 100 : 0}%
                   </p>
                   <p className="text-sm text-gray-500 dark:text-gray-400">Success Rate</p>
                 </div>
                 <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50">
                   <p className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
-                    {profile?.response_rate || 0}%
+                    {profile?.years_experience ? Math.min(100, profile.years_experience * 10) : 0}%
                   </p>
                   <p className="text-sm text-gray-500 dark:text-gray-400">Response Rate</p>
                 </div>

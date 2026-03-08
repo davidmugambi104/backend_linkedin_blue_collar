@@ -4,6 +4,8 @@
 import React, { useState } from 'react';
 import { MagnifyingGlassIcon, BellIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
 import { Link } from 'react-router-dom';
+import { useAuth } from '@context/AuthContext';
+import { UserRole } from '@types';
 
 interface HeaderProps {
   title?: string;
@@ -11,6 +13,14 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = () => {
   const [searchQuery, setSearchQuery] = useState('');
+  const { user } = useAuth();
+
+  const settingsPath =
+    user?.role === UserRole.WORKER
+      ? '/worker/settings'
+      : user?.role === UserRole.EMPLOYER
+      ? '/employer/settings'
+      : '/admin/settings';
 
   return (
     <header className="sticky top-0 z-30 px-4 sm:px-6 py-4">
@@ -48,7 +58,7 @@ export const Header: React.FC<HeaderProps> = () => {
           <div className="flex items-center gap-1">
             {/* Settings */}
             <Link
-              to="/settings"
+              to={settingsPath}
               className="
                 p-2 rounded-xl 
                 text-slate-600 dark:text-slate-400 

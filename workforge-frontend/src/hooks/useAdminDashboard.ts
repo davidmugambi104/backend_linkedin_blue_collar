@@ -54,6 +54,6 @@ export const useAuditLog = (params?: {
   return useQuery({
     queryKey: ['admin', 'audit-log', params],
     queryFn: () => adminDashboardService.getAuditLog(params),
-    keepPreviousData: true,
+    placeholderData: (previousData) => previousData,
   });
 };

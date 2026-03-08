@@ -124,7 +124,7 @@ const Profile: React.FC = () => {
                   <span className="text-gray-500 dark:text-gray-400">
                     Member since {profile?.created_at ? formatDate(profile.created_at) : 'Unknown'}
                   </span>
-                  {profile?.is_verified && (
+                  {(profile?.verification_score || 0) > 0 && (
                     <>
                       <span className="text-gray-400">•</span>
                       <Badge variant="success" className="flex items-center gap-1">
@@ -179,7 +179,7 @@ const Profile: React.FC = () => {
             </div>
             <div>
               <p className="text-sm text-gray-500 dark:text-gray-400">Workers Hired</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{profile?.workers_hired || 0}</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{profile?.total_jobs || 0}</p>
             </div>
           </div>
         </Card>

@@ -15,7 +15,7 @@ import { Button } from '@components/ui/Button';
 import { Input } from '@components/ui/Input';
 import { Badge } from '@components/ui/Badge';
 import { Skeleton } from '@components/ui/Skeleton';
-import { Job, JobStatus } from '@types';
+import { JobStatus } from '@types';
 import { useJobsPage } from './useJobsPage';
 import { formatDate, formatCurrency } from '@lib/utils/format';
 
@@ -176,7 +176,7 @@ export const WorkerJobs: React.FC = () => {
         </Card>
       ) : (
         <div className="space-y-4">
-          {jobs.map((job: Job) => (
+          {jobs.map((job) => (
             <Link key={job.id} to={`/jobs/${job.id}`} className="block">
               <Card 
                 className="p-4 lg:p-6 hover:shadow-lg transition-all duration-200 hover:border-primary-300 dark:hover:border-primary-700"

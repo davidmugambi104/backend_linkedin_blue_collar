@@ -242,7 +242,7 @@ const Applications: React.FC = () => {
                         />
                       ))}
                       <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">
-                        ({selectedApp.worker?.total_jobs_completed || 0} jobs completed)
+                        ({selectedApp.worker?.completed_jobs || 0} jobs completed)
                       </span>
                     </div>
 
@@ -263,10 +263,10 @@ const Applications: React.FC = () => {
                     </div>
 
                     {/* Cover Note */}
-                    {selectedApp.cover_note && (
+                    {selectedApp.cover_letter && (
                       <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
                         <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cover Note</p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">{selectedApp.cover_note}</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">{selectedApp.cover_letter}</p>
                       </div>
                     )}
 
