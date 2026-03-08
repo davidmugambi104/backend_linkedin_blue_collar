@@ -86,7 +86,7 @@ const Profile: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 employer-page-m3">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -106,7 +106,7 @@ const Profile: React.FC = () => {
       </div>
 
       {/* Profile Header Card */}
-      <Card className="p-4 lg:p-6 employer-fintech-panel">
+      <Card className="p-4 lg:p-6 employer-m3-card">
         <div className="flex flex-col sm:flex-row sm:items-start gap-6">
           {/* Avatar */}
           <div className="w-20 h-20 rounded-2xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
@@ -198,7 +198,7 @@ const Profile: React.FC = () => {
       </div>
 
       {/* Contact Information */}
-      <Card className="p-4 lg:p-6 employer-fintech-panel">
+      <Card className="p-4 lg:p-6 employer-m3-card">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
           Contact Information
         </h3>

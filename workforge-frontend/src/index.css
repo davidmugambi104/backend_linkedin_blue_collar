@@ -425,4 +425,53 @@
     padding: 6px 8px;
     font-size: 12px;
   }
+
+  .employer-m3 .employer-fintech-panel {
+    background: #FFFFFF !important;
+    border: 1px solid #E9EDF2 !important;
+    box-shadow: none !important;
+    color: #1A1A1A !important;
+  }
+
+  .employer-m3 [class*='text-[#0F172A]'] {
+    color: #1A1A1A !important;
+  }
+
+  .employer-m3 [class*='text-[#64748B]'] {
+    color: rgba(26, 26, 26, 0.72) !important;
+  }
+
+  .employer-m3 [class*='text-[#2563EB]'] {
+    color: #0A2540 !important;
+  }
+
+  .employer-m3 [class*='bg-[#2563EB]'] {
+    background-color: #0A2540 !important;
+  }
+
+  .employer-m3 [class*='bg-[#2563EB]/10'] {
+    background-color: rgba(10, 37, 64, 0.1) !important;
+  }
+
+  .employer-m3 [class*='border-[#E2E8F0]'] {
+    border-color: #E9EDF2 !important;
+  }
+
+  .employer-m3 [class*='bg-[#F8FAFC]'] {
+    background-color: #F8FAFC !important;
+  }
+
+  .employer-m3 [class*='hover:bg-[#F8FAFC]']:hover {
+    background-color: #F8FAFC !important;
+  }
+
+  .employer-m3 [class*='hover:bg-[#1E3A8A]']:hover {
+    background-color: #081D32 !important;
+  }
+
+  .employer-m3 .rounded-2xl,
+  .employer-m3 .rounded-xl,
+  .employer-m3 .rounded-lg {
+    border-radius: 12px;
+  }
 }

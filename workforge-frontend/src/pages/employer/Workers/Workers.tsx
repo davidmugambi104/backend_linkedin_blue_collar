@@ -29,7 +29,7 @@ const Workers: React.FC = () => {
   }, [workers, searchQuery]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 employer-page-m3">
       <div>
         <h1 className="text-3xl font-bold text-[#0F172A]">Browse Workers</h1>
         <p className="mt-2 text-[#64748B]">Find skilled workers for your projects</p>

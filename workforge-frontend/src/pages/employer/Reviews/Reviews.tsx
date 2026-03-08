@@ -57,14 +57,14 @@ const Reviews: React.FC = () => {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 employer-page-m3">
       <div>
         <h1 className="text-3xl font-bold text-[#0F172A]">Reviews & Ratings</h1>
         <p className="mt-2 text-[#64748B]">See what workers say about your services</p>
       </div>
 
       {/* Rating Summary */}
-      <Card className="bg-white border border-[#E2E8F0] rounded-2xl p-8 employer-fintech-panel">
+      <Card className="bg-white border border-[#E2E8F0] rounded-2xl p-8 employer-m3-card">
         <div className="flex items-center space-x-8">
           <div>
             <p className="text-6xl font-bold text-[#0F172A]">{averageRating}</p>
@@ -104,7 +104,7 @@ const Reviews: React.FC = () => {
       <div className="space-y-4">
         <h2 className="text-xl font-semibold text-[#0F172A]">Recent Reviews</h2>
         {reviews.map(review => (
-          <Card key={review.id} className="bg-white border border-[#E2E8F0] rounded-2xl p-6 hover:shadow-md transition employer-fintech-panel">
+          <Card key={review.id} className="bg-white border border-[#E2E8F0] rounded-2xl p-6 hover:shadow-md transition employer-m3-card">
             <div className="flex items-start justify-between mb-3">
               <div>
                 <h3 className="font-semibold text-[#0F172A]">{review.workerName}</h3>

@@ -3,18 +3,22 @@
  */
 import React, { useState } from 'react';
 import { MagnifyingGlassIcon, BellIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
+import { MoonIcon, SunIcon } from '@heroicons/react/24/solid';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@context/AuthContext';
 import { UserRole } from '@types';
+import { uiStore } from '@store/ui.store';
 
 interface HeaderProps {
   title?: string;
+  className?: string;
 }
 
-export const Header: React.FC<HeaderProps> = () => {
+export const Header: React.FC<HeaderProps> = ({ className }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const { user } = useAuth();
   const isEmployer = user?.role === UserRole.EMPLOYER;
+  const { theme, setTheme } = uiStore();
 
   const settingsPath =
     user?.role === UserRole.WORKER
@@ -24,16 +28,16 @@ export const Header: React.FC<HeaderProps> = () => {
       : '/admin/settings';
 
   return (
-    <header className="sticky top-0 z-30 px-4 sm:px-6 py-4">
+    <header className={`sticky top-0 z-30 px-4 sm:px-6 py-4 ${className || ''}`}>
       <div className="max-w-7xl mx-auto">
         {/* Glassmorphism Search & Notifications Bar */}
         <div className={`
-          backdrop-blur-xl bg-white/70 dark:bg-slate-900/70 
-          border border-blue-100/50 dark:border-slate-700/50 
+          bg-white dark:bg-slate-900
+          border border-[#E9EDF2] dark:border-slate-700/50 
           rounded-2xl px-4 py-3 
           flex items-center gap-3 sm:gap-4 
           shadow-sm hover:shadow-md transition-all duration-300
-          ${isEmployer ? 'bg-white/12 border-white/20 shadow-lg shadow-black/20' : ''}
+          ${isEmployer ? 'bg-white border-[#E9EDF2] shadow-none' : ''}
         `}>
           {/* Search Bar */}
           <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -49,7 +53,7 @@ export const Header: React.FC<HeaderProps> = () => {
                 placeholder-slate-500 dark:placeholder-slate-400 
                 w-full text-sm font-medium
                 min-w-0
-                ${isEmployer ? 'text-white placeholder:text-white/60' : ''}
+                ${isEmployer ? 'text-[#1A1A1A] placeholder:text-[#5B6675]' : ''}
               `}
             />
           </div>
@@ -59,6 +63,14 @@ export const Header: React.FC<HeaderProps> = () => {
 
           {/* Right side actions */}
           <div className="flex items-center gap-1">
+            <button
+              onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+              className="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-primary-500/10 transition-all duration-200"
+              aria-label="Toggle dark mode"
+            >
+              {theme === 'light' ? <MoonIcon className="w-5 h-5" /> : <SunIcon className="w-5 h-5" />}
+            </button>
+
             {/* Settings */}
             <Link
               to={settingsPath}

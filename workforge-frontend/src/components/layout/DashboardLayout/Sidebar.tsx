@@ -16,7 +16,11 @@ import {
 import { useAuth } from '@context/AuthContext';
 import { UserRole } from '@types';
 
-export const Sidebar: React.FC = () => {
+interface SidebarProps {
+  className?: string;
+}
+
+export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
   const { user, logout } = useAuth();
   const isEmployer = user?.role === UserRole.EMPLOYER;
 
@@ -74,11 +78,11 @@ export const Sidebar: React.FC = () => {
   return (
     // Fixed Sidebar - Always visible on desktop
     <aside
-      className={`hidden lg:flex lg:flex-col w-64 h-screen overflow-hidden ${
+      className={`hidden lg:flex lg:flex-col h-screen overflow-hidden ${
         isEmployer
-          ? 'bg-gradient-to-b from-[#081326] via-[#0B1730] to-[#101b33] border-r border-white/10'
-          : 'bg-slate-900 border-r border-slate-800'
-      }`}
+          ? 'group w-[88px] hover:w-72 transition-all duration-200 bg-[#0A2540] border-r border-white/10'
+          : 'w-64 bg-slate-900 border-r border-slate-800'
+      } ${className || ''}`}
     >
       {/* Logo Section */}
       <div
@@ -90,7 +94,7 @@ export const Sidebar: React.FC = () => {
           <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-primary-600 rounded-lg flex items-center justify-center">
             <span className="text-white font-bold text-lg">W</span>
           </div>
-          <h2 className={`text-xl font-bold tracking-tight ${isEmployer ? 'text-white/95' : 'text-white'}`}>
+          <h2 className={`text-xl font-bold tracking-tight whitespace-nowrap transition-all duration-200 ${isEmployer ? 'text-white/95 opacity-0 max-w-0 group-hover:opacity-100 group-hover:max-w-48' : 'text-white'}`}>
             WorkForge
           </h2>
         </div>
@@ -108,7 +112,7 @@ export const Sidebar: React.FC = () => {
                 `flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
                   isActive
                     ? isEmployer
-                      ? 'bg-white/15 text-white border border-white/20 shadow-md shadow-black/20'
+                      ? 'bg-white/10 text-white border-l-4 border-l-white border border-white/15 shadow-md shadow-black/20'
                       : 'bg-primary-500/20 text-primary-400 border border-primary-500/30 font-bold'
                     : isEmployer
                       ? 'text-slate-300 hover:bg-white/10 hover:text-white border border-transparent font-light'
@@ -117,7 +121,7 @@ export const Sidebar: React.FC = () => {
               }
             >
               <Icon className="w-5 h-5 flex-shrink-0" />
-              <span>{item.name}</span>
+              <span className={`whitespace-nowrap transition-all duration-200 ${isEmployer ? 'opacity-0 max-w-0 group-hover:opacity-100 group-hover:max-w-48 overflow-hidden' : ''}`}>{item.name}</span>
             </NavLink>
           );
         })}
@@ -145,7 +149,7 @@ export const Sidebar: React.FC = () => {
           }
         >
           <Cog6ToothIcon className="w-5 h-5 flex-shrink-0" />
-          <span className="font-medium">Settings</span>
+          <span className={`font-medium whitespace-nowrap transition-all duration-200 ${isEmployer ? 'opacity-0 max-w-0 group-hover:opacity-100 group-hover:max-w-48 overflow-hidden' : ''}`}>Settings</span>
         </NavLink>
 
         {/* Logout */}
@@ -158,7 +162,7 @@ export const Sidebar: React.FC = () => {
           }`}
         >
           <ArrowRightOnRectangleIcon className="w-5 h-5 flex-shrink-0" />
-          <span className="font-medium">Logout</span>
+          <span className={`font-medium whitespace-nowrap transition-all duration-200 ${isEmployer ? 'opacity-0 max-w-0 group-hover:opacity-100 group-hover:max-w-48 overflow-hidden' : ''}`}>Logout</span>
         </button>
       </div>
     </aside>

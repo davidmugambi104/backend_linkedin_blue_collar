@@ -30,10 +30,7 @@ export const DashboardLayout = () => {
       {/* Main Content */}
       <div className="flex flex-col flex-1 overflow-hidden w-full">
         {/* Header with Glassmorphism */}
-        <Header
-          variant={isEmployerDashboard || isAdminDashboard || isWorkerDashboard ? 'dashboard' : 'public'}
-          className={isEmployerDashboard ? 'employer-shell-header' : ''}
-        />
+        <Header className={isEmployerDashboard ? 'employer-shell-header' : ''} />
 
         {/* Page Content */}
         <main className={`flex-1 relative overflow-y-auto focus:outline-none bg-gradient-to-br from-slate-50 to-blue-50/30 dark:from-slate-900 dark:to-slate-800 ${isEmployerDashboard ? 'employer-shell-main' : ''}`}>

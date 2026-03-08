@@ -49,7 +49,7 @@ const Settings: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 employer-page-m3">
       {/* Page Header */}
       <div>
         <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
@@ -61,7 +61,7 @@ const Settings: React.FC = () => {
       </div>
 
       {/* Notification Settings */}
-      <Card className="p-4 lg:p-6 employer-fintech-panel">
+      <Card className="p-4 lg:p-6 employer-m3-card">
         <h2 className="flex items-center gap-3 text-lg font-semibold text-gray-900 dark:text-white mb-6">
           <BellIcon className="w-5 h-5" />
           Notification Preferences
@@ -100,7 +100,7 @@ const Settings: React.FC = () => {
       </Card>
 
       {/* Security Settings */}
-      <Card className="p-4 lg:p-6 employer-fintech-panel">
+      <Card className="p-4 lg:p-6 employer-m3-card">
         <h2 className="flex items-center gap-3 text-lg font-semibold text-gray-900 dark:text-white mb-6">
           <LockClosedIcon className="w-5 h-5" />
           Security & Privacy
@@ -181,7 +181,7 @@ const Settings: React.FC = () => {
       </Card>
 
       {/* Account Info */}
-      <Card className="p-4 lg:p-6 employer-fintech-panel">
+      <Card className="p-4 lg:p-6 employer-m3-card">
         <h2 className="flex items-center gap-3 text-lg font-semibold text-gray-900 dark:text-white mb-6">
           <EnvelopeIcon className="w-5 h-5" />
           Account Information
@@ -210,7 +210,7 @@ const Settings: React.FC = () => {
       </Card>
 
       {/* Danger Zone */}
-      <Card className="p-4 lg:p-6 border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/10 employer-fintech-panel">
+      <Card className="p-4 lg:p-6 border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/10 employer-m3-card">
         <h2 className="flex items-center gap-3 text-lg font-semibold text-red-600 dark:text-red-400 mb-4">
           <TrashIcon className="w-5 h-5" />
           Danger Zone
