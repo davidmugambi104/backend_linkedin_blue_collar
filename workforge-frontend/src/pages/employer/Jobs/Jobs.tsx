@@ -1,195 +1,364 @@
-import React, { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import {
+import { 
+  BriefcaseIcon, 
+  Squares2X2Icon, 
+  TableCellsIcon,
   PlusIcon,
+  MagnifyingGlassIcon,
+  FunnelIcon,
+  MapPinIcon,
+  CurrencyDollarIcon,
+  UsersIcon,
+  EyeIcon,
+  EllipsisHorizontalIcon,
   PencilIcon,
   TrashIcon,
-  EyeIcon,
-  ArrowsUpDownIcon,
-  BriefcaseIcon,
+  ArrowTopRightOnSquareIcon
 } from '@heroicons/react/24/outline';
-import { useEmployerJobs, useDeleteJob } from '@hooks/useEmployerJobs';
-import { Card } from '@components/ui/Card';
-import { Button } from '@components/ui/Button';
-import { Badge } from '@components/ui/Badge';
 
-type SortKey = 'title' | 'status' | 'created_at' | 'application_count';
+// Search Input Component
+const SearchInput: React.FC<{ 
+  value: string; 
+  onChange: (value: string) => void;
+  placeholder?: string;
+}> = ({ value, onChange, placeholder = 'Search...' }) => (
+  <div className="relative">
+    <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted" />
+    <input
+      type="text"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      className="input-field pl-12"
+    />
+  </div>
+);
 
-type SortState = {
-  key: SortKey;
-  order: 'asc' | 'desc';
-};
+// Filter Chip Component
+interface FilterChipProps {
+  label: string;
+  active?: boolean;
+  onClick?: () => void;
+  count?: number;
+}
 
-const Jobs: React.FC = () => {
-  const { data: jobs = [], isLoading, isError, error } = useEmployerJobs();
-  const deleteJobMutation = useDeleteJob();
-  const [sort, setSort] = useState<SortState>({ key: 'created_at', order: 'desc' });
+const FilterChip: React.FC<FilterChipProps> = ({ label, active, onClick, count }) => (
+  <button
+    onClick={onClick}
+    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+      active 
+        ? 'bg-navy text-white shadow-md' 
+        : 'bg-white text-muted border border-charcoal-200 hover:border-navy hover:text-navy'
+    }`}
+  >
+    {label}
+    {count !== undefined && (
+      <span className={`ml-2 px-1.5 py-0.5 rounded-full text-xs ${active ? 'bg-white/20' : 'bg-charcoal-100'}`}>
+        {count}
+      </span>
+    )}
+  </button>
+);
 
-  const handleDelete = (id: number) => {
-    if (confirm('Are you sure you want to delete this job?')) {
-      deleteJobMutation.mutate(id);
-    }
+// View Toggle Button
+const ViewToggle: React.FC<{ 
+  view: 'grid' | 'table'; 
+  onChange: (view: 'grid' | 'table') => void;
+}> = ({ view, onChange }) => (
+  <div className="flex items-center gap-1 bg-white border border-charcoal-200 rounded-lg p-1">
+    <button
+      onClick={() => onChange('table')}
+      className={`p-2 rounded-md transition-all ${
+        view === 'table' ? 'bg-navy text-white' : 'text-muted hover:text-navy'
+      }`}
+      aria-label="Table view"
+    >
+      <TableCellsIcon className="w-5 h-5" />
+    </button>
+    <button
+      onClick={() => onChange('grid')}
+      className={`p-2 rounded-md transition-all ${
+        view === 'grid' ? 'bg-navy text-white' : 'text-muted hover:text-navy'
+      }`}
+      aria-label="Grid view"
+    >
+      <Squares2X2Icon className="w-5 h-5" />
+    </button>
+  </div>
+);
+
+// Job Card Component (Grid View)
+interface JobCardProps {
+  job: JobItem;
+}
+
+const JobCard: React.FC<JobCardProps> = ({ job }) => {
+  const statusClasses: Record<string, string> = {
+    open: 'badge-success',
+    draft: 'badge-neutral',
+    closed: 'badge-error',
   };
-
-  const handleSort = (key: SortKey) => {
-    setSort((current) => {
-      if (current.key === key) {
-        return { key, order: current.order === 'asc' ? 'desc' : 'asc' };
-      }
-      return { key, order: 'asc' };
-    });
-  };
-
-  const sortedJobs = useMemo(() => {
-    const next = [...jobs];
-    next.sort((a, b) => {
-      const direction = sort.order === 'asc' ? 1 : -1;
-      if (sort.key === 'application_count') {
-        return (((a.application_count as number) || 0) - ((b.application_count as number) || 0)) * direction;
-      }
-      if (sort.key === 'created_at') {
-        return (new Date(a.created_at).getTime() - new Date(b.created_at).getTime()) * direction;
-      }
-      const left = String(a[sort.key] ?? '').toLowerCase();
-      const right = String(b[sort.key] ?? '').toLowerCase();
-      return left.localeCompare(right) * direction;
-    });
-    return next;
-  }, [jobs, sort]);
-
-  const statusClass = (status: string) => {
-    const normalized = status?.toLowerCase();
-    if (normalized === 'open' || normalized === 'published') {
-      return 'employer-status-published';
-    }
-    return 'employer-status-draft';
-  };
-
-  const toSentenceCase = (value: string) =>
-    value
-      .replace(/_/g, ' ')
-      .toLowerCase()
-      .replace(/(^\w)|\s\w/g, (text) => text.toUpperCase());
 
   return (
-    <div className="space-y-6 employer-page-m3">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-[#0A2540]">My Job Postings</h1>
-          <p className="mt-2 text-[#3C4A5B]">Manage and monitor your job listings</p>
+    <div className="solid-card p-5 group hover:border-navy/30">
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-xl bg-navy flex items-center justify-center text-white font-bold text-lg">
+            {job.title.charAt(0)}
+          </div>
+          <div>
+            <h4 className="font-semibold text-charcoal group-hover:text-navy transition-colors">{job.title}</h4>
+            <p className="text-sm text-muted">{job.location}</p>
+          </div>
         </div>
-        <Link to="/employer/jobs/post">
-          <Button className="flex items-center space-x-2 rounded-xl bg-[#0A2540] text-white hover:bg-[#081D32]">
-            <PlusIcon className="h-4 w-4" />
-            <span>Post New Job</span>
-          </Button>
+        <button className="icon-btn opacity-0 group-hover:opacity-100 transition-opacity">
+          <EllipsisHorizontalIcon className="w-5 h-5" />
+        </button>
+      </div>
+
+      <div className="flex items-center gap-4 mb-4">
+        <span className={`badge ${statusClasses[job.status.toLowerCase()]}`}>
+          {job.status}
+        </span>
+        <span className="text-sm text-muted flex items-center gap-1">
+          <CurrencyDollarIcon className="w-4 h-4" />
+          {job.salaryRange}
+        </span>
+      </div>
+
+      <div className="flex items-center justify-between pt-4 border-t border-charcoal-100">
+        <div className="flex items-center gap-4 text-sm text-muted">
+          <span className="flex items-center gap-1">
+            <UsersIcon className="w-4 h-4" />
+            {job.applicants} applicants
+          </span>
+          <span className="flex items-center gap-1">
+            <EyeIcon className="w-4 h-4" />
+            {job.views} views
+          </span>
+        </div>
+        <Link 
+          to={`/employer/jobs/${job.id}`}
+          className="text-sm font-medium text-navy hover:underline flex items-center gap-1"
+        >
+          View <ArrowTopRightOnSquareIcon className="w-4 h-4" />
+        </Link>
+      </div>
+    </div>
+  );
+};
+
+// Job Table Row Component
+const JobTableRow: React.FC<{ job: JobItem }> = ({ job }) => {
+  const statusClasses: Record<string, string> = {
+    open: 'badge-success',
+    draft: 'badge-neutral',
+    closed: 'badge-error',
+  };
+
+  return (
+    <tr className="interactive-row group">
+      <td className="font-medium text-charcoal">{job.title}</td>
+      <td>
+        <span className={`badge ${statusClasses[job.status.toLowerCase()]}`}>
+          {job.status}
+        </span>
+      </td>
+      <td className="text-charcoal">{job.applicants}</td>
+      <td className="text-charcoal">{job.views}</td>
+      <td className="text-charcoal">{job.salaryRange}</td>
+      <td className="text-muted">{job.location}</td>
+      <td>
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <Link to={`/employer/jobs/${job.id}`}>
+            <button className="icon-btn">
+              <EyeIcon className="w-4 h-4" />
+            </button>
+          </Link>
+          <button className="icon-btn">
+            <PencilIcon className="w-4 h-4" />
+          </button>
+          <button className="icon-btn text-error">
+            <TrashIcon className="w-4 h-4" />
+          </button>
+        </div>
+      </td>
+    </tr>
+  );
+};
+
+// Empty State Component
+const EmptyState: React.FC = () => (
+  <div className="empty-state">
+    <div className="w-16 h-16 rounded-full bg-charcoal-100 flex items-center justify-center mx-auto mb-4">
+      <BriefcaseIcon className="w-8 h-8 text-muted" />
+    </div>
+    <h3 className="text-lg font-semibold text-charcoal mb-2">No jobs found</h3>
+    <p className="text-muted mb-6">Adjust your search or create your first job posting.</p>
+    <Link to="/employer/post-job">
+      <button className="btn-primary">
+        <PlusIcon className="w-5 h-5" />
+        Create Job
+      </button>
+    </Link>
+  </div>
+);
+
+// Types & Mock Data
+interface JobItem {
+  id: number;
+  title: string;
+  status: string;
+  applicants: number;
+  views: number;
+  salaryRange: string;
+  location: string;
+}
+
+const mockJobs: JobItem[] = [
+  { id: 1, title: 'Journeyman Electrician', status: 'Open', applicants: 14, views: 140, salaryRange: '$34-$42/hr', location: 'Dallas, TX' },
+  { id: 2, title: 'Welding Specialist', status: 'Draft', applicants: 0, views: 28, salaryRange: '$28-$36/hr', location: 'Houston, TX' },
+  { id: 3, title: 'Heavy Equipment Operator', status: 'Open', applicants: 6, views: 91, salaryRange: '$30-$38/hr', location: 'San Antonio, TX' },
+  { id: 4, title: 'Senior Carpenter', status: 'Open', applicants: 22, views: 340, salaryRange: '$32-$40/hr', location: 'Austin, TX' },
+  { id: 5, title: 'Mason Specialist', status: 'Closed', applicants: 18, views: 256, salaryRange: '$26-$34/hr', location: 'Fort Worth, TX' },
+  { id: 6, title: 'Project Manager', status: 'Open', applicants: 8, views: 124, salaryRange: '$45-$55/hr', location: 'Dallas, TX' },
+];
+
+const Jobs = () => {
+  const [query, setQuery] = useState('');
+  const [filter, setFilter] = useState('all');
+  const [view, setView] = useState<'grid' | 'table'>('table');
+  const [page, setPage] = useState(1);
+
+  // Filter jobs
+  const filtered = useMemo(() => {
+    return mockJobs.filter((job) => {
+      const matchesQuery = job.title.toLowerCase().includes(query.toLowerCase());
+      const matchesFilter = filter === 'all' || job.status.toLowerCase() === filter;
+      return matchesQuery && matchesFilter;
+    });
+  }, [query, filter]);
+
+  // Stats for filter chips
+  const jobCounts = useMemo(() => ({
+    all: mockJobs.length,
+    open: mockJobs.filter(j => j.status.toLowerCase() === 'open').length,
+    draft: mockJobs.filter(j => j.status.toLowerCase() === 'draft').length,
+  }), []);
+
+  return (
+    <div className="animate-fade-in-up">
+      {/* Page Header */}
+      <div className="page-header flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="page-title">Jobs</h1>
+          <p className="page-subtitle">Manage your job listings and monitor demand</p>
+        </div>
+        <Link to="/employer/post-job">
+          <button className="btn-primary">
+            <PlusIcon className="w-5 h-5" />
+            Post New Job
+          </button>
         </Link>
       </div>
 
-      {isLoading && (
-        <Card className="employer-m3-card rounded-2xl p-8 text-center">
-          <p className="text-[#3C4A5B]">Loading jobs...</p>
-        </Card>
-      )}
-
-      {isError && (
-        <Card className="employer-m3-card rounded-2xl border-red-200 p-8 text-center">
-          <p className="text-red-700">Error loading jobs: {error?.message}</p>
-        </Card>
-      )}
-
-      {!isLoading && jobs.length === 0 && (
-        <Card className="employer-empty-state rounded-2xl p-12 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-[#E9EDF2] bg-white">
-            <BriefcaseIcon className="h-8 w-8 text-[#0A2540]" />
+      {/* Search & Filter Bar */}
+      <div className="solid-card p-4 mb-6">
+        <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+          <div className="flex-1">
+            <SearchInput 
+              value={query} 
+              onChange={setQuery}
+              placeholder="Search jobs by title..."
+            />
           </div>
-          <h2 className="text-lg font-semibold text-[#0A2540]">No jobs yet</h2>
-          <p className="mt-2 text-sm text-[#3C4A5B]">Post your first job to see applicants</p>
-          <Link to="/employer/jobs/post">
-            <Button size="sm" className="mt-5 rounded-xl bg-[#0A2540] text-white hover:bg-[#081D32]">
-              Create your first job posting
-            </Button>
-          </Link>
-        </Card>
-      )}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <FilterChip 
+                label="All" 
+                active={filter === 'all'} 
+                onClick={() => setFilter('all')}
+                count={jobCounts.all}
+              />
+              <FilterChip 
+                label="Open" 
+                active={filter === 'open'} 
+                onClick={() => setFilter('open')}
+                count={jobCounts.open}
+              />
+              <FilterChip 
+                label="Draft" 
+                active={filter === 'draft'} 
+                onClick={() => setFilter('draft')}
+                count={jobCounts.draft}
+              />
+            </div>
+            <ViewToggle view={view} onChange={setView} />
+          </div>
+        </div>
+      </div>
 
-      {!isLoading && jobs.length > 0 && (
-        <Card className="employer-m3-table-wrapper rounded-2xl p-0">
-          <div className="max-h-[560px] overflow-auto rounded-2xl">
+      {/* Jobs Display */}
+      {filtered.length === 0 ? (
+        <EmptyState />
+      ) : view === 'grid' ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {filtered.map((job) => (
+            <JobCard key={job.id} job={job} />
+          ))}
+        </div>
+      ) : (
+        <div className="solid-card overflow-hidden">
+          <div className="overflow-x-auto">
             <table className="employer-table">
               <thead>
                 <tr>
-                  <th>
-                    <button type="button" onClick={() => handleSort('title')} className="inline-flex items-center gap-1 text-[#0A2540]">
-                      Job
-                      <ArrowsUpDownIcon className="h-4 w-4" />
-                    </button>
-                  </th>
-                  <th>
-                    <button type="button" onClick={() => handleSort('status')} className="inline-flex items-center gap-1 text-[#0A2540]">
-                      Status
-                      <ArrowsUpDownIcon className="h-4 w-4" />
-                    </button>
-                  </th>
-                  <th>
-                    <button type="button" onClick={() => handleSort('application_count')} className="inline-flex items-center gap-1 text-[#0A2540]">
-                      Applicants
-                      <ArrowsUpDownIcon className="h-4 w-4" />
-                    </button>
-                  </th>
-                  <th>
-                    <button type="button" onClick={() => handleSort('created_at')} className="inline-flex items-center gap-1 text-[#0A2540]">
-                      Posted
-                      <ArrowsUpDownIcon className="h-4 w-4" />
-                    </button>
-                  </th>
-                  <th className="text-right">Actions</th>
+                  <th>Job Title</th>
+                  <th>Status</th>
+                  <th>Applicants</th>
+                  <th>Views</th>
+                  <th>Salary</th>
+                  <th>Location</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody>
-                {sortedJobs.map((job) => (
-                  <tr key={job.id}>
-                    <td>
-                      <div className="font-semibold text-[#1A1A1A]">{job.title}</div>
-                      <div className="line-clamp-1 text-sm text-[#3C4A5B]">{job.description}</div>
-                    </td>
-                    <td>
-                      <Badge variant="default" className={`capitalize ${statusClass(job.status)}`}>
-                        {toSentenceCase(job.status || 'draft')}
-                      </Badge>
-                    </td>
-                    <td className="text-[#1A1A1A]">{job.application_count || 0}</td>
-                    <td className="text-[#3C4A5B]">{new Date(job.created_at).toLocaleDateString()}</td>
-                    <td>
-                      <div className="flex items-center justify-end gap-1">
-                        <Link to={`/employer/jobs/${job.id}`}>
-                          <Button variant="ghost" size="sm" title="View job" className="text-[#0A2540]">
-                            <EyeIcon className="h-4 w-4" />
-                          </Button>
-                        </Link>
-                        <Link to={`/employer/jobs/${job.id}`}>
-                          <Button variant="ghost" size="sm" title="Edit job" className="text-[#0A2540]">
-                            <PencilIcon className="h-4 w-4" />
-                          </Button>
-                        </Link>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          title="Delete job"
-                          onClick={() => handleDelete(job.id)}
-                          disabled={deleteJobMutation.isPending}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <TrashIcon className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
+                {filtered.map((job) => (
+                  <JobTableRow key={job.id} job={job} />
                 ))}
               </tbody>
             </table>
           </div>
-        </Card>
+        </div>
+      )}
+
+      {/* Pagination */}
+      {filtered.length > 0 && (
+        <div className="flex items-center justify-between mt-6">
+          <p className="text-sm text-muted">
+            Showing {filtered.length} of {mockJobs.length} jobs
+          </p>
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="btn-secondary text-sm disabled:opacity-50"
+            >
+              Previous
+            </button>
+            <span className="px-4 py-2 text-sm font-medium text-charcoal">
+              Page {page} of 3
+            </span>
+            <button 
+              onClick={() => setPage(p => Math.min(3, p + 1))}
+              disabled={page === 3}
+              className="btn-secondary text-sm disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

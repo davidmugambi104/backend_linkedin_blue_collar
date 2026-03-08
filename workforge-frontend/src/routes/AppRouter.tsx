@@ -3,6 +3,7 @@ import { lazy, Suspense } from 'react';
 import { RootLayout } from '@components/layout/RootLayout';
 import { AuthLayout } from '@components/layout/AuthLayout';
 import { DashboardLayout } from '@components/layout/DashboardLayout';
+import { Layout as EmployerLayout } from '@components/organisms';
 import { useAuth } from '@context/AuthContext';
 import { UserRole } from '@types';
 import { LoadingScreen } from '@components/common/LoadingScreen';
@@ -106,6 +107,25 @@ const ProtectedDashboardLayout = ({
   return <DashboardLayout />;
 };
 
+const ProtectedEmployerLayout = () => {
+  const { isAuthenticated, hasRole, isLoading } = useAuth();
+  const location = useLocation();
+
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/auth/login" state={{ from: location }} replace />;
+  }
+
+  if (!hasRole(UserRole.EMPLOYER)) {
+    return <Navigate to="/" replace />;
+  }
+
+  return <EmployerLayout />;
+};
+
 /**
  * SUSPENSION FALLBACK
  * Shown while lazy components are loading
@@ -174,9 +194,7 @@ export const AppRouter = () => {
             ======================================== */}
         <Route
           path="employer"
-          element={
-            <ProtectedDashboardLayout allowedRoles={UserRole.EMPLOYER} />
-          }
+          element={<ProtectedEmployerLayout />}
         >
           {/* Redirect /employer to /employer/dashboard */}
           <Route index element={<Navigate to="dashboard" replace />} />

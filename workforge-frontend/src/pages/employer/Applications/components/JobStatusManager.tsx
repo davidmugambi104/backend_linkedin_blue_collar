@@ -18,24 +18,24 @@ export const JobStatusManager: React.FC<JobStatusManagerProps> = ({ job, onStatu
   const isExpired = job.status === JobStatus.EXPIRED;
 
   return (
-    <Card className="bg-white border border-[#E2E8F0] rounded-2xl">
+    <Card className="employer-bg-surface border employer-border rounded-2xl">
       <CardBody>
         <div className="space-y-4">
           <div>
-            <h3 className="text-lg font-semibold text-[#0F172A] mb-4">
+            <h3 className="text-lg font-semibold employer-text-primary mb-4">
               Job Status
             </h3>
           </div>
 
-          <div className="flex items-center gap-3 p-4 rounded-lg bg-[#F8FAFC]">
+          <div className="flex items-center gap-3 p-4 rounded-lg employer-bg-muted">
             {isOpen && (
               <>
                 <CheckCircleIcon className="h-6 w-6 text-green-600" />
                 <div>
-                  <p className="font-semibold text-[#0F172A]">
+                  <p className="font-semibold employer-text-primary">
                     Open
                   </p>
-                  <p className="text-sm text-[#64748B]">
+                  <p className="text-sm employer-text-muted">
                     This job is open and receiving applications
                   </p>
                 </div>
@@ -43,12 +43,12 @@ export const JobStatusManager: React.FC<JobStatusManagerProps> = ({ job, onStatu
             )}
             {isInProgress && (
               <>
-                <EyeIcon className="h-6 w-6 text-[#2563EB]" />
+                <EyeIcon className="h-6 w-6 employer-text-accent" />
                 <div>
-                  <p className="font-semibold text-[#0F172A]">
+                  <p className="font-semibold employer-text-primary">
                     In Progress
                   </p>
-                  <p className="text-sm text-[#64748B]">
+                  <p className="text-sm employer-text-muted">
                     A worker has been hired and the job is in progress
                   </p>
                 </div>
@@ -58,10 +58,10 @@ export const JobStatusManager: React.FC<JobStatusManagerProps> = ({ job, onStatu
               <>
                 <CheckCircleIcon className="h-6 w-6 text-green-600" />
                 <div>
-                  <p className="font-semibold text-[#0F172A]">
+                  <p className="font-semibold employer-text-primary">
                     Completed
                   </p>
-                  <p className="text-sm text-[#64748B]">
+                  <p className="text-sm employer-text-muted">
                     This job has been completed
                   </p>
                 </div>
@@ -71,10 +71,10 @@ export const JobStatusManager: React.FC<JobStatusManagerProps> = ({ job, onStatu
               <>
                 <XCircleIcon className="h-6 w-6 text-red-600" />
                 <div>
-                  <p className="font-semibold text-[#0F172A]">
+                  <p className="font-semibold employer-text-primary">
                     Cancelled
                   </p>
-                  <p className="text-sm text-[#64748B]">
+                  <p className="text-sm employer-text-muted">
                     This job was cancelled
                   </p>
                 </div>
@@ -84,10 +84,10 @@ export const JobStatusManager: React.FC<JobStatusManagerProps> = ({ job, onStatu
               <>
                 <XCircleIcon className="h-6 w-6 text-yellow-600" />
                 <div>
-                  <p className="font-semibold text-[#0F172A]">
+                  <p className="font-semibold employer-text-primary">
                     Expired
                   </p>
-                  <p className="text-sm text-[#64748B]">
+                  <p className="text-sm employer-text-muted">
                     This job expired and is no longer accepting applications
                   </p>
                 </div>
@@ -95,12 +95,12 @@ export const JobStatusManager: React.FC<JobStatusManagerProps> = ({ job, onStatu
             )}
             {!isOpen && !isInProgress && !isCompleted && !isCancelled && !isExpired && (
               <>
-                <EyeIcon className="h-6 w-6 text-[#64748B]" />
+                <EyeIcon className="h-6 w-6 employer-text-muted" />
                 <div>
-                  <p className="font-semibold text-[#0F172A]">
+                  <p className="font-semibold employer-text-primary">
                     {job.status || 'Unknown'}
                   </p>
-                  <p className="text-sm text-[#64748B]">
+                  <p className="text-sm employer-text-muted">
                     Current job status
                   </p>
                 </div>
@@ -108,11 +108,11 @@ export const JobStatusManager: React.FC<JobStatusManagerProps> = ({ job, onStatu
             )}
           </div>
 
-          <div className="flex gap-2 pt-4 border-t border-[#E2E8F0]">
+          <div className="flex gap-2 pt-4 border-t employer-border">
             {onStatusChange && isOpen && (
               <Button
                 variant="outline"
-                className="rounded-xl border border-[#E2E8F0] bg-white text-[#0F172A] hover:bg-[#F8FAFC]"
+                className="rounded-xl border employer-border employer-bg-surface employer-text-primary hover:employer-bg-muted"
                 onClick={() => onStatusChange(JobStatus.CANCELLED)}
               >
                 Cancel Job
@@ -120,7 +120,7 @@ export const JobStatusManager: React.FC<JobStatusManagerProps> = ({ job, onStatu
             )}
             {onStatusChange && isInProgress && (
               <Button
-                className="rounded-xl bg-[#2563EB] text-white shadow-sm hover:bg-[#1E3A8A] active:scale-95"
+                className="rounded-xl employer-button-primary shadow-sm active:scale-95"
                 onClick={() => onStatusChange(JobStatus.COMPLETED)}
               >
                 Mark Completed

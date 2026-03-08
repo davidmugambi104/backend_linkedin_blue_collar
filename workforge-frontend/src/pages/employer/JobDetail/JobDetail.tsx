@@ -1,217 +1,380 @@
-import React, { useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { StarIcon, MapPinIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
-import { Card } from '@components/ui/Card';
-import { Button } from '@components/ui/Button';
-import { Badge } from '@components/ui/Badge';
+import { useState } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { 
+  ArrowLeftIcon,
+  PencilIcon,
+  TrashIcon,
+  EyeIcon,
+  ShareIcon,
+  MapPinIcon,
+  CurrencyDollarIcon,
+  ClockIcon,
+  UsersIcon,
+  BriefcaseIcon,
+  CheckBadgeIcon,
+  EnvelopeIcon,
+  PhoneIcon,
+  EllipsisHorizontalIcon,
+  ArrowTopRightOnSquareIcon,
+  DocumentDuplicateIcon,
+  XMarkIcon,
+  ExclamationTriangleIcon
+} from '@heroicons/react/24/outline';
 
+// Badge Component
+const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
+  const config: Record<string, { class: string; label: string }> = {
+    open: { class: 'badge-success', label: 'Open' },
+    draft: { class: 'badge-neutral', label: 'Draft' },
+    closed: { class: 'badge-error', label: 'Closed' },
+    paused: { class: 'badge-warning', label: 'Paused' },
+  };
+  const { class: className, label } = config[status.toLowerCase()] || config.open;
+  return <span className={className}>{label}</span>;
+};
+
+// Action Button
+const ActionButton: React.FC<{
+  icon: React.ReactNode;
+  label: string;
+  onClick?: () => void;
+  variant?: 'primary' | 'secondary' | 'danger';
+}> = ({ icon, label, onClick, variant = 'primary' }) => {
+  const variants = {
+    primary: 'btn-primary',
+    secondary: 'btn-secondary',
+    danger: 'text-red-600 hover:bg-red-50',
+  };
+  return (
+    <button onClick={onClick} className={`${variants[variant]} text-sm`}>
+      {icon}
+      {label}
+    </button>
+  );
+};
+
+// Applicant Card
 interface Applicant {
   id: number;
   name: string;
-  title: string;
+  role: string;
+  applied: string;
+  status: string;
   rating: number;
-  completedJobs: number;
-  hourlyRate: number;
-  status: 'pending' | 'accepted' | 'rejected';
-  appliedAt: string;
 }
 
-const JobDetail: React.FC = () => {
-  const { id } = useParams();
-  const [applicants, setApplicants] = useState<Applicant[]>([
-    {
-      id: 1,
-      name: 'John Smith',
-      title: 'Master Plumber',
-      rating: 4.9,
-      completedJobs: 156,
-      hourlyRate: 75,
-      status: 'pending',
-      appliedAt: '2024-01-15',
-    },
-    {
-      id: 2,
-      name: 'Sarah Johnson',
-      title: 'Electrical Specialist',
-      rating: 4.8,
-      completedJobs: 89,
-      hourlyRate: 85,
-      status: 'accepted',
-      appliedAt: '2024-01-14',
-    },
-    {
-      id: 3,
-      name: 'Mike Davis',
-      title: 'HVAC Technician',
-      rating: 4.7,
-      completedJobs: 67,
-      hourlyRate: 65,
-      status: 'rejected',
-      appliedAt: '2024-01-13',
-    },
-  ]);
-
-  const job = {
-    id,
-    title: 'Plumbing Installation & Repair',
-    publishedAt: '2024-01-10',
-    budget: '$500 - $1500',
-    timeline: '3-5 days',
-    location: 'New York, NY',
-    description: 'We need an experienced plumber for a residential property renovation project. The main tasks include replacing old pipes, installing new fixtures, and ensuring all work meets local codes.',
-    requirements: [
-      'Licensed plumber with minimum 5 years experience',
-      'Knowledge of residential and commercial systems',
-      'Ability to read blueprints',
-      'Valid driver\'s license',
-      'Insurance and bonding',
-    ],
-    skills: ['Plumbing', 'Repairs', 'Installation', 'Code Compliance'],
-    views: 284,
-    applicants: applicants.length,
-  };
-
-  const handleApplicantAction = (applicantId: number, action: 'accept' | 'reject') => {
-    setApplicants(applicants.map(app =>
-      app.id === applicantId ? { ...app, status: action === 'accept' ? 'accepted' : 'rejected' } : app
-    ));
-  };
-
-  const statusBadge = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return <Badge variant="warning">Pending</Badge>;
-      case 'accepted':
-        return <Badge variant="success">Accepted</Badge>;
-      case 'rejected':
-        return <Badge variant="error">Rejected</Badge>;
-      default:
-        return null;
-    }
+const ApplicantCard: React.FC<{ applicant: Applicant }> = ({ applicant }) => {
+  const statusColors: Record<string, string> = {
+    shortlisted: 'badge-success',
+    pending: 'badge-warning',
+    rejected: 'badge-error',
+    reviewed: 'badge-info',
   };
 
   return (
-    <div className="space-y-6">
-      {/* Job Header */}
-      <Card className="bg-white border border-[#E2E8F0] rounded-2xl p-6 employer-fintech-panel">
-        <div className="flex items-start justify-between mb-4">
-          <div>
-            <h1 className="text-3xl font-bold text-[#0F172A] mb-2">{job.title}</h1>
-            <p className="text-[#64748B]">Posted on {job.publishedAt}</p>
-          </div>
-          <Button className="rounded-xl border border-[#E2E8F0] bg-white text-[#0F172A] hover:bg-[#F8FAFC]">Edit Job</Button>
+    <Link 
+      to={`/employer/applications`}
+      className="flex items-center gap-3 p-3 rounded-lg hover:bg-charcoal-50 transition-colors group"
+    >
+      <div className="w-10 h-10 rounded-full bg-navy-100 flex items-center justify-center text-navy font-semibold text-sm">
+        {applicant.name.split(' ').map(n => n[0]).join('')}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <p className="font-medium text-charcoal truncate group-hover:text-navy transition-colors">
+            {applicant.name}
+          </p>
+          <CheckBadgeIcon className="w-4 h-4 text-emerald-500 flex-shrink-0" />
         </div>
+        <p className="text-xs text-muted">{applicant.role} • {applicant.applied}</p>
+      </div>
+      <span className={`badge ${statusColors[applicant.status]} text-xs`}>
+        {applicant.status}
+      </span>
+    </Link>
+  );
+};
 
-        {/* Job Meta */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-[#E2E8F0]">
-          <div>
-            <p className="text-xs font-medium text-[#64748B] uppercase mb-1">Budget</p>
-            <p className="text-lg font-semibold text-[#0F172A]">{job.budget}</p>
-          </div>
-          <div>
-            <p className="text-xs font-medium text-[#64748B] uppercase mb-1">Timeline</p>
-            <p className="text-lg font-semibold text-[#0F172A]">{job.timeline}</p>
-          </div>
-          <div>
-            <p className="text-xs font-medium text-[#64748B] uppercase mb-1">Views</p>
-            <p className="text-lg font-semibold text-[#0F172A]">{job.views}</p>
-          </div>
-          <div>
-            <p className="text-xs font-medium text-[#64748B] uppercase mb-1">Applicants</p>
-            <p className="text-lg font-semibold text-[#0F172A]">{job.applicants}</p>
-          </div>
+// Stats Overview
+const StatsRow: React.FC<{ stats: { label: string; value: string; icon: React.ReactNode }[] }> = ({ stats }) => (
+  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+    {stats.map((stat) => (
+      <div key={stat.label} className="text-center p-4 bg-charcoal-50 rounded-xl">
+        <div className="w-10 h-10 rounded-lg bg-navy/10 flex items-center justify-center text-navy mx-auto mb-2">
+          {stat.icon}
         </div>
-      </Card>
+        <p className="text-xl font-bold text-charcoal">{stat.value}</p>
+        <p className="text-xs text-muted mt-1">{stat.label}</p>
+      </div>
+    ))}
+  </div>
+);
 
-      <div className="grid grid-cols-3 gap-6">
-        {/* Left Column - Job Details */}
-        <div className="col-span-2 space-y-6">
-          {/* Location & Skills */}
-          <Card className="bg-white border border-[#E2E8F0] rounded-2xl p-6 employer-fintech-panel">
-            <div className="space-y-4">
-              <div className="flex items-center space-x-3">
-                <MapPinIcon className="h-5 w-5 text-[#64748B]" />
-                <span className="text-[#0F172A]">{job.location}</span>
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-[#64748B] mb-2 uppercase tracking-wide">Required Skills</p>
-                <div className="flex flex-wrap gap-2">
-                  {job.skills.map(skill => (
-                    <Badge key={skill} variant="outline" className="border border-[#E2E8F0] text-[#64748B] bg-[#F8FAFC]">{skill}</Badge>
-                  ))}
-                </div>
-              </div>
+// Main JobDetail Component
+const JobDetail = () => {
+  const { jobId } = useParams();
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+
+  // Mock job data
+  const job = {
+    id: jobId || '1',
+    title: 'Commercial Electrician',
+    company: 'WorkForge Builders',
+    category: 'Electrical',
+    type: 'Full-time',
+    experience: 'Senior',
+    status: 'open',
+    description: `We are seeking an experienced Commercial Electrician to join our growing team. The ideal candidate will have extensive experience with commercial electrical systems, including:
+
+• Installation, maintenance, and repair of electrical systems in commercial buildings
+• Reading and interpreting blueprints, schematics, and diagrams
+• Working with PLCs and automated systems
+• Ensuring compliance with NEC codes and safety regulations
+• Mentoring junior electricians
+
+This is a great opportunity to join a established company with competitive benefits and growth opportunities.`,
+    requirements: [
+      '5+ years of commercial electrical experience',
+      'Valid Journeyman or Master Electrician license',
+      'OSHA 10-Hour Construction Safety certification',
+      'Experience with PLC programming preferred',
+      'Valid drivers license and reliable transportation',
+    ],
+    benefits: [
+      'Health, dental, and vision insurance',
+      '401(k) with company match',
+      'Paid time off',
+      'Professional development opportunities',
+      'Company truck and tools provided',
+    ],
+    payMin: 35,
+    payMax: 45,
+    payPeriod: 'hourly',
+    city: 'Dallas',
+    state: 'TX',
+    zip: '75201',
+    posted: '5 days ago',
+    expires: '30 days',
+    views: 432,
+    uniqueViews: 389,
+    applicants: 18,
+    shortlisted: 5,
+    hires: 0,
+  };
+
+  const applicants: Applicant[] = [
+    { id: 1, name: 'James Wilson', role: 'Electrician', applied: '2 hours ago', status: 'shortlisted', rating: 5 },
+    { id: 2, name: 'Sarah Chen', role: 'Electrician', applied: '5 hours ago', status: 'pending', rating: 4 },
+    { id: 3, name: 'Michael Brown', role: 'Electrician', applied: '1 day ago', status: 'reviewed', rating: 4 },
+    { id: 4, name: 'Emily Davis', role: 'Electrician', applied: '2 days ago', status: 'shortlisted', rating: 5 },
+    { id: 5, name: 'Robert Miller', role: 'Electrician', applied: '3 days ago', status: 'pending', rating: 3 },
+  ];
+
+  const stats = [
+    { label: 'Total Views', value: job.views.toString(), icon: <EyeIcon className="w-5 h-5" /> },
+    { label: 'Unique Views', value: job.uniqueViews.toString(), icon: <UsersIcon className="w-5 h-5" /> },
+    { label: 'Applicants', value: job.applicants.toString(), icon: <BriefcaseIcon className="w-5 h-5" /> },
+    { label: 'Shortlisted', value: job.shortlisted.toString(), icon: <CheckBadgeIcon className="w-5 h-5" /> },
+  ];
+
+  return (
+    <div className="animate-fade-in-up">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
+        <div className="flex items-start gap-4">
+          <Link to="/employer/jobs" className="mt-1">
+            <button className="icon-btn">
+              <ArrowLeftIcon className="w-5 h-5" />
+            </button>
+          </Link>
+          <div>
+            <div className="flex items-center gap-3 mb-1">
+              <h1 className="page-title">{job.title}</h1>
+              <StatusBadge status={job.status} />
             </div>
-          </Card>
+            <p className="text-sm text-muted">
+              {job.company} • Job #{job.id}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+          <button className="btn-secondary text-sm">
+            <ShareIcon className="w-4 h-4" />
+            Share
+          </button>
+          <button className="btn-secondary text-sm">
+            <DocumentDuplicateIcon className="w-4 h-4" />
+            Duplicate
+          </button>
+          <button 
+            onClick={() => setIsEditing(!isEditing)}
+            className="btn-primary text-sm"
+          >
+            <PencilIcon className="w-4 h-4" />
+            Edit Job
+          </button>
+        </div>
+      </div>
 
-          {/* Description */}
-          <Card className="bg-white border border-[#E2E8F0] rounded-2xl p-6 employer-fintech-panel">
-            <h2 className="text-xl font-semibold text-[#0F172A] mb-3">Job Description</h2>
-            <p className="text-[#64748B] leading-relaxed">{job.description}</p>
-          </Card>
+      {/* Stats */}
+      <div className="mb-6">
+        <StatsRow stats={stats} />
+      </div>
 
-          {/* Requirements */}
-          <Card className="bg-white border border-[#E2E8F0] rounded-2xl p-6 employer-fintech-panel">
-            <h2 className="text-xl font-semibold text-[#0F172A] mb-4">Requirements</h2>
-            <ul className="space-y-2">
-              {job.requirements.map((req, idx) => (
-                <li key={idx} className="flex items-start space-x-3">
-                  <CheckCircleIcon className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-                  <span className="text-[#0F172A]">{req}</span>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Main Content */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Job Description Card */}
+          <div className="solid-card p-6">
+            <h3 className="text-lg font-semibold text-charcoal mb-4">Job Description</h3>
+            <div className="prose prose-sm max-w-none text-charcoal whitespace-pre-line">
+              {job.description}
+            </div>
+          </div>
+
+          {/* Requirements Card */}
+          <div className="solid-card p-6">
+            <h3 className="text-lg font-semibold text-charcoal mb-4">Requirements</h3>
+            <ul className="space-y-3">
+              {job.requirements.map((req, index) => (
+                <li key={index} className="flex items-start gap-3">
+                  <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center mt-0.5 flex-shrink-0">
+                    <CheckBadgeIcon className="w-3 h-3 text-emerald-600" />
+                  </div>
+                  <span className="text-charcoal">{req}</span>
                 </li>
               ))}
             </ul>
-          </Card>
-        </div>
+          </div>
 
-        {/* Right Column - Applicants */}
-        <div className="col-span-1">
-          <Card className="bg-white border border-[#E2E8F0] rounded-2xl p-6 sticky top-6 employer-fintech-panel">
-            <h2 className="text-lg font-semibold text-[#0F172A] mb-4">Applicants ({job.applicants})</h2>
-            <div className="space-y-4 max-h-96 overflow-y-auto">
-              {applicants.map(applicant => (
-                <div key={applicant.id} className="p-3 border border-[#E2E8F0] rounded-lg">
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex-1">
-                      <h3 className="font-medium text-[#0F172A] text-sm">{applicant.name}</h3>
-                      <p className="text-xs text-[#64748B]">{applicant.title}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-1 mb-2">
-                    {[1, 2, 3, 4, 5].map(star => (
-                      <StarIcon
-                        key={star}
-                        className={`h-3 w-3 ${
-                          star <= Math.round(applicant.rating) ? 'text-yellow-400 fill-yellow-400' : 'text-[#E2E8F0]'
-                        }`}
-                      />
-                    ))}
-                    <span className="text-xs text-[#64748B] ml-1">{applicant.rating}</span>
-                  </div>
-                  <p className="text-xs text-[#64748B] mb-3">${applicant.hourlyRate}/hr • {applicant.completedJobs} jobs</p>
-                  <div className="mb-2">{statusBadge(applicant.status)}</div>
-                  {applicant.status === 'pending' && (
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => handleApplicantAction(applicant.id, 'accept')}
-                        className="flex-1 text-xs px-2 py-1 bg-[#2563EB] text-white rounded-lg hover:bg-[#1E3A8A] transition"
-                      >
-                        Accept
-                      </button>
-                      <button
-                        onClick={() => handleApplicantAction(applicant.id, 'reject')}
-                        className="flex-1 text-xs px-2 py-1 border border-[#E2E8F0] text-[#0F172A] rounded-lg hover:bg-[#F8FAFC] transition"
-                      >
-                        Reject
-                      </button>
-                    </div>
-                  )}
+          {/* Benefits Card */}
+          <div className="solid-card p-6">
+            <h3 className="text-lg font-semibold text-charcoal mb-4">Benefits</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {job.benefits.map((benefit, index) => (
+                <div key={index} className="flex items-center gap-3 p-3 bg-charcoal-50 rounded-lg">
+                  <CheckBadgeIcon className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+                  <span className="text-sm text-charcoal">{benefit}</span>
                 </div>
               ))}
             </div>
-          </Card>
+          </div>
+        </div>
+
+        {/* Sidebar */}
+        <div className="space-y-6">
+          {/* Quick Info */}
+          <div className="solid-card p-5">
+            <h4 className="font-semibold text-charcoal mb-4">Job Details</h4>
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-navy-50 flex items-center justify-center text-navy">
+                  <CurrencyDollarIcon className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted uppercase">Pay Range</p>
+                  <p className="font-medium text-charcoal">${job.payMin}-${job.payMax}/hr</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-navy-50 flex items-center justify-center text-navy">
+                  <MapPinIcon className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted uppercase">Location</p>
+                  <p className="font-medium text-charcoal">{job.city}, {job.state} {job.zip}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-navy-50 flex items-center justify-center text-navy">
+                  <BriefcaseIcon className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted uppercase">Type & Level</p>
+                  <p className="font-medium text-charcoal">{job.type} • {job.experience}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-navy-50 flex items-center justify-center text-navy">
+                  <ClockIcon className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted uppercase">Posted</p>
+                  <p className="font-medium text-charcoal">{job.posted}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Applicants */}
+          <div className="solid-card p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h4 className="font-semibold text-charcoal">Recent Applicants</h4>
+              <Link to="/employer/applications" className="text-sm text-navy font-medium hover:underline">
+                View all
+              </Link>
+            </div>
+            <div className="space-y-1">
+              {applicants.slice(0, 5).map((applicant) => (
+                <ApplicantCard key={applicant.id} applicant={applicant} />
+              ))}
+            </div>
+          </div>
+
+          {/* Danger Zone */}
+          <div className="solid-card p-5 border-red-200">
+            <h4 className="font-semibold text-red-600 mb-3 flex items-center gap-2">
+              <ExclamationTriangleIcon className="w-5 h-5" />
+              Danger Zone
+            </h4>
+            <div className="space-y-2">
+              <button className="w-full btn-secondary text-sm justify-start text-red-600 hover:bg-red-50 border-red-200">
+                <TrashIcon className="w-4 h-4" />
+                Close Job
+              </button>
+              <button 
+                onClick={() => setShowDeleteModal(true)}
+                className="w-full btn-ghost text-sm justify-start text-red-600 hover:bg-red-50"
+              >
+                Delete Job
+              </button>
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="solid-card p-6 max-w-md mx-4 animate-fade-in-up">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                <ExclamationTriangleIcon className="w-6 h-6 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-charcoal">Delete Job?</h3>
+                <p className="text-sm text-muted">This action cannot be undone.</p>
+              </div>
+            </div>
+            <p className="text-charcoal mb-6">
+              Are you sure you want to delete <strong>&quot;{job.title}&quot;</strong>? 
+              All applicant data will be permanently removed.
+            </p>
+            <div className="flex items-center justify-end gap-3">
+              <button 
+                onClick={() => setShowDeleteModal(false)}
+                className="btn-secondary"
+              >
+                Cancel
+              </button>
+              <button className="btn-primary bg-red-600 hover:bg-red-700">
+                Delete Job
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

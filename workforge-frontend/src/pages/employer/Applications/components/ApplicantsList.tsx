@@ -34,14 +34,14 @@ export const ApplicantsList: React.FC = () => {
 
   if (isLoading) {
     return (
-      <Card className="bg-white border border-[#E2E8F0] rounded-2xl">
+      <Card className="employer-bg-surface border employer-border rounded-2xl">
         <CardHeader>
-          <h3 className="text-xl font-semibold text-[#0F172A]">Applicants</h3>
+          <h3 className="text-xl font-semibold employer-text-primary">Applicants</h3>
         </CardHeader>
         <CardBody>
           <div className="space-y-4">
             {[...Array(3)].map((_, i) => (
-              <Skeleton key={i} className="h-32 bg-[#F1F5F9]" />
+              <Skeleton key={i} className="h-32 employer-bg-muted" />
             ))}
           </div>
         </CardBody>
@@ -50,9 +50,9 @@ export const ApplicantsList: React.FC = () => {
   }
 
   return (
-    <Card className="bg-white border border-[#E2E8F0] rounded-2xl">
+    <Card className="employer-bg-surface border employer-border rounded-2xl">
       <CardHeader>
-        <h3 className="text-xl font-semibold text-[#0F172A]">
+        <h3 className="text-xl font-semibold employer-text-primary">
           Applicants ({filteredApplications?.length || 0})
         </h3>
       </CardHeader>
@@ -65,15 +65,15 @@ export const ApplicantsList: React.FC = () => {
                 placeholder="Search applicants..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                leftIcon={<MagnifyingGlassIcon className="w-5 h-5 text-[#64748B]" />}
-                className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-full focus:ring-[#2563EB] focus:border-[#2563EB]"
+                leftIcon={<MagnifyingGlassIcon className="w-5 h-5 employer-text-muted" />}
+                className="employer-bg-muted border employer-border rounded-full employer-focus-accent"
               />
             </div>
             <div className="sm:w-48">
               <Select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="border border-[#E2E8F0] rounded-lg"
+                className="border employer-border rounded-lg"
               >
                 <option value="all">All Status</option>
                 <option value={ApplicationStatus.PENDING}>Pending</option>
@@ -87,7 +87,7 @@ export const ApplicantsList: React.FC = () => {
           {/* Applicants List */}
           <div className="space-y-4">
             {filteredApplications?.length === 0 ? (
-              <p className="text-center text-[#64748B] py-8">
+              <p className="text-center employer-text-muted py-8">
                 No applicants found
               </p>
             ) : (

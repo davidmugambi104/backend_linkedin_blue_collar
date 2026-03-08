@@ -1,327 +1,329 @@
-/**
- * Employer Applications Page - Unified Design System
- */
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import {
+import { 
   UsersIcon,
+  MagnifyingGlassIcon,
+  FunnelIcon,
+  BriefcaseIcon,
   CheckCircleIcon,
-  XCircleIcon,
-  StarIcon,
   ClockIcon,
+  XCircleIcon,
   EnvelopeIcon,
   PhoneIcon,
+  EllipsisHorizontalIcon,
+  StarIcon,
+  ArrowTopRightOnSquareIcon
 } from '@heroicons/react/24/outline';
-import { Card } from '@components/ui/Card';
-import { Button } from '@components/ui/Button';
-import { Badge } from '@components/ui/Badge';
-import { Skeleton } from '@components/ui/Skeleton';
-import { useEmployerApplications, useUpdateApplicationStatus } from '@hooks/useEmployer';
-import { Application } from '@types';
-import { formatDate } from '@lib/utils/format';
 
-const statusConfig = {
-  pending: { variant: 'warning' as const, label: 'Pending' },
-  accepted: { variant: 'success' as const, label: 'Accepted' },
-  rejected: { variant: 'error' as const, label: 'Rejected' },
-  withdrawn: { variant: 'default' as const, label: 'Withdrawn' },
-};
+// Search Input
+const SearchInput: React.FC<{ 
+  value: string; 
+  onChange: (value: string) => void;
+  placeholder?: string;
+}> = ({ value, onChange, placeholder = 'Search...' }) => (
+  <div className="relative">
+    <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted" />
+    <input
+      type="text"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      className="input-field pl-12"
+    />
+  </div>
+);
 
-const Applications: React.FC = () => {
-  const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [selectedAppId, setSelectedAppId] = useState<number | null>(null);
+// Filter Chip
+interface FilterChipProps {
+  label: string;
+  active?: boolean;
+  onClick?: () => void;
+  count?: number;
+  variant?: 'default' | 'success' | 'warning' | 'error';
+}
 
-  // Fetch applications
-  const { data: applications = [], isLoading, error } = useEmployerApplications(
-    filterStatus !== 'all' ? filterStatus : undefined
-  );
-
-  // Update application status mutation
-  const updateApplicationMutation = useUpdateApplicationStatus();
-
-  // Filter applications
-  const filteredApplications = useMemo(() => {
-    if (filterStatus === 'all') {
-      return applications;
-    }
-    return applications.filter(app => app.status === filterStatus);
-  }, [applications, filterStatus]);
-
-  const selectedApp = selectedAppId ? applications.find(app => app.id === selectedAppId) : null;
-
-  const handleUpdateStatus = async (applicationId: number, newStatus: string) => {
-    await updateApplicationMutation.mutateAsync({
-      applicationId,
-      status: newStatus,
-    });
-    setSelectedAppId(null);
+const FilterChip: React.FC<FilterChipProps> = ({ label, active, onClick, count, variant = 'default' }) => {
+  const variantClasses = {
+    default: active ? 'bg-navy text-white' : 'bg-white text-muted border-charcoal-200 hover:border-navy hover:text-navy',
+    success: active ? 'bg-emerald-600 text-white' : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:border-emerald-500',
+    warning: active ? 'bg-amber-600 text-white' : 'bg-amber-50 text-amber-700 border-amber-200 hover:border-amber-500',
+    error: active ? 'bg-red-600 text-white' : 'bg-red-50 text-red-700 border-red-200 hover:border-red-500',
   };
 
-  // Stats
-  const stats = [
-    { label: 'Total', value: applications.length, color: 'blue' },
-    { label: 'Pending', value: applications.filter(a => a.status === 'pending').length, color: 'amber' },
-    { label: 'Accepted', value: applications.filter(a => a.status === 'accepted').length, color: 'green' },
-    { label: 'Rejected', value: applications.filter(a => a.status === 'rejected').length, color: 'red' },
-  ];
+  return (
+    <button
+      onClick={onClick}
+      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 border ${variantClasses[variant]}`}
+    >
+      {label}
+      {count !== undefined && (
+        <span className={`ml-2 px-1.5 py-0.5 rounded-full text-xs ${active ? 'bg-white/20' : ''}`}>
+          {count}
+        </span>
+      )}
+    </button>
+  );
+};
 
-  const getStatusVariant = (status: string) => statusConfig[status as keyof typeof statusConfig]?.variant || 'default';
+// Status Badge Component
+const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
+  const statusConfig: Record<string, { class: string; icon: React.ReactNode; label: string }> = {
+    shortlisted: { class: 'badge-success', icon: <CheckCircleIcon className="w-3.5 h-3.5" />, label: 'Shortlisted' },
+    pending: { class: 'badge-warning', icon: <ClockIcon className="w-3.5 h-3.5" />, label: 'Pending' },
+    rejected: { class: 'badge-error', icon: <XCircleIcon className="w-3.5 h-3.5" />, label: 'Rejected' },
+    hired: { class: 'badge-success', icon: <CheckCircleIcon className="w-3.5 h-3.5" />, label: 'Hired' },
+  };
 
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[400px]">
-        <div className="w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mb-4">
-          <UsersIcon className="h-8 w-8 text-red-500" />
-        </div>
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-          Failed to load applications
-        </h2>
-        <p className="text-gray-500 dark:text-gray-400 mb-6">
-          {error instanceof Error ? error.message : 'Please try again'}
-        </p>
-        <Button onClick={() => window.location.reload()}>Try Again</Button>
-      </div>
-    );
-  }
+  const config = statusConfig[status.toLowerCase()] || statusConfig.pending;
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <span className={`badge ${config.class} flex items-center gap-1.5`}>
+      {config.icon}
+      {config.label}
+    </span>
+  );
+};
+
+// Applicant Row for Table
+interface Applicant {
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+  job: string;
+  status: string;
+  applied: string;
+  rating: number;
+  avatar?: string;
+}
+
+const ApplicantTableRow: React.FC<{ applicant: Applicant }> = ({ applicant }) => (
+  <tr className="interactive-row group">
+    <td>
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-full bg-navy-100 flex items-center justify-center text-navy font-semibold">
+          {applicant.name.split(' ').map(n => n[0]).join('')}
+        </div>
         <div>
-          <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
-            Applications
-          </h1>
-          <p className="mt-1 text-gray-500 dark:text-gray-400">
-            Review and manage job applications
-          </p>
+          <p className="font-medium text-charcoal">{applicant.name}</p>
+          <p className="text-xs text-muted">{applicant.email}</p>
+        </div>
+      </div>
+    </td>
+    <td className="text-charcoal">{applicant.job}</td>
+    <td><StatusBadge status={applicant.status} /></td>
+    <td className="text-muted">{applicant.applied}</td>
+    <td>
+      <div className="flex items-center gap-1">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <StarIcon 
+            key={star} 
+            className={`w-4 h-4 ${star <= applicant.rating ? 'text-amber-400 fill-amber-400' : 'text-charcoal-200'}`} 
+          />
+        ))}
+      </div>
+    </td>
+    <td>
+      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <button className="icon-btn" title="Send Email">
+          <EnvelopeIcon className="w-4 h-4" />
+        </button>
+        <button className="icon-btn" title="View Profile">
+          <ArrowTopRightOnSquareIcon className="w-4 h-4" />
+        </button>
+        <button className="icon-btn">
+          <EllipsisHorizontalIcon className="w-4 h-4" />
+        </button>
+      </div>
+    </td>
+  </tr>
+);
+
+// Stats Overview Cards
+const OverviewCards: React.FC = () => {
+  const stats = [
+    { label: 'Total Applications', value: '47', icon: <UsersIcon className="w-6 h-6" />, color: 'navy' },
+    { label: 'Shortlisted', value: '12', icon: <CheckCircleIcon className="w-6 h-6" />, color: 'emerald' },
+    { label: 'Pending Review', value: '8', icon: <ClockIcon className="w-6 h-6" />, color: 'amber' },
+    { label: 'Rejected', value: '27', icon: <XCircleIcon className="w-6 h-6" />, color: 'red' },
+  ];
+
+  return (
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      {stats.map((stat, i) => (
+        <div key={stat.label} className={`stat-widget stagger-${i + 1}`}>
+          <div className="flex items-center justify-between mb-3">
+            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+              stat.color === 'navy' ? 'bg-navy-100 text-navy' :
+              stat.color === 'emerald' ? 'bg-emerald-100 text-emerald-600' :
+              stat.color === 'amber' ? 'bg-amber-100 text-amber-600' :
+              'bg-red-100 text-red-600'
+            }`}>
+              {stat.icon}
+            </div>
+          </div>
+          <p className="text-2xl font-bold text-charcoal">{stat.value}</p>
+          <p className="text-sm text-muted mt-1">{stat.label}</p>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+// Mock Data
+const mockApplicants: Applicant[] = [
+  { id: 1, name: 'Ariana Flores', email: 'ariana@example.com', phone: '+1 555-0123', job: 'Electrician', status: 'Shortlisted', applied: '2 hours ago', rating: 4 },
+  { id: 2, name: 'Samuel Reed', email: 'samuel.r@example.com', phone: '+1 555-0124', job: 'HVAC Technician', status: 'Pending', applied: '5 hours ago', rating: 3 },
+  { id: 3, name: 'Nina Patel', email: 'nina.p@example.com', phone: '+1 555-0125', job: 'Project Coordinator', status: 'Rejected', applied: '1 day ago', rating: 2 },
+  { id: 4, name: 'James Wilson', email: 'james.w@example.com', phone: '+1 555-0126', job: 'Electrician', status: 'Shortlisted', applied: '1 day ago', rating: 5 },
+  { id: 5, name: 'Maria Garcia', email: 'maria.g@example.com', phone: '+1 555-0127', job: 'Carpenter', status: 'Pending', applied: '2 days ago', rating: 4 },
+  { id: 6, name: 'David Chen', email: 'david.c@example.com', phone: '+1 555-0128', job: 'Plumber', status: 'Hired', applied: '3 days ago', rating: 5 },
+];
+
+const Applications = () => {
+  const [query, setQuery] = useState('');
+  const [status, setStatus] = useState('all');
+  const [page, setPage] = useState(1);
+
+  // Filter applicants
+  const filtered = useMemo(() => {
+    return mockApplicants.filter((app) => {
+      const matchesQuery = 
+        app.name.toLowerCase().includes(query.toLowerCase()) || 
+        app.job.toLowerCase().includes(query.toLowerCase());
+      const matchesStatus = status === 'all' || app.status.toLowerCase() === status;
+      return matchesQuery && matchesStatus;
+    });
+  }, [query, status]);
+
+  // Stats counts
+  const counts = useMemo(() => ({
+    all: mockApplicants.length,
+    shortlisted: mockApplicants.filter(a => a.status.toLowerCase() === 'shortlisted').length,
+    pending: mockApplicants.filter(a => a.status.toLowerCase() === 'pending').length,
+    rejected: mockApplicants.filter(a => a.status.toLowerCase() === 'rejected').length,
+  }), []);
+
+  return (
+    <div className="animate-fade-in-up">
+      {/* Page Header */}
+      <div className="page-header flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="page-title">Applications</h1>
+          <p className="page-subtitle">Review and manage job applicants</p>
+        </div>
+        <Link to="/employer/jobs">
+          <button className="btn-secondary">
+            <BriefcaseIcon className="w-5 h-5" />
+            View Jobs
+          </button>
+        </Link>
+      </div>
+
+      {/* Overview Stats */}
+      <OverviewCards />
+
+      {/* Search & Filter */}
+      <div className="solid-card p-4 mb-6">
+        <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+          <div className="flex-1">
+            <SearchInput 
+              value={query} 
+              onChange={setQuery}
+              placeholder="Search applicants by name or job..."
+            />
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <FilterChip 
+              label="All" 
+              active={status === 'all'} 
+              onClick={() => setStatus('all')}
+              count={counts.all}
+            />
+            <FilterChip 
+              label="Shortlisted" 
+              active={status === 'shortlisted'} 
+              onClick={() => setStatus('shortlisted')}
+              count={counts.shortlisted}
+              variant="success"
+            />
+            <FilterChip 
+              label="Pending" 
+              active={status === 'pending'} 
+              onClick={() => setStatus('pending')}
+              count={counts.pending}
+              variant="warning"
+            />
+            <FilterChip 
+              label="Rejected" 
+              active={status === 'rejected'} 
+              onClick={() => setStatus('rejected')}
+              count={counts.rejected}
+              variant="error"
+            />
+          </div>
         </div>
       </div>
 
-      {/* Loading State */}
-      {isLoading && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-20" />)}
+      {/* Applications Table */}
+      {filtered.length === 0 ? (
+        <div className="empty-state">
+          <div className="w-16 h-16 rounded-full bg-charcoal-100 flex items-center justify-center mx-auto mb-4">
+            <UsersIcon className="w-8 h-8 text-muted" />
+          </div>
+          <h3 className="text-lg font-semibold text-charcoal mb-2">No applications found</h3>
+          <p className="text-muted">Try adjusting your filters or search terms.</p>
+        </div>
+      ) : (
+        <div className="solid-card overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="employer-table">
+              <thead>
+                <tr>
+                  <th>Applicant</th>
+                  <th>Job</th>
+                  <th>Status</th>
+                  <th>Applied</th>
+                  <th>Rating</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((applicant) => (
+                  <ApplicantTableRow key={applicant.id} applicant={applicant} />
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
-      {!isLoading && !error && (
-        <>
-          {/* Stats Grid */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {stats.map((stat, idx) => (
-              <Card key={idx} className="p-4 lg:p-6 employer-stat-widget employer-aspect-16-9" hoverable>
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{stat.label}</p>
-                <p className="mt-1 text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">{stat.value}</p>
-              </Card>
-            ))}
+      {/* Pagination */}
+      {filtered.length > 0 && (
+        <div className="flex items-center justify-between mt-6">
+          <p className="text-sm text-muted">
+            Showing {filtered.length} of {mockApplicants.length} applications
+          </p>
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="btn-secondary text-sm disabled:opacity-50"
+            >
+              Previous
+            </button>
+            <span className="px-4 py-2 text-sm font-medium text-charcoal">
+              Page {page} of 2
+            </span>
+            <button 
+              onClick={() => setPage(p => Math.min(2, p + 1))}
+              disabled={page === 2}
+              className="btn-secondary text-sm disabled:opacity-50"
+            >
+              Next
+            </button>
           </div>
-
-          {/* Filter Tabs */}
-          <Card className="p-2 employer-m3-card">
-            <div className="flex flex-wrap gap-2">
-              {['all', 'pending', 'accepted', 'rejected'].map(status => (
-                <button
-                  key={status}
-                  onClick={() => setFilterStatus(status)}
-                  className={`
-                    px-4 py-2 rounded-xl font-medium text-sm transition-all duration-200
-                    ${filterStatus === status
-                      ? 'bg-blue-600 text-white shadow-sm'
-                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
-                    }
-                  `}
-                >
-                  {status.charAt(0).toUpperCase() + status.slice(1)}
-                </button>
-              ))}
-            </div>
-          </Card>
-
-          {/* Applications Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Applications List */}
-            <div className="lg:col-span-2 space-y-4">
-              {filteredApplications.length === 0 ? (
-                <Card className="employer-empty-state p-8 lg:p-12 text-center">
-                  <UsersIcon className="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                    No applications found
-                  </h3>
-                  <p className="text-gray-500 dark:text-gray-400">
-                    Post your first job to see applicants
-                  </p>
-                  <Link to="/employer/jobs/post">
-                    <Button className="mt-5 rounded-xl bg-[#0A2540] text-white hover:bg-[#081D32]">Post your first job</Button>
-                  </Link>
-                </Card>
-              ) : (
-                filteredApplications.map(application => (
-                  <Card
-                    key={application.id}
-                    className={`
-                        p-4 lg:p-6 cursor-pointer transition-all duration-200 hover:shadow-lg employer-m3-card
-                      ${selectedAppId === application.id ? 'ring-2 ring-blue-500 border-blue-500' : ''}
-                    `}
-                    onClick={() => setSelectedAppId(application.id)}
-                    hoverable
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex items-start gap-3 min-w-0 flex-1">
-                        <div className="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
-                          <UsersIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <h3 className="font-semibold text-gray-900 dark:text-white truncate">
-                            {application.worker?.full_name || 'Unknown Worker'}
-                          </h3>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
-                            {application.worker?.address || 'Location not set'}
-                          </p>
-                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                            Applied for: <span className="font-medium text-gray-900 dark:text-white">{application.job?.title || 'Unknown Job'}</span>
-                          </p>
-                        </div>
-                      </div>
-                      <Badge variant={getStatusVariant(application.status)}>
-                        {application.status}
-                      </Badge>
-                    </div>
-
-                    {/* Rating */}
-                    <div className="mt-4 flex items-center gap-1">
-                      {[1, 2, 3, 4, 5].map(star => (
-                        <StarIcon
-                          key={star}
-                          className={`h-4 w-4 ${
-                            star <= Math.round(application.worker?.average_rating || 0)
-                              ? 'text-yellow-400 fill-yellow-400'
-                              : 'text-gray-300 dark:text-gray-600'
-                          }`}
-                        />
-                      ))}
-                      <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">
-                        {application.worker?.average_rating?.toFixed(1) || '0.0'}
-                      </span>
-                    </div>
-                  </Card>
-                ))
-              )}
-            </div>
-
-            {/* Selected Application Detail */}
-            <div className="lg:col-span-1">
-              {selectedApp ? (
-                <Card className="p-4 lg:p-6 sticky top-24">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                    Application Details
-                  </h3>
-                  
-                  <div className="space-y-4">
-                    {/* Worker Info */}
-                    <div className="flex items-center gap-3">
-                      <div className="w-16 h-16 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                        <UsersIcon className="h-8 w-8 text-blue-600 dark:text-blue-400" />
-                      </div>
-                      <div>
-                        <h4 className="font-semibold text-gray-900 dark:text-white">
-                          {selectedApp.worker?.full_name || 'Unknown'}
-                        </h4>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                          {selectedApp.worker?.years_experience || 0} years experience
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Rating */}
-                    <div className="flex items-center gap-1">
-                      {[1, 2, 3, 4, 5].map(star => (
-                        <StarIcon
-                          key={star}
-                          className={`h-5 w-5 ${
-                            star <= Math.round(selectedApp.worker?.average_rating || 0)
-                              ? 'text-yellow-400 fill-yellow-400'
-                              : 'text-gray-300 dark:text-gray-600'
-                          }`}
-                        />
-                      ))}
-                      <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">
-                        ({selectedApp.worker?.completed_jobs || 0} jobs completed)
-                      </span>
-                    </div>
-
-                    {/* Contact */}
-                    <div className="space-y-2 pt-4 border-t border-gray-200 dark:border-gray-700">
-                      {selectedApp.worker?.user?.phone && (
-                        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                          <PhoneIcon className="h-4 w-4" />
-                          {selectedApp.worker.user.phone}
-                        </div>
-                      )}
-                      {selectedApp.worker?.user?.email && (
-                        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                          <EnvelopeIcon className="h-4 w-4" />
-                          {selectedApp.worker.user.email}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Cover Note */}
-                    {selectedApp.cover_letter && (
-                      <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cover Note</p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">{selectedApp.cover_letter}</p>
-                      </div>
-                    )}
-
-                    {/* Applied Date */}
-                    <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-                      <ClockIcon className="h-4 w-4" />
-                      Applied {formatDate(selectedApp.created_at)}
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="flex flex-col gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
-                      {selectedApp.status === 'pending' && (
-                        <>
-                          <Button
-                            className="w-full"
-                            leftIcon={<CheckCircleIcon className="h-5 w-5" />}
-                            onClick={() => handleUpdateStatus(selectedApp.id, 'accepted')}
-                            isLoading={updateApplicationMutation.isPending}
-                          >
-                            Accept
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            className="w-full"
-                            leftIcon={<XCircleIcon className="h-5 w-5" />}
-                            onClick={() => handleUpdateStatus(selectedApp.id, 'rejected')}
-                            isLoading={updateApplicationMutation.isPending}
-                          >
-                            Reject
-                          </Button>
-                        </>
-                      )}
-                      {selectedApp.status !== 'pending' && (
-                        <Badge variant={getStatusVariant(selectedApp.status)} className="w-full justify-center py-2">
-                          {selectedApp.status.charAt(0).toUpperCase() + selectedApp.status.slice(1)}
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                </Card>
-              ) : (
-                <Card className="employer-empty-state p-6 text-center">
-                  <UsersIcon className="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-                  <p className="text-gray-500 dark:text-gray-400">
-                    Select an application to view details
-                  </p>
-                </Card>
-              )}
-            </div>
-          </div>
-        </>
+        </div>
       )}
     </div>
   );

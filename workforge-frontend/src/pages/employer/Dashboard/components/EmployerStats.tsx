@@ -20,19 +20,19 @@ interface StatCardProps {
 
 const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, trend }) => {
   return (
-    <Card className="bg-[#F8FAFC] rounded-2xl p-6">
+    <Card className="employer-bg-muted rounded-2xl p-6">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium text-[#64748B]">{title}</p>
-          <p className="mt-2 text-3xl font-bold text-[#0F172A]">{value}</p>
+          <p className="text-sm font-medium employer-text-muted">{title}</p>
+          <p className="mt-2 text-3xl font-bold employer-text-primary">{value}</p>
           {trend !== undefined && (
             <p className={`mt-2 text-sm ${trend >= 0 ? 'text-green-600' : 'text-red-600'}`}>
               {trend >= 0 ? '↑' : '↓'} {Math.abs(trend)}% from last month
             </p>
           )}
         </div>
-        <div className="p-3 bg-[#2563EB]/10 rounded-xl">
-          <Icon className="w-6 h-6 text-[#2563EB]" />
+        <div className="p-3 employer-bg-accent-soft rounded-xl">
+          <Icon className="w-6 h-6 employer-text-accent" />
         </div>
       </div>
     </Card>
@@ -46,8 +46,8 @@ export const EmployerStats: React.FC = () => {
     return (
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {[...Array(4)].map((_, i) => (
-          <Card key={i} className="bg-[#F8FAFC] rounded-2xl p-6">
-            <Skeleton className="h-20 bg-[#F1F5F9]" />
+          <Card key={i} className="employer-bg-muted rounded-2xl p-6">
+            <Skeleton className="h-20 employer-bg-surface" />
           </Card>
         ))}
       </div>

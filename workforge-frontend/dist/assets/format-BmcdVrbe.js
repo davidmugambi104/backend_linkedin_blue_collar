@@ -1,1 +1,0 @@
-import{f as t}from"./date-9h7kpJ06.js";const r=(t,r="USD")=>new Intl.NumberFormat("en-US",{style:"currency",currency:r,minimumFractionDigits:0,maximumFractionDigits:2}).format(t),a=(r,a="MMM dd, yyyy")=>t(new Date(r),a);export{r as a,a as f};

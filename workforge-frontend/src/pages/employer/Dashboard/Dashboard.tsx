@@ -1,286 +1,292 @@
-/**
- * Employer Dashboard - Unified Design System
- */
-import React from 'react';
 import { Link } from 'react-router-dom';
-import {
-  BriefcaseIcon,
-  UsersIcon,
-  ClockIcon,
-  PlusIcon,
+import { 
+  BriefcaseIcon, 
+  UserGroupIcon, 
+  EyeIcon, 
+  ClipboardDocumentCheckIcon,
   ArrowTrendingUpIcon,
-  ArrowTrendingDownIcon,
+  PlusIcon,
+  ChevronRightIcon
 } from '@heroicons/react/24/outline';
-import { Card } from '@components/ui/Card';
-import { Button } from '@components/ui/Button';
-import { Badge } from '@components/ui/Badge';
-import { Skeleton } from '@components/ui/Skeleton';
-import { useEmployerStats } from '@hooks/useEmployer';
-import { useEmployerJobs } from '@hooks/useEmployerJobs';
-import { useEmployerApplications } from '@hooks/useEmployer';
-import { formatDate } from '@lib/utils/format';
-import { JOB_STATUS, APPLICATION_STATUS } from '@config/constants';
 
-const Dashboard: React.FC = () => {
-  const { data: stats, isLoading: statsLoading } = useEmployerStats();
-  const { data: jobs, isLoading: jobsLoading } = useEmployerJobs();
-  const { data: applications = [], isLoading: appsLoading } = useEmployerApplications();
+// Stat Card Component
+interface StatCardProps {
+  label: string;
+  value: string | number;
+  icon: React.ReactNode;
+  trend?: number;
+  variant?: 'default' | 'gradient';
+}
 
-  const activeJobs = jobs?.filter((job: any) => job.status === JOB_STATUS.OPEN).slice(0, 3) || [];
-  const recentApplications = applications.slice(0, 5) || [];
-  const pendingApplicationsCount = applications.filter((app: any) => app.status === 'pending').length;
-  const totalJobs = stats?.total_jobs || 0;
-  const totalApplications = stats?.total_applications || 0;
-  const activeJobsCount = stats?.job_status_counts?.open || 0;
+const StatCard: React.FC<StatCardProps> = ({ 
+  label, 
+  value, 
+  icon, 
+  trend, 
+  variant = 'default' 
+}) => {
+  if (variant === 'gradient') {
+    return (
+      <div className="stat-widget-gradient">
+        <div className="flex items-start justify-between relative z-10">
+          <div className="w-12 h-12 rounded-xl bg-white/15 flex items-center justify-center text-white">
+            {icon}
+          </div>
+          {trend !== undefined && (
+            <div className="flex items-center gap-1 text-sm font-medium text-emerald-300">
+              <ArrowTrendingUpIcon className="w-4 h-4" />
+              <span>+{trend}%</span>
+            </div>
+          )}
+        </div>
+        <div className="mt-5 relative z-10">
+          <p className="text-3xl font-bold tracking-tight">{value}</p>
+          <p className="text-sm text-white/70 mt-1">{label}</p>
+        </div>
+      </div>
+    );
+  }
 
-  const trendData = {
-    activeJobs: activeJobsCount > 0 ? { up: true, label: '+8% vs last week' } : { up: false, label: 'No movement yet' },
-    totalApplications: totalApplications > 4 ? { up: true, label: '+12% this period' } : { up: false, label: 'Low pipeline volume' },
-    pending: pendingApplicationsCount < 5 ? { up: true, label: 'Healthy review queue' } : { up: false, label: 'Backlog increasing' },
-    totalJobs: totalJobs > 0 ? { up: true, label: '+5% this month' } : { up: false, label: 'Publish your first role' },
-  };
+  return (
+    <div className="stat-widget">
+      <div className="flex items-start justify-between">
+        <div className="w-11 h-11 rounded-lg bg-navy-50 flex items-center justify-center text-navy">
+          {icon}
+        </div>
+        {trend !== undefined && (
+          <div className="flex items-center gap-1 text-sm font-medium text-emerald-600">
+            <ArrowTrendingUpIcon className="w-4 h-4" />
+            <span>+{trend}%</span>
+          </div>
+        )}
+      </div>
+      <div className="mt-4">
+        <p className="text-2xl font-bold text-charcoal">{value}</p>
+        <p className="text-sm text-muted mt-1">{label}</p>
+      </div>
+    </div>
+  );
+};
 
-  const getStatusColor = (status: string): string => {
-    switch (status) {
-      case JOB_STATUS.OPEN:
-        return 'success';
-      case JOB_STATUS.IN_PROGRESS:
-        return 'info';
-      case JOB_STATUS.COMPLETED:
-        return 'purple';
-      case JOB_STATUS.CANCELLED:
-        return 'error';
-      default:
-        return 'default';
-    }
-  };
+// Job Row Component
+interface JobRow {
+  id: number;
+  title: string;
+  status: 'open' | 'draft' | 'closed';
+  applicants: number;
+  views: number;
+  posted: string;
+}
 
-  const getApplicationStatusColor = (status: string): string => {
-    switch (status) {
-      case APPLICATION_STATUS.ACCEPTED:
-        return 'success';
-      case APPLICATION_STATUS.REJECTED:
-        return 'error';
-      case APPLICATION_STATUS.PENDING:
-        return 'warning';
-      default:
-        return 'default';
-    }
+const JobRow: React.FC<{ job: JobRow }> = ({ job }) => {
+  const statusClasses = {
+    open: 'badge-success',
+    draft: 'badge-neutral',
+    closed: 'badge-error',
   };
 
   return (
-    <div className="space-y-6 lg:space-y-8">
+    <tr className="interactive-row">
+      <td className="font-medium text-charcoal">{job.title}</td>
+      <td>
+        <span className={`badge ${statusClasses[job.status]}`}>
+          {job.status}
+        </span>
+      </td>
+      <td className="text-charcoal">{job.applicants}</td>
+      <td className="text-charcoal">{job.views}</td>
+      <td className="text-muted">{job.posted}</td>
+      <td>
+        <button className="icon-btn">
+          <ChevronRightIcon className="w-5 h-5" />
+        </button>
+      </td>
+    </tr>
+  );
+};
+
+// Quick Action Card
+interface QuickActionProps {
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  to: string;
+}
+
+const QuickActionCard: React.FC<QuickActionProps> = ({ title, description, icon, to }) => (
+  <Link to={to} className="solid-card p-5 flex items-center gap-4 group">
+    <div className="w-12 h-12 rounded-xl bg-navy-50 flex items-center justify-center text-navy group-hover:bg-navy group-hover:text-white transition-all duration-200">
+      {icon}
+    </div>
+    <div>
+      <h4 className="font-semibold text-charcoal group-hover:text-navy transition-colors">{title}</h4>
+      <p className="text-sm text-muted">{description}</p>
+    </div>
+  </Link>
+);
+
+// Recent Applicant Card
+interface Applicant {
+  id: number;
+  name: string;
+  role: string;
+  avatar?: string;
+  applied: string;
+}
+
+const ApplicantCard: React.FC<{ applicant: Applicant }> = ({ applicant }) => (
+  <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors">
+    <div className="w-10 h-10 rounded-full bg-navy-100 flex items-center justify-center text-navy font-semibold">
+      {applicant.name.charAt(0)}
+    </div>
+    <div className="flex-1 min-w-0">
+      <p className="font-medium text-charcoal truncate">{applicant.name}</p>
+      <p className="text-xs text-muted">{applicant.role} • {applicant.applied}</p>
+    </div>
+  </div>
+);
+
+// Mock Data
+const mockStats = {
+  activeJobs: 12,
+  totalApplicants: 74,
+  totalViews: 2408,
+  hires: 15,
+};
+
+const mockJobs: JobRow[] = [
+  { id: 1, title: 'Commercial Electrician', status: 'open', applicants: 18, views: 432, posted: '2 days ago' },
+  { id: 2, title: 'HVAC Technician', status: 'open', applicants: 9, views: 284, posted: '3 days ago' },
+  { id: 3, title: 'Plumbing Crew Lead', status: 'open', applicants: 17, views: 512, posted: '5 days ago' },
+  { id: 4, title: 'General Labor Supervisor', status: 'draft', applicants: 0, views: 11, posted: '1 week ago' },
+  { id: 5, title: 'Senior Carpenter', status: 'closed', applicants: 24, views: 890, posted: '2 weeks ago' },
+];
+
+const mockApplicants: Applicant[] = [
+  { id: 1, name: 'James Wilson', role: 'Electrician', applied: '2 hours ago' },
+  { id: 2, name: 'Sarah Chen', role: 'HVAC Tech', applied: '5 hours ago' },
+  { id: 3, name: 'Michael Brown', role: 'Plumber', applied: '1 day ago' },
+  { id: 4, name: 'Emily Davis', role: 'Carpenter', applied: '2 days ago' },
+];
+
+const Dashboard = () => {
+  return (
+    <div className="animate-fade-in-up">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="page-header flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
-            Company Dashboard
-          </h1>
-          <p className="mt-1 text-gray-500 dark:text-gray-400">
-            Manage your job postings and review applications
-          </p>
+          <h1 className="page-title">Dashboard</h1>
+          <p className="page-subtitle">Welcome back! Here's your hiring overview.</p>
         </div>
         <Link to="/employer/post-job">
-          <Button leftIcon={<PlusIcon className="h-5 w-5" />}>
+          <button className="btn-primary">
+            <PlusIcon className="w-5 h-5" />
             Post New Job
-          </Button>
+          </button>
         </Link>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
-        {statsLoading ? (
-          [...Array(4)].map((_, i) => (
-            <Card key={i} className="p-4 lg:p-6">
-              <Skeleton className="h-20" />
-            </Card>
-          ))
-        ) : (
-          <>
-            {/* Active Jobs */}
-            <Card className="p-4 lg:p-6 employer-stat-widget employer-aspect-16-9" hoverable>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Active Jobs</p>
-                  <p className="mt-1 text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
-                    {stats?.job_status_counts?.open || 0}
-                  </p>
-                </div>
-                <div className="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                  <BriefcaseIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                </div>
-              </div>
-              <div className="mt-4 flex items-center gap-1 text-xs">
-                {trendData.activeJobs.up ? <ArrowTrendingUpIcon className="h-4 w-4 text-emerald-600" /> : <ArrowTrendingDownIcon className="h-4 w-4 text-red-600" />}
-                <span className={trendData.activeJobs.up ? 'text-emerald-600' : 'text-red-600'}>{trendData.activeJobs.label}</span>
-              </div>
-            </Card>
+      <div className="employer-grid employer-grid-4 mb-8">
+        <StatCard 
+          label="Active Jobs" 
+          value={mockStats.activeJobs} 
+          icon={<BriefcaseIcon className="w-6 h-6" />}
+          trend={8.3}
+          variant="gradient"
+        />
+        <StatCard 
+          label="Total Applicants" 
+          value={mockStats.totalApplicants} 
+          icon={<UserGroupIcon className="w-6 h-6" />}
+          trend={12.1}
+        />
+        <StatCard 
+          label="Profile Views" 
+          value={mockStats.totalViews.toLocaleString()} 
+          icon={<EyeIcon className="w-6 h-6" />}
+          trend={6.8}
+        />
+        <StatCard 
+          label="Successful Hires" 
+          value={mockStats.hires} 
+          icon={<ClipboardDocumentCheckIcon className="w-6 h-6" />}
+          trend={4.5}
+        />
+      </div>
 
-            {/* Total Applications */}
-            <Card className="p-4 lg:p-6 employer-stat-widget employer-aspect-16-9" hoverable>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Applications</p>
-                  <p className="mt-1 text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
-                    {stats?.total_applications || 0}
-                  </p>
-                </div>
-                <div className="w-12 h-12 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
-                  <UsersIcon className="h-6 w-6 text-purple-600 dark:text-purple-400" />
-                </div>
-              </div>
-              <div className="mt-4 flex items-center gap-1 text-xs">
-                {trendData.totalApplications.up ? <ArrowTrendingUpIcon className="h-4 w-4 text-emerald-600" /> : <ArrowTrendingDownIcon className="h-4 w-4 text-red-600" />}
-                <span className={trendData.totalApplications.up ? 'text-emerald-600' : 'text-red-600'}>{trendData.totalApplications.label}</span>
-              </div>
-            </Card>
+      {/* Main Content Grid */}
+      <div className="employer-grid employer-grid-3 mb-8">
+        {/* Jobs Table */}
+        <div className="xl:col-span-2">
+          <div className="solid-card overflow-hidden">
+            <div className="card-header flex items-center justify-between">
+              <h3 className="section-title">Recent Job Postings</h3>
+              <Link to="/employer/jobs" className="text-sm font-medium text-navy hover:underline">
+                View all
+              </Link>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="employer-table">
+                <thead>
+                  <tr>
+                    <th>Job Title</th>
+                    <th>Status</th>
+                    <th>Applicants</th>
+                    <th>Views</th>
+                    <th>Posted</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {mockJobs.slice(0, 5).map((job) => (
+                    <JobRow key={job.id} job={job} />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
 
-            {/* Pending Review */}
-            <Card className="p-4 lg:p-6 employer-stat-widget employer-aspect-16-9" hoverable>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Pending Review</p>
-                  <p className="mt-1 text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
-                    {pendingApplicationsCount}
-                  </p>
-                </div>
-                <div className="w-12 h-12 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-                  <ClockIcon className="h-6 w-6 text-amber-600 dark:text-amber-400" />
-                </div>
-              </div>
-              <div className="mt-4 flex items-center gap-1 text-xs">
-                {trendData.pending.up ? <ArrowTrendingUpIcon className="h-4 w-4 text-emerald-600" /> : <ArrowTrendingDownIcon className="h-4 w-4 text-red-600" />}
-                <span className={trendData.pending.up ? 'text-emerald-600' : 'text-red-600'}>{trendData.pending.label}</span>
-              </div>
-            </Card>
-
-            {/* Total Jobs */}
-            <Card className="p-4 lg:p-6 employer-stat-widget employer-aspect-16-9" hoverable>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Jobs Posted</p>
-                  <p className="mt-1 text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
-                    {stats?.total_jobs || 0}
-                  </p>
-                </div>
-                <div className="w-12 h-12 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                  <ArrowTrendingUpIcon className="h-6 w-6 text-green-600 dark:text-green-400" />
-                </div>
-              </div>
-              <div className="mt-4 flex items-center gap-1 text-xs">
-                {trendData.totalJobs.up ? <ArrowTrendingUpIcon className="h-4 w-4 text-emerald-600" /> : <ArrowTrendingDownIcon className="h-4 w-4 text-red-600" />}
-                <span className={trendData.totalJobs.up ? 'text-emerald-600' : 'text-red-600'}>{trendData.totalJobs.label}</span>
-              </div>
-            </Card>
-          </>
-        )}
+        {/* Recent Applicants */}
+        <div className="solid-card">
+          <div className="card-header flex items-center justify-between">
+            <h3 className="section-title">Recent Applicants</h3>
+            <Link to="/employer/applications" className="text-sm font-medium text-navy hover:underline">
+              View all
+            </Link>
+          </div>
+          <div className="card-body space-y-1">
+            {mockApplicants.map((applicant) => (
+              <ApplicantCard key={applicant.id} applicant={applicant} />
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Quick Actions */}
-      <Card className="p-4 lg:p-6 employer-m3-card">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <Link to="/employer/post-job">
-            <Button variant="default" className="w-full justify-start" leftIcon={<PlusIcon className="h-5 w-5" />}>
-              Post New Job
-            </Button>
-          </Link>
-          <Link to="/employer/applications">
-            <Button variant="outline" className="w-full justify-start" leftIcon={<UsersIcon className="h-5 w-5" />}>
-              Review Applications
-            </Button>
-          </Link>
-          <Link to="/employer/workers">
-            <Button variant="outline" className="w-full justify-start" leftIcon={<BriefcaseIcon className="h-5 w-5" />}>
-              Browse Workers
-            </Button>
-          </Link>
+      <div className="section">
+        <h3 className="section-title mb-4">Quick Actions</h3>
+        <div className="employer-grid employer-grid-3">
+          <QuickActionCard
+            title="Post a Job"
+            description="Create a new job listing"
+            icon={<PlusIcon className="w-6 h-6" />}
+            to="/employer/post-job"
+          />
+          <QuickActionCard
+            title="Review Applications"
+            description="Check pending applications"
+            icon={<UserGroupIcon className="w-6 h-6" />}
+            to="/employer/applications"
+          />
+          <QuickActionCard
+            title="Manage Workers"
+            description="View your hired workers"
+            icon={<ClipboardDocumentCheckIcon className="w-6 h-6" />}
+            to="/employer/workers"
+          />
         </div>
-      </Card>
-
-      {/* Active Jobs & Recent Applications */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Active Jobs */}
-        <Card className="p-4 lg:p-6 employer-m3-card">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Active Jobs</h2>
-            <Link to="/employer/jobs" className="text-sm text-blue-600 dark:text-blue-400 hover:underline">
-              View All
-            </Link>
-          </div>
-          
-          {jobsLoading ? (
-            <div className="space-y-3">
-              {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-16" />)}
-            </div>
-          ) : activeJobs.length === 0 ? (
-            <div className="text-center py-8">
-              <BriefcaseIcon className="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-              <p className="text-gray-500 dark:text-gray-400">No active jobs</p>
-              <Link to="/employer/post-job">
-                <Button size="sm" className="mt-4">Post Your First Job</Button>
-              </Link>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {activeJobs.map((job: any) => (
-                <Link 
-                  key={job.id} 
-                  to={`/employer/jobs/${job.id}`}
-                  className="block p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <h3 className="font-medium text-gray-900 dark:text-white truncate">{job.title}</h3>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {job.application_count || 0} applications • {formatDate(job.created_at)}
-                      </p>
-                    </div>
-                    <Badge variant={getStatusColor(job.status) as any}>{job.status}</Badge>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
-        </Card>
-
-        {/* Recent Applications */}
-        <Card className="p-4 lg:p-6 employer-m3-card">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Recent Applications</h2>
-            <Link to="/employer/applications" className="text-sm text-blue-600 dark:text-blue-400 hover:underline">
-              View All
-            </Link>
-          </div>
-          
-          {appsLoading ? (
-            <div className="space-y-3">
-              {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-16" />)}
-            </div>
-          ) : recentApplications.length === 0 ? (
-            <div className="text-center py-8">
-              <UsersIcon className="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-              <p className="text-gray-500 dark:text-gray-400">No applications yet</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {recentApplications.map((app: any) => (
-                <div 
-                  key={app.id}
-                  className="flex items-center justify-between gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
-                >
-                  <div className="min-w-0 flex-1">
-                    <h3 className="font-medium text-gray-900 dark:text-white truncate">{app.worker?.user?.username || 'Applicant'}</h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {app.job?.title || 'Job'} • {formatDate(app.created_at)}
-                    </p>
-                  </div>
-                  <Badge variant={getApplicationStatusColor(app.status) as any}>{app.status}</Badge>
-                </div>
-              ))}
-            </div>
-          )}
-        </Card>
       </div>
     </div>
   );

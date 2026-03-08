@@ -11,10 +11,10 @@ export const JobBasicInfo: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-[#0F172A] mb-4">
+        <h2 className="text-lg font-semibold employer-text-primary mb-4">
           Basic Information
         </h2>
-        <p className="text-sm text-[#64748B] mb-6">
+        <p className="text-sm employer-text-muted mb-6">
           Start with the basic details of your job posting.
         </p>
       </div>
@@ -73,7 +73,7 @@ export const JobBasicInfo: React.FC = () => {
               {errors.expiration_date.message as string}
             </p>
           ) : (
-            <p className="mt-1 text-xs text-[#516176]">Leave empty for no deadline</p>
+            <p className="mt-1 text-xs employer-text-subtle">Leave empty for no deadline</p>
           )}
         </div>
       </div>

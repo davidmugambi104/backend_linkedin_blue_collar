@@ -26,12 +26,12 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({
     <div className="mt-6 space-y-6">
       {/* Cover Letter */}
       <div>
-        <h5 className="text-sm font-medium text-[#0F172A] mb-2 flex items-center">
-          <DocumentTextIcon className="w-4 h-4 mr-2 text-[#2563EB]" />
+        <h5 className="text-sm font-medium employer-text-primary mb-2 flex items-center">
+          <DocumentTextIcon className="w-4 h-4 mr-2 employer-text-accent" />
           Cover Letter
         </h5>
-        <div className="p-4 bg-[#F8FAFC] rounded-lg border border-[#E2E8F0]">
-          <p className="text-sm text-[#0F172A] whitespace-pre-line">
+        <div className="p-4 employer-bg-muted rounded-lg border employer-border">
+          <p className="text-sm employer-text-primary whitespace-pre-line">
             {application.cover_letter || 'No cover letter provided'}
           </p>
         </div>
@@ -40,10 +40,10 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({
       {/* Proposed Rate */}
       {application.proposed_rate && (
         <div>
-          <h5 className="text-sm font-medium text-[#64748B] mb-2">
+          <h5 className="text-sm font-medium employer-text-muted mb-2">
             Proposed Rate
           </h5>
-          <p className="text-lg font-semibold text-[#0F172A]">
+          <p className="text-lg font-semibold employer-text-primary">
             ${application.proposed_rate}/hour
           </p>
         </div>
@@ -51,8 +51,8 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({
 
       {/* Message to Applicant */}
       <div>
-        <h5 className="text-sm font-medium text-[#0F172A] mb-2 flex items-center">
-          <ChatBubbleLeftIcon className="w-4 h-4 mr-2 text-[#2563EB]" />
+        <h5 className="text-sm font-medium employer-text-primary mb-2 flex items-center">
+          <ChatBubbleLeftIcon className="w-4 h-4 mr-2 employer-text-accent" />
           Message to Applicant (Optional)
         </h5>
         <Textarea
@@ -60,7 +60,7 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           rows={3}
-          className="border border-[#E2E8F0] rounded-lg focus:ring-[#2563EB] focus:border-[#2563EB]"
+          className="border employer-border rounded-lg focus:ring-[#0A2540] focus:border-[#0A2540]"
         />
       </div>
 
@@ -69,7 +69,7 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({
         <Button
           onClick={onAccept}
           leftIcon={<CheckCircleIcon className="w-5 h-5" />}
-          className="rounded-xl bg-[#2563EB] text-white shadow-sm hover:bg-[#1E3A8A] active:scale-95"
+          className="rounded-xl employer-button-primary shadow-sm active:scale-95"
         >
           Accept Application
         </Button>
@@ -84,7 +84,7 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({
       </div>
 
       {/* Tips */}
-      <div className="bg-blue-50 border-l-4 border-[#2563EB] rounded-lg p-4">
+      <div className="employer-bg-muted border-l-4 border-[#0A2540] rounded-lg p-4">
         <p className="text-sm text-blue-800">
           <strong>Tip:</strong> Accepting an application will mark this job as "In Progress" 
           and notify the worker. You can only accept one applicant per job.

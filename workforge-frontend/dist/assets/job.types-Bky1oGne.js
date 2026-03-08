@@ -1,1 +1,0 @@
-var e=(e=>(e.OPEN="open",e.IN_PROGRESS="in_progress",e.COMPLETED="completed",e.CANCELLED="cancelled",e.EXPIRED="expired",e))(e||{}),E=(e=>(e.HOURLY="hourly",e.DAILY="daily",e.FIXED="fixed",e))(E||{});export{e as J,E as P};

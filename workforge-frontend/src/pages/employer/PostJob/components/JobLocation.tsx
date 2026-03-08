@@ -22,10 +22,10 @@ export const JobLocation: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-[#0F172A] mb-4">
+        <h2 className="text-lg font-semibold employer-text-primary mb-4">
           Job Location
         </h2>
-        <p className="text-sm text-[#64748B] mb-6">
+        <p className="text-sm employer-text-muted mb-6">
           Where will the work be performed?
         </p>
       </div>
@@ -37,8 +37,8 @@ export const JobLocation: React.FC = () => {
             onClick={() => setUseMapPicker(false)}
             className={`px-4 py-2 text-sm font-medium rounded-xl transition ${
               !useMapPicker
-                ? 'bg-[#0A2540] text-white'
-                : 'bg-white border border-[#E9EDF2] text-[#1A1A1A] hover:bg-[#F8FAFC]'
+                ? 'employer-button-primary'
+                : 'employer-bg-surface border employer-border employer-text-primary hover:employer-bg-muted'
             }`}
           >
             Enter Address Manually
@@ -48,8 +48,8 @@ export const JobLocation: React.FC = () => {
             onClick={() => setUseMapPicker(true)}
             className={`px-4 py-2 text-sm font-medium rounded-xl transition ${
               useMapPicker
-                ? 'bg-[#0A2540] text-white'
-                : 'bg-white border border-[#E9EDF2] text-[#1A1A1A] hover:bg-[#F8FAFC]'
+                ? 'employer-button-primary'
+                : 'employer-bg-surface border employer-border employer-text-primary hover:employer-bg-muted'
             }`}
           >
             Pick on Map

@@ -10,10 +10,10 @@ export const JobDetails: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-[#0F172A] mb-4">
+        <h2 className="text-lg font-semibold employer-text-primary mb-4">
           Job Details
         </h2>
-        <p className="text-sm text-[#64748B] mb-6">
+        <p className="text-sm employer-text-muted mb-6">
           Provide a detailed description of the job and responsibilities.
         </p>
       </div>

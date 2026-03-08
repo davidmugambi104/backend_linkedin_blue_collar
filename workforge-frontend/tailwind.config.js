@@ -22,6 +22,22 @@ export default {
     },
     extend: {
       colors: {
+        'primary-blue': '#0066FF',
+        'dark-navy': '#0A2540',
+        'pure-white': '#FFFFFF',
+        'rich-black': '#1A1A1A',
+        gray: {
+          50: '#F8FAFC',
+          100: '#F1F5F9',
+          200: '#E9EDF2',
+          300: '#CBD5E1',
+          400: '#9CA3AF',
+          500: '#6B7280',
+          600: '#475569',
+          700: '#334155',
+          800: '#1F2937',
+          900: '#0F172A',
+        },
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
@@ -67,6 +83,7 @@ export default {
           foreground: 'hsl(var(--card-foreground))',
         },
         success: {
+          DEFAULT: '#10B981',
           50: '#f0fdf4',
           100: '#dcfce7',
           200: '#bbf7d0',
@@ -80,6 +97,7 @@ export default {
           950: '#052e16',
         },
         warning: {
+          DEFAULT: '#F59E0B',
           50: '#fffbeb',
           100: '#fef3c7',
           200: '#fde68a',
@@ -93,6 +111,7 @@ export default {
           950: '#451a03',
         },
         error: {
+          DEFAULT: '#EF4444',
           50: '#fef2f2',
           100: '#fee2e2',
           200: '#fecaca',
@@ -106,6 +125,7 @@ export default {
           950: '#450a0a',
         },
         info: {
+          DEFAULT: '#3B82F6',
           50: '#eff6ff',
           100: '#dbeafe',
           200: '#bfdbfe',
@@ -123,10 +143,14 @@ export default {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
+        badge: '4px',
+        card: '8px',
         xl: 'calc(var(--radius) + 4px)',
         '2xl': 'calc(var(--radius) + 8px)',
       },
       fontFamily: {
+        heading: ['Google Sans', 'Inter', 'system-ui', 'sans-serif'],
+        body: ['Inter', 'system-ui', 'sans-serif'],
         sans: ['Inter var', 'Inter', 'system-ui', 'sans-serif'],
         mono: ['JetBrains Mono', 'monospace'],
       },
@@ -209,6 +233,9 @@ export default {
         'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
       },
       boxShadow: {
+        'level-1': '0 1px 3px 0 rgb(0 0 0 / 0.05)',
+        'level-2': '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+        'level-3': '0 20px 25px -5px rgb(0 0 0 / 0.1)',
         'soft': '0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04)',
         'inner-soft': 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.06)',
         'glow': '0 0 15px rgba(59, 130, 246, 0.5)',

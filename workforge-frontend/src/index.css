@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -6,6 +6,18 @@
 /* WorkForge Professional Design System - Color Palette */
 @layer base {
   :root {
+    --wf-primary-blue: #0066FF;
+    --wf-dark-navy: #0A2540;
+    --wf-white: #FFFFFF;
+    --wf-rich-black: #1A1A1A;
+    --wf-gray-50: #F8FAFC;
+    --wf-gray-200: #E9EDF2;
+    --wf-gray-500: #6B7280;
+    --wf-gray-400: #9CA3AF;
+
+    --wf-font-heading: 'Google Sans', 'Inter', system-ui, sans-serif;
+    --wf-font-body: 'Inter', system-ui, sans-serif;
+
     /* Primary Color - Corporate Blue #2563EB */
     --primary: 217 91% 60%;
     --primary-foreground: 0 0% 100%;
@@ -66,15 +78,17 @@
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--text-dark));
-    font-family: 'SF Pro Display', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-family: var(--wf-font-body);
+    line-height: 1.5;
     font-feature-settings: "rlig" 1, "calt" 1;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
   
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Neue Haas Grotesk Display Pro', 'Neue Haas Grotesk Text Pro', 'Inter', 'SF Pro Display', sans-serif;
-    font-weight: 700;
+    font-family: var(--wf-font-heading);
+    font-weight: 600;
+    line-height: 1.2;
     letter-spacing: -0.025em;
     color: hsl(var(--text-dark));
   }
@@ -473,5 +487,24 @@
   .employer-m3 .rounded-xl,
   .employer-m3 .rounded-lg {
     border-radius: 12px;
+  }
+
+  .employer-text-primary { color: #1A1A1A !important; }
+  .employer-text-muted { color: rgba(26, 26, 26, 0.72) !important; }
+  .employer-text-subtle { color: #516176 !important; }
+  .employer-text-accent { color: #0A2540 !important; }
+  .employer-bg-surface { background-color: #FFFFFF !important; }
+  .employer-bg-muted { background-color: #F8FAFC !important; }
+  .employer-bg-accent-soft { background-color: rgba(10, 37, 64, 0.1) !important; }
+  .employer-border { border-color: #E9EDF2 !important; }
+  .employer-border-top { border-top-color: #E9EDF2 !important; }
+  .employer-button-primary { background-color: #0A2540 !important; color: #FFFFFF !important; }
+  .employer-button-primary:hover { background-color: #081D32 !important; }
+  .employer-link-accent { color: #0A2540 !important; }
+  .employer-border-accent { border-color: #0A2540 !important; }
+  .employer-focus-accent:focus {
+    border-color: #0A2540 !important;
+    box-shadow: 0 0 0 3px rgba(10, 37, 64, 0.14) !important;
+    outline: none !important;
   }
 }

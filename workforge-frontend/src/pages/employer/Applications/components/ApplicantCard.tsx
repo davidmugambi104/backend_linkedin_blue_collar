@@ -42,19 +42,19 @@ export const ApplicantCard: React.FC<ApplicantCardProps> = ({ application, onSta
   };
 
   return (
-    <Card className="bg-white border border-[#E2E8F0] rounded-2xl p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+    <Card className="employer-bg-surface border employer-border rounded-2xl p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <div className="flex items-center gap-3">
-            <div className="h-12 w-12 rounded-full bg-[#2563EB] flex items-center justify-center text-white font-semibold">
+            <div className="h-12 w-12 rounded-full employer-button-primary flex items-center justify-center font-semibold">
               {application.worker?.full_name?.charAt(0) || '?'}
             </div>
             <div>
-              <h3 className="font-semibold text-[#0F172A]">
+              <h3 className="font-semibold employer-text-primary">
                 {application.worker?.full_name || 'Unknown Applicant'}
               </h3>
               {application.worker?.title && (
-                <p className="text-sm text-[#64748B]">
+                <p className="text-sm employer-text-muted">
                   {application.worker.title}
                 </p>
               )}
@@ -62,12 +62,12 @@ export const ApplicantCard: React.FC<ApplicantCardProps> = ({ application, onSta
           </div>
 
           {application.cover_letter && (
-            <p className="mt-3 text-sm text-[#64748B]">
+            <p className="mt-3 text-sm employer-text-muted">
               {application.cover_letter}
             </p>
           )}
 
-          <div className="flex items-center gap-4 mt-2 text-xs text-[#64748B]">
+          <div className="flex items-center gap-4 mt-2 text-xs employer-text-muted">
             <span>Applied {formatDate(application.created_at)}</span>
             {application.worker?.average_rating && (
               <span className="flex items-center gap-1">
@@ -95,7 +95,7 @@ export const ApplicantCard: React.FC<ApplicantCardProps> = ({ application, onSta
           <Button
             variant="outline"
             size="sm"
-            className="rounded-xl border border-[#E2E8F0] bg-white text-[#0F172A] hover:bg-[#F8FAFC]"
+            className="rounded-xl border employer-border employer-bg-surface employer-text-primary hover:employer-bg-muted"
           >
             View Details
           </Button>
@@ -105,14 +105,14 @@ export const ApplicantCard: React.FC<ApplicantCardProps> = ({ application, onSta
             <Button
               size="sm"
               variant="outline"
-              className="rounded-xl border border-[#E2E8F0] bg-white text-[#0F172A] hover:bg-[#F8FAFC]"
+              className="rounded-xl border employer-border employer-bg-surface employer-text-primary hover:employer-bg-muted"
               onClick={() => onStatusChange(ApplicationStatus.REJECTED)}
             >
               Reject
             </Button>
             <Button
               size="sm"
-              className="rounded-xl bg-[#2563EB] text-white shadow-sm hover:bg-[#1E3A8A] active:scale-95"
+              className="rounded-xl employer-button-primary shadow-sm active:scale-95"
               onClick={() => onStatusChange(ApplicationStatus.ACCEPTED)}
             >
               Accept

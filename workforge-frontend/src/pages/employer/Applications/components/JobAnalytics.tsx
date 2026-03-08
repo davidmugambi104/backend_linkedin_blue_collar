@@ -39,12 +39,12 @@ export const JobAnalytics: React.FC<JobAnalyticsProps> = ({ job }) => {
   ];
 
   return (
-    <Card className="bg-white border border-[#E2E8F0] rounded-2xl">
+    <Card className="employer-bg-surface border employer-border rounded-2xl">
       <CardBody>
         <div className="space-y-6">
           <div>
-            <h3 className="text-lg font-semibold text-[#0F172A] mb-4 flex items-center gap-2">
-              <ChartBarIcon className="h-5 w-5 text-[#2563EB]" />
+            <h3 className="text-lg font-semibold employer-text-primary mb-4 flex items-center gap-2">
+              <ChartBarIcon className="h-5 w-5 employer-text-accent" />
               Application Analytics
             </h3>
           </div>
@@ -55,16 +55,16 @@ export const JobAnalytics: React.FC<JobAnalyticsProps> = ({ job }) => {
               return (
                 <div
                   key={stat.label}
-                  className="bg-[#F8FAFC] p-6 rounded-2xl flex items-center gap-4"
+                  className="employer-bg-muted p-6 rounded-2xl flex items-center gap-4"
                 >
-                  <div className="p-3 bg-[#2563EB]/10 rounded-xl text-[#2563EB]">
+                  <div className="p-3 employer-bg-accent-soft rounded-xl employer-text-accent">
                     <Icon className="h-6 w-6" />
                   </div>
                   <div>
-                    <p className="text-3xl font-bold text-[#0F172A]">
+                    <p className="text-3xl font-bold employer-text-primary">
                       {stat.value}
                     </p>
-                    <p className="text-sm text-[#64748B]">
+                    <p className="text-sm employer-text-muted">
                       {stat.label}
                     </p>
                   </div>
@@ -73,14 +73,14 @@ export const JobAnalytics: React.FC<JobAnalyticsProps> = ({ job }) => {
             })}
           </div>
 
-          <div className="border border-[#E2E8F0] rounded-2xl p-6 text-center bg-white">
-            <p className="text-sm font-medium text-[#64748B] mb-1">
+          <div className="border employer-border rounded-2xl p-6 text-center employer-bg-surface">
+            <p className="text-sm font-medium employer-text-muted mb-1">
               Acceptance Rate
             </p>
-            <p className="text-3xl font-bold text-[#0F172A]">
+            <p className="text-3xl font-bold employer-text-primary">
               {acceptanceRate}%
             </p>
-            <p className="text-xs text-[#64748B] mt-2">
+            <p className="text-xs employer-text-muted mt-2">
               {acceptedCount} accepted out of {totalApplicants} total applications
             </p>
           </div>

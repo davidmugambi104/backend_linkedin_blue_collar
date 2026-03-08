@@ -9,59 +9,59 @@ interface JobOverviewProps {
 
 export const JobOverview: React.FC<JobOverviewProps> = ({ job }) => {
   return (
-    <Card className="bg-white border border-[#E2E8F0] rounded-2xl">
+    <Card className="employer-bg-surface border employer-border rounded-2xl">
       <CardBody>
         <div className="space-y-6">
           <div>
-            <h3 className="text-lg font-semibold text-[#0F172A] mb-4">
+            <h3 className="text-lg font-semibold employer-text-primary mb-4">
               Job Overview
             </h3>
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <p className="text-sm font-medium text-[#64748B]">
+              <p className="text-sm font-medium employer-text-muted">
                 Location
               </p>
               <div className="flex items-center gap-2 mt-1">
-                <MapPinIcon className="h-5 w-5 text-[#64748B]" />
-                <span className="text-[#0F172A]">
+                <MapPinIcon className="h-5 w-5 employer-text-muted" />
+                <span className="employer-text-primary">
                   {job.location || 'Remote'}
                 </span>
               </div>
             </div>
 
             <div>
-              <p className="text-sm font-medium text-[#64748B]">
+              <p className="text-sm font-medium employer-text-muted">
                 Employment Type
               </p>
               <div className="flex items-center gap-2 mt-1">
-                <BriefcaseIcon className="h-5 w-5 text-[#64748B]" />
-                <span className="text-[#0F172A]">
+                <BriefcaseIcon className="h-5 w-5 employer-text-muted" />
+                <span className="employer-text-primary">
                   {job.employment_type || 'Not specified'}
                 </span>
               </div>
             </div>
 
             <div>
-              <p className="text-sm font-medium text-[#64748B]">
+              <p className="text-sm font-medium employer-text-muted">
                 Salary Range
               </p>
               <div className="flex items-center gap-2 mt-1">
-                <CurrencyDollarIcon className="h-5 w-5 text-[#64748B]" />
-                <span className="text-[#0F172A]">
+                <CurrencyDollarIcon className="h-5 w-5 employer-text-muted" />
+                <span className="employer-text-primary">
                   ${job.salary_min?.toLocaleString() || '0'} - ${job.salary_max?.toLocaleString() || 'Negotiable'}
                 </span>
               </div>
             </div>
 
             <div>
-              <p className="text-sm font-medium text-[#64748B]">
+              <p className="text-sm font-medium employer-text-muted">
                 Total Applicants
               </p>
               <div className="flex items-center gap-2 mt-1">
-                <UserGroupIcon className="h-5 w-5 text-[#64748B]" />
-                <span className="text-[#0F172A]">
+                <UserGroupIcon className="h-5 w-5 employer-text-muted" />
+                <span className="employer-text-primary">
                   {job.applicants?.length || 0}
                 </span>
               </div>
@@ -69,22 +69,22 @@ export const JobOverview: React.FC<JobOverviewProps> = ({ job }) => {
           </div>
 
           {job.description && (
-            <div className="border-t border-[#E2E8F0] pt-6">
-              <p className="text-sm font-medium text-[#64748B] mb-2">
+            <div className="border-t employer-border pt-6">
+              <p className="text-sm font-medium employer-text-muted mb-2">
                 Description
               </p>
-              <div className="prose prose-slate max-w-none text-[#0F172A] whitespace-pre-wrap">
+              <div className="prose prose-slate max-w-none employer-text-primary whitespace-pre-wrap">
                 {job.description}
               </div>
             </div>
           )}
 
           {job.requirements && (
-            <div className="border-t border-[#E2E8F0] pt-4">
-              <p className="text-sm font-medium text-[#64748B] mb-2">
+            <div className="border-t employer-border pt-4">
+              <p className="text-sm font-medium employer-text-muted mb-2">
                 Requirements
               </p>
-              <div className="prose prose-slate max-w-none text-[#0F172A] whitespace-pre-wrap">
+              <div className="prose prose-slate max-w-none employer-text-primary whitespace-pre-wrap">
                 {job.requirements}
               </div>
             </div>

@@ -14,14 +14,14 @@ export const RecentJobPostings: React.FC = () => {
 
   if (isLoading) {
     return (
-      <Card className="bg-white border border-[#E2E8F0] rounded-2xl">
+      <Card className="employer-bg-surface border employer-border rounded-2xl">
         <CardHeader>
-          <h3 className="text-lg font-semibold text-[#0F172A]">Recent Job Postings</h3>
+          <h3 className="text-lg font-semibold employer-text-primary">Recent Job Postings</h3>
         </CardHeader>
         <CardBody>
           <div className="space-y-4">
             {[...Array(3)].map((_, i) => (
-              <Skeleton key={i} className="h-16 bg-[#F1F5F9]" />
+              <Skeleton key={i} className="h-16 employer-bg-muted" />
             ))}
           </div>
         </CardBody>
@@ -32,15 +32,15 @@ export const RecentJobPostings: React.FC = () => {
   const recentJobs = jobs?.slice(0, 5) || [];
 
   return (
-    <Card className="bg-white border border-[#E2E8F0] rounded-2xl">
+    <Card className="employer-bg-surface border employer-border rounded-2xl">
       <CardHeader>
-        <h3 className="text-lg font-semibold text-[#0F172A]">Recent Job Postings</h3>
+        <h3 className="text-lg font-semibold employer-text-primary">Recent Job Postings</h3>
         <Link to="/employer/jobs">
           <Button
             variant="ghost"
             size="sm"
             rightIcon={<ArrowRightIcon className="w-4 h-4" />}
-            className="text-[#2563EB] hover:underline"
+            className="employer-link-accent hover:underline"
           >
             View All
           </Button>
@@ -50,11 +50,11 @@ export const RecentJobPostings: React.FC = () => {
         <div className="space-y-4">
           {recentJobs.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-[#64748B] mb-4">
+              <p className="employer-text-muted mb-4">
                 You haven't posted any jobs yet
               </p>
               <Link to="/employer/post-job">
-                <Button className="rounded-xl bg-[#2563EB] text-white shadow-sm hover:bg-[#1E3A8A] active:scale-95">
+                <Button className="rounded-xl employer-button-primary shadow-sm active:scale-95">
                   Post Your First Job
                 </Button>
               </Link>
@@ -64,17 +64,17 @@ export const RecentJobPostings: React.FC = () => {
               <Link
                 key={job.id}
                 to={`/employer/jobs/${job.id}`}
-                className="block p-4 rounded-lg hover:bg-[#F8FAFC] transition-colors"
+                className="block p-4 rounded-lg hover:employer-bg-muted transition-colors"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center space-x-2">
-                      <h4 className="font-medium text-[#0F172A]">
+                      <h4 className="font-medium employer-text-primary">
                         {job.title}
                       </h4>
                       <JobStatusBadge status={job.status} size="sm" />
                     </div>
-                    <div className="flex items-center gap-4 mt-2 text-sm text-[#64748B]">
+                    <div className="flex items-center gap-4 mt-2 text-sm employer-text-muted">
                       <span>{job.application_count || 0} applications</span>
                       <span>•</span>
                       <span>Posted {formatDistanceToNow(new Date(job.created_at), { addSuffix: true })}</span>

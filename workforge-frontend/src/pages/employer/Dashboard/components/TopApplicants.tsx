@@ -18,14 +18,14 @@ export const TopApplicants: React.FC = () => {
 
   if (isLoading || !firstJobId) {
     return (
-      <Card className="bg-white border border-[#E2E8F0] rounded-2xl">
+      <Card className="employer-bg-surface border employer-border rounded-2xl">
         <CardHeader>
-          <h3 className="text-lg font-semibold text-[#0F172A]">Top Applicants</h3>
+          <h3 className="text-lg font-semibold employer-text-primary">Top Applicants</h3>
         </CardHeader>
         <CardBody>
           <div className="space-y-4">
             {[...Array(3)].map((_, i) => (
-              <Skeleton key={i} className="h-16 bg-[#F1F5F9]" />
+              <Skeleton key={i} className="h-16 employer-bg-muted" />
             ))}
           </div>
         </CardBody>
@@ -38,11 +38,11 @@ export const TopApplicants: React.FC = () => {
     .slice(0, 3) || [];
 
   return (
-    <Card className="bg-white border border-[#E2E8F0] rounded-2xl">
+    <Card className="employer-bg-surface border employer-border rounded-2xl">
       <CardHeader>
-        <h3 className="text-lg font-semibold text-[#0F172A]">Recent Applicants</h3>
+        <h3 className="text-lg font-semibold employer-text-primary">Recent Applicants</h3>
         <Link to="/employer/applications">
-          <Button variant="ghost" size="sm" className="text-[#2563EB] hover:underline">
+          <Button variant="ghost" size="sm" className="employer-link-accent hover:underline">
             View All
           </Button>
         </Link>
@@ -50,14 +50,14 @@ export const TopApplicants: React.FC = () => {
       <CardBody>
         <div className="space-y-4">
           {topApplicants.length === 0 ? (
-            <p className="text-center text-[#64748B] py-4">
+            <p className="text-center employer-text-muted py-4">
               No applications yet
             </p>
           ) : (
             topApplicants.map((application) => (
               <div
                 key={application.id}
-                className="flex items-center justify-between p-3 rounded-lg hover:bg-[#F8FAFC] transition-colors"
+                className="flex items-center justify-between p-3 rounded-lg hover:employer-bg-muted transition-colors"
               >
                 <div className="flex items-center space-x-3">
                   <Avatar
@@ -67,18 +67,18 @@ export const TopApplicants: React.FC = () => {
                     className="rounded-lg"
                   />
                   <div>
-                    <h4 className="font-medium text-[#0F172A]">
+                    <h4 className="font-medium employer-text-primary">
                       {application.worker?.full_name}
                     </h4>
                     <div className="flex items-center space-x-2 mt-1">
                       <Rating value={application.worker?.average_rating || 0} readonly size="sm" />
-                      <span className="text-xs text-[#64748B]">
+                      <span className="text-xs employer-text-muted">
                         ({application.worker?.total_ratings})
                       </span>
                       {application.proposed_rate && (
                         <>
-                          <span className="text-[#E2E8F0]">•</span>
-                          <span className="text-xs text-[#64748B]">
+                          <span className="employer-text-muted">•</span>
+                          <span className="text-xs employer-text-muted">
                             {formatCurrency(application.proposed_rate)}/hr
                           </span>
                         </>
@@ -87,7 +87,7 @@ export const TopApplicants: React.FC = () => {
                   </div>
                 </div>
                 <Link to={`/employer/jobs/${application.job_id}?application=${application.id}`}>
-                  <Button variant="ghost" size="sm" className="!p-2 text-[#2563EB]">
+                  <Button variant="ghost" size="sm" className="!p-2 employer-link-accent">
                     <ChatBubbleLeftIcon className="w-5 h-5" />
                   </Button>
                 </Link>

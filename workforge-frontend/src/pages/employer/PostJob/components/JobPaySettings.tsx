@@ -4,7 +4,12 @@ import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import { PayType } from '@types';
 
 export const JobPaySettings: React.FC = () => {
-  const { register, watch, formState: { errors } } = useFormContext();
+  const {
+    register,
+    watch,
+    formState: { errors },
+  } = useFormContext();
+
   const payType = watch('pay_type');
 
   const payTypeOptions = [
@@ -16,12 +21,8 @@ export const JobPaySettings: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-[#0F172A] mb-4">
-          Compensation
-        </h2>
-        <p className="text-sm text-[#64748B] mb-6">
-          Set the pay rate and type for this position.
-        </p>
+        <h2 className="text-lg font-semibold employer-text-primary mb-4">Compensation</h2>
+        <p className="text-sm employer-text-muted mb-6">Set the pay rate and type for this position.</p>
       </div>
 
       <div className="space-y-4">
@@ -32,7 +33,9 @@ export const JobPaySettings: React.FC = () => {
             defaultValue=""
             required
           >
-            <option value="" disabled>Select pay type</option>
+            <option value="" disabled>
+              Select pay type
+            </option>
             {payTypeOptions.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
@@ -58,7 +61,7 @@ export const JobPaySettings: React.FC = () => {
               placeholder=" "
               required
             />
-            <label className="employer-floating-label">Minimum Pay ({payType || 'rate'})</label>
+            <label className="employer-floating-label">Minimum Pay {payType ? `(/${payType})` : ''}</label>
             {errors.pay_min?.message && (
               <p className="employer-validation-error">
                 <ExclamationTriangleIcon className="h-4 w-4" />
@@ -75,7 +78,7 @@ export const JobPaySettings: React.FC = () => {
               className="employer-floating-input"
               placeholder=" "
             />
-            <label className="employer-floating-label">Maximum Pay ({payType || 'rate'})</label>
+            <label className="employer-floating-label">Maximum Pay {payType ? `(/${payType})` : ''}</label>
             {errors.pay_max?.message && (
               <p className="employer-validation-error">
                 <ExclamationTriangleIcon className="h-4 w-4" />
@@ -85,10 +88,10 @@ export const JobPaySettings: React.FC = () => {
           </div>
         </div>
 
-        <div className="rounded-lg border border-[#E9EDF2] bg-[#F8FAFC] p-4">
-          <p className="text-sm text-[#0A2540]">
-            <strong>Tip:</strong> Setting a competitive pay rate helps attract qualified candidates faster.
-            Research shows jobs with clear pay ranges receive 30% more applications.
+        <div className="rounded-lg border employer-border employer-bg-muted p-4">
+          <p className="text-sm employer-text-primary">
+            <strong>Tip:</strong> Setting a competitive pay rate helps attract qualified candidates faster. Research
+            shows jobs with clear pay ranges receive 30% more applications.
           </p>
         </div>
       </div>
