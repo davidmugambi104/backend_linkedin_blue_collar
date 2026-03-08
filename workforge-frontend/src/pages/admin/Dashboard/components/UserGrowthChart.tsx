@@ -56,7 +56,7 @@ export const UserGrowthChart: React.FC = () => {
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={growthData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200 dark:stroke-gray-700" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#E6E9F0" />
                 <XAxis
                   dataKey="date"
                   tickFormatter={(date) => new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
@@ -70,14 +70,22 @@ export const UserGrowthChart: React.FC = () => {
                     month: 'long',
                     day: 'numeric',
                   })}
+                  contentStyle={{
+                    backgroundColor: '#000000',
+                    color: '#ffffff',
+                    border: '1px solid #0A2540',
+                    borderRadius: '0.5rem',
+                  }}
+                  labelStyle={{ color: '#ffffff' }}
+                  itemStyle={{ color: '#ffffff' }}
                 />
                 <Legend />
                 <Line
                   type="monotone"
                   dataKey="workers"
                   name="Workers"
-                  stroke="#3b82f6"
-                  strokeWidth={2}
+                  stroke="#0066FF"
+                  strokeWidth={2.5}
                   dot={false}
                 />
                 <Line
@@ -97,7 +105,7 @@ export const UserGrowthChart: React.FC = () => {
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={retentionData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200 dark:stroke-gray-700" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#E6E9F0" />
                 <XAxis
                   dataKey="date"
                   tickFormatter={(date) => `${date} days`}
@@ -110,6 +118,14 @@ export const UserGrowthChart: React.FC = () => {
                 <Tooltip
                   formatter={(value: number) => [`${value}%`, 'Retention Rate']}
                   labelFormatter={(label) => `Day ${label}`}
+                  contentStyle={{
+                    backgroundColor: '#000000',
+                    color: '#ffffff',
+                    border: '1px solid #0A2540',
+                    borderRadius: '0.5rem',
+                  }}
+                  labelStyle={{ color: '#ffffff' }}
+                  itemStyle={{ color: '#ffffff' }}
                 />
                 <Line
                   type="monotone"

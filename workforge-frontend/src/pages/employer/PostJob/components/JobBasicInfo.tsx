@@ -1,12 +1,12 @@
 import React from 'react';
 import { useFormContext } from 'react-hook-form';
-import { Input } from '@components/ui/Input';
-import { Select } from '@components/ui/Select';
+import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import { useSkills } from '@hooks/useSkills';
 
 export const JobBasicInfo: React.FC = () => {
-  const { register, formState: { errors } } = useFormContext();
+  const { register, watch, formState: { errors } } = useFormContext();
   const { data: skills } = useSkills();
+  const selectedSkill = watch('required_skill_id');
 
   return (
     <div className="space-y-6">
@@ -20,35 +20,62 @@ export const JobBasicInfo: React.FC = () => {
       </div>
 
       <div className="space-y-4">
-        <Input
-          {...register('title')}
-          label="Job Title"
-          placeholder="e.g., Senior Carpenter Needed for Renovation"
-          error={errors.title?.message as string}
-          required
-        />
+        <div className="employer-floating">
+          <input
+            {...register('title')}
+            className="employer-floating-input"
+            placeholder=" "
+            required
+          />
+          <label className="employer-floating-label">Job Title</label>
+          {errors.title?.message && (
+            <p className="employer-validation-error">
+              <ExclamationTriangleIcon className="h-4 w-4" />
+              {errors.title.message as string}
+            </p>
+          )}
+        </div>
 
-        <Select
-          {...register('required_skill_id', { valueAsNumber: true })}
-          label="Required Skill"
-          error={errors.required_skill_id?.message as string}
-          required
-        >
-          <option value="">Select a skill</option>
-          {skills?.map((skill) => (
-            <option key={skill.id} value={skill.id}>
-              {skill.name} ({skill.category})
-            </option>
-          ))}
-        </Select>
+        <div className="employer-floating">
+          <select
+            {...register('required_skill_id', { valueAsNumber: true })}
+            className={`employer-floating-select ${selectedSkill ? 'has-value' : ''}`}
+            defaultValue=""
+            required
+          >
+            <option value="" disabled>Select a skill</option>
+            {skills?.map((skill) => (
+              <option key={skill.id} value={skill.id}>
+                {skill.name} ({skill.category})
+              </option>
+            ))}
+          </select>
+          <label className="employer-floating-label">Required Skill</label>
+          {errors.required_skill_id?.message && (
+            <p className="employer-validation-error">
+              <ExclamationTriangleIcon className="h-4 w-4" />
+              {errors.required_skill_id.message as string}
+            </p>
+          )}
+        </div>
 
-        <Input
-          {...register('expiration_date')}
-          type="date"
-          label="Application Deadline"
-          error={errors.expiration_date?.message as string}
-          hint="Leave empty for no deadline"
-        />
+        <div className="employer-floating">
+          <input
+            {...register('expiration_date')}
+            type="date"
+            className="employer-floating-input"
+            placeholder=" "
+          />
+          <label className="employer-floating-label">Application Deadline</label>
+          {errors.expiration_date?.message ? (
+            <p className="employer-validation-error">
+              <ExclamationTriangleIcon className="h-4 w-4" />
+              {errors.expiration_date.message as string}
+            </p>
+          ) : (
+            <p className="mt-1 text-xs text-[#516176]">Leave empty for no deadline</p>
+          )}
+        </div>
       </div>
     </div>
   );

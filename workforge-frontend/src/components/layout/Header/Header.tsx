@@ -1,10 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
+import { MoonIcon, SunIcon } from '@heroicons/react/24/solid';
 import { cn } from '@lib/utils/cn';
 import { Button } from '@components/ui/Button';
 import { Avatar } from '@components/ui/Avatar';
 import { Dropdown } from '@components/ui/Dropdown';
+import { uiStore } from '@store/ui.store';
 import { useHeader } from './useHeader';
 import { NavMenu } from './NavMenu';
 import { MobileMenu } from './MobileMenu';
@@ -25,6 +27,7 @@ export const Header: React.FC<HeaderProps> = ({
       mobileOpen,
       onMobileOpenChange,
     });
+  const { theme, setTheme } = uiStore();
 
   const handleMobileMenuToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -74,7 +77,7 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Brand */}
           <Link to="/" className="flex items-center gap-2">
-            <span className="text-xl font-extrabold tracking-tight text-blue-600 dark:text-blue-400">
+            <span className="text-xl font-extrabold tracking-tight text-[#0A2540] dark:text-blue-300">
               WorkForge
             </span>
           </Link>
@@ -106,6 +109,21 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* RIGHT: Actions */}
         <div className="hidden md:flex items-center gap-3">
+          {variant === 'dashboard' && (
+            <button
+              type="button"
+              onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#E9EDF2] text-[#0A2540] hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+              aria-label="Toggle dark mode"
+            >
+              {theme === 'light' ? (
+                <MoonIcon className="h-5 w-5" />
+              ) : (
+                <SunIcon className="h-5 w-5" />
+              )}
+            </button>
+          )}
+
           {children}
 
           {/* Authenticated user */}

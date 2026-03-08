@@ -30,25 +30,25 @@ export const StatCard: React.FC<StatCardProps> = ({
   return (
     <div
       className={cn(
-        "group relative bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl",
-        "rounded-2xl border border-gray-200/50 dark:border-gray-800/50",
+        "group relative bg-white dark:bg-[#151922]",
+        "rounded-2xl border border-[#E6E9F0] dark:border-[#2A3140]",
         "p-6 transition-all duration-200",
-        "hover:shadow-xl hover:shadow-gray-200/50 dark:hover:shadow-gray-900/50",
-        "hover:border-gray-300/50 dark:hover:border-gray-700/50",
+        "shadow-[0_4px_16px_rgba(10,37,64,0.08)] hover:shadow-[0_8px_22px_rgba(10,37,64,0.14)]",
+        "hover:border-[#D6DEEB] dark:hover:border-[#374154]",
         "hover:scale-[1.02]",
         className
       )}
     >
       {/* Gradient Overlay */}
-      <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-transparent via-transparent to-gray-50/50 dark:to-gray-900/50 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+      <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-transparent via-transparent to-[#F5F7FA]/60 dark:to-[#1A1F2B]/70 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
 
       <div className="relative">
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+            <p className="text-sm font-medium text-[#9CA3AF] dark:text-gray-400 mb-1 font-['SF_Pro_Display','Inter',sans-serif]">
               {title}
             </p>
-            <p className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
+            <p className="text-3xl font-bold text-[#0A2540] dark:text-white tracking-tight font-['Neue_Haas_Grotesk_Display_Pro','Inter',sans-serif]">
               {value}
             </p>
             {subtitle && (

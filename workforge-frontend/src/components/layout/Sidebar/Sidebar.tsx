@@ -42,9 +42,9 @@ const SidebarHeader: React.FC<SidebarHeaderProps> = ({ title = 'WorkForge', subt
       {logo ? <div className="flex items-center">{logo}</div> : null}
       {variant === 'compact' ? null : (
         <div>
-          <div className="text-lg font-semibold text-slate-900 dark:text-white">{title}</div>
+          <div className="text-lg font-semibold text-slate-900 dark:text-white employer-sidebar-title">{title}</div>
           {subtitle ? (
-            <div className="text-xs text-slate-500 dark:text-slate-400">{subtitle}</div>
+            <div className="text-xs text-slate-500 dark:text-slate-400 employer-sidebar-subtitle">{subtitle}</div>
           ) : null}
         </div>
       )}
@@ -69,7 +69,7 @@ const SidebarSection: React.FC<SidebarSectionProps> = ({ section, className }) =
 
   return (
     <div className={cn('space-y-2', className)}>
-      <div className={sidebarSectionLabelVariants({ variant })}>{section.label}</div>
+      <div className={cn(sidebarSectionLabelVariants({ variant }), 'employer-sidebar-section')}>{section.label}</div>
       <div className="space-y-1">
         {section.items.map((item) => (
           <SidebarItem key={item.id} item={item} />
@@ -87,17 +87,17 @@ const SidebarItem: React.FC<SidebarItemProps> = ({ item, className }) => {
   return (
     <NavLink
       to={item.to}
-      className={cn(sidebarItemVariants({ active: isActive, variant }), className)}
+      className={cn(sidebarItemVariants({ active: isActive, variant }), 'employer-nav-link', className)}
       aria-current={isActive ? 'page' : undefined}
     >
       <span className="flex items-center justify-center text-slate-500 dark:text-slate-400">
         {item.icon ? <item.icon className="h-5 w-5" /> : null}
       </span>
       {variant === 'compact' ? null : (
-        <span className="flex-1 truncate">{item.label}</span>
+        <span className="flex-1 truncate employer-nav-label">{item.label}</span>
       )}
       {variant === 'compact' || item.badge === undefined ? null : (
-        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200 employer-nav-badge">
           {item.badge}
         </span>
       )}
@@ -124,7 +124,7 @@ const SidebarDefaultContent: React.FC = () => {
         </div>
       </SidebarNav>
       <SidebarFooter>
-        <div className="text-xs text-slate-500 dark:text-slate-400">WorkForge v1.0</div>
+        <div className="text-xs text-slate-500 dark:text-slate-400 employer-sidebar-version">WorkForge v1.0</div>
       </SidebarFooter>
     </>
   );

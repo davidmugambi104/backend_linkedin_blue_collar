@@ -11,14 +11,14 @@ const TableHeader: React.FC<TableHeaderProps> = ({
   sortDirection,
 }) => {
   return (
-    <thead className="bg-slate-50 dark:bg-slate-800">
+    <thead className="bg-[#DDEBFF] dark:bg-[#1A2740]">
       <tr>
         {columns.map((column) => (
           <th
             key={column.key}
             className={cn(
-              'px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider dark:text-slate-400',
-              column.sortable && 'cursor-pointer hover:text-slate-900 dark:hover:text-slate-200 transition-colors',
+              'px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider',
+              column.sortable && 'cursor-pointer hover:text-white/90 transition-colors',
               column.align === 'center' && 'text-center',
               column.align === 'right' && 'text-right',
               column.width && `w-[${column.width}]`,
@@ -66,10 +66,10 @@ const TableRow = <T extends Record<string, any>>({
   return (
     <tr
       className={cn(
-        'transition-colors border-b border-slate-200 dark:border-slate-800',
-        striped && index % 2 === 1 && 'bg-slate-50 dark:bg-slate-800/50',
-        hoverable && 'hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer',
-        !hoverable && 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
+        'transition-colors border-b border-[#DDEBFF] dark:border-[#2A3140]',
+        striped && index % 2 === 1 && 'bg-[#F9FBFF] dark:bg-[#1A1F2B]',
+        hoverable && 'hover:bg-[#EEF4FF] dark:hover:bg-[#1A2740] cursor-pointer',
+        !hoverable && 'hover:bg-[#F9FBFF] dark:hover:bg-[#1A1F2B]'
       )}
       onClick={() => onRowClick?.(item)}
     >
@@ -77,7 +77,7 @@ const TableRow = <T extends Record<string, any>>({
         <td
           key={column.key}
           className={cn(
-            'px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-slate-100',
+            'px-6 py-4 whitespace-nowrap text-sm text-[#1A1A1A] dark:text-slate-100',
             column.align === 'center' && 'text-center',
             column.align === 'right' && 'text-right',
             column.className
@@ -122,10 +122,10 @@ export const Table = <T extends Record<string, any>>({
   };
 
   return (
-    <div className={cn('relative overflow-x-auto', className)}>
+    <div className={cn('relative overflow-x-auto rounded-2xl border border-[#E6E9F0] shadow-[0_4px_16px_rgba(10,37,64,0.06)]', className)}>
       <table
         className={cn(
-          'w-full text-left',
+          'w-full text-left bg-white dark:bg-[#151922]',
           bordered && 'border border-gray-200 dark:border-gray-800',
           compact && 'text-sm'
         )}
@@ -137,7 +137,7 @@ export const Table = <T extends Record<string, any>>({
           sortDirection={sortDirection}
         />
         
-        <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-900 dark:divide-gray-800">
+        <tbody className="bg-white divide-y divide-[#DDEBFF] dark:bg-[#151922] dark:divide-[#2A3140]">
           {loading ? (
             <tr>
               <td colSpan={columns.length} className="px-6 py-8 text-center">

@@ -14,6 +14,7 @@ from .payments import payments_bp
 from .escrow import escrow_bp
 from .admin import admin_bp
 from .admin_dashboard import admin_dashboard_bp
+from .admin_ops import admin_ops_bp
 from .analytics import analytics_bp
 from .ml import ml_bp
 from .bulk import bulk_bp
@@ -38,6 +39,7 @@ def register_blueprints(app):
     app.register_blueprint(escrow_bp, url_prefix="/api/escrow")
     app.register_blueprint(admin_bp, url_prefix="/api/admin")
     app.register_blueprint(admin_dashboard_bp, url_prefix="/api/admin")
+    app.register_blueprint(admin_ops_bp, url_prefix="/api/admin")
     app.register_blueprint(analytics_bp, url_prefix="/api/analytics")
     app.register_blueprint(ml_bp, url_prefix="/api/ml")
     app.register_blueprint(bulk_bp, url_prefix="/api/bulk")

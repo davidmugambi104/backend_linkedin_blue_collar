@@ -47,7 +47,7 @@ export const AdminTable = <T extends Record<string, any>>({
 
   if (loading) {
     return (
-      <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 dark:border-gray-800/50 p-8">
+      <div className="bg-white dark:bg-[#151922] rounded-2xl border border-[#E6E9F0] dark:border-[#2A3140] p-8 shadow-[0_4px_16px_rgba(10,37,64,0.06)]">
         <div className="space-y-4">
           {[...Array(5)].map((_, i) => (
             <div key={i} className="h-12 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse" />
@@ -58,18 +58,18 @@ export const AdminTable = <T extends Record<string, any>>({
   }
 
   return (
-    <div className={cn("bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 dark:border-gray-800/50 overflow-hidden", className)}>
+    <div className={cn("bg-white dark:bg-[#151922] rounded-2xl border border-[#E6E9F0] dark:border-[#2A3140] overflow-hidden shadow-[0_4px_16px_rgba(10,37,64,0.06)]", className)}>
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
-          <thead className="bg-gray-50/50 dark:bg-gray-800/50">
+        <table className="min-w-full divide-y divide-[#DDEBFF] dark:divide-[#2A3140]">
+          <thead className="bg-[#DDEBFF] dark:bg-[#1A2740]">
             <tr>
               {columns.map((column) => (
                 <th
                   key={column.key}
                   scope="col"
                   className={cn(
-                    "px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider",
-                    column.sortable && "cursor-pointer hover:text-gray-700 dark:hover:text-gray-300",
+                    "px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider",
+                    column.sortable && "cursor-pointer hover:text-white/90",
                     column.align === 'right' && "text-right",
                     column.align === 'center' && "text-center"
                   )}
@@ -87,18 +87,18 @@ export const AdminTable = <T extends Record<string, any>>({
               ))}
             </tr>
           </thead>
-          <tbody className="bg-white/50 dark:bg-gray-900/50 divide-y divide-gray-200 dark:divide-gray-800">
+          <tbody className="bg-white dark:bg-[#151922] divide-y divide-[#DDEBFF] dark:divide-[#2A3140]">
             {data.length > 0 ? (
               data.map((row, index) => (
                 <tr
                   key={row.id || index}
-                  className="hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors"
+                  className="hover:bg-[#EEF4FF] dark:hover:bg-[#1A2740] transition-colors"
                 >
                   {columns.map((column) => (
                     <td
                       key={column.key}
                       className={cn(
-                        "px-6 py-4 text-sm text-gray-900 dark:text-white",
+                        "px-6 py-4 text-sm text-[#1A1A1A] dark:text-white font-['SF_Pro_Display','Inter',sans-serif]",
                         column.align === 'right' && "text-right",
                         column.align === 'center' && "text-center"
                       )}

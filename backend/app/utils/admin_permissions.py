@@ -131,6 +131,22 @@ def get_admin_role(user: User) -> str:
     return getattr(user, 'admin_role', None) or AdminRole.OPS_ADMIN
 
 
+def get_current_admin():
+    """Get current admin user from JWT context"""
+    from flask import request
+    from flask_jwt_extended import get_jwt_identity
+    
+    try:
+        from flask import g
+        if hasattr(g, 'current_admin'):
+            return g.current_admin
+    except:
+        pass
+    
+    user_id = get_jwt_identity()
+    return User.query.get(int(user_id))
+
+
 def has_permission(user: User, permission: str) -> bool:
     """Check if user has a specific permission"""
     if user.role != UserRole.ADMIN:

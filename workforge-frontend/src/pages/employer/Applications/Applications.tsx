@@ -2,6 +2,7 @@
  * Employer Applications Page - Unified Design System
  */
 import React, { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import {
   UsersIcon,
   CheckCircleIcon,
@@ -109,7 +110,7 @@ const Applications: React.FC = () => {
           {/* Stats Grid */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {stats.map((stat, idx) => (
-              <Card key={idx} className="p-4 lg:p-6" hoverable>
+              <Card key={idx} className="p-4 lg:p-6 employer-stat-widget employer-aspect-16-9" hoverable>
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{stat.label}</p>
                 <p className="mt-1 text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">{stat.value}</p>
               </Card>
@@ -117,7 +118,7 @@ const Applications: React.FC = () => {
           </div>
 
           {/* Filter Tabs */}
-          <Card className="p-2">
+          <Card className="p-2 employer-m3-card">
             <div className="flex flex-wrap gap-2">
               {['all', 'pending', 'accepted', 'rejected'].map(status => (
                 <button
@@ -142,21 +143,24 @@ const Applications: React.FC = () => {
             {/* Applications List */}
             <div className="lg:col-span-2 space-y-4">
               {filteredApplications.length === 0 ? (
-                <Card className="p-8 lg:p-12 text-center">
+                <Card className="employer-empty-state p-8 lg:p-12 text-center">
                   <UsersIcon className="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                     No applications found
                   </h3>
                   <p className="text-gray-500 dark:text-gray-400">
-                    Applications will appear here when workers apply to your jobs
+                    Post your first job to see applicants
                   </p>
+                  <Link to="/employer/jobs/post">
+                    <Button className="mt-5 rounded-xl bg-[#0A2540] text-white hover:bg-[#081D32]">Post your first job</Button>
+                  </Link>
                 </Card>
               ) : (
                 filteredApplications.map(application => (
                   <Card
                     key={application.id}
                     className={`
-                      p-4 lg:p-6 cursor-pointer transition-all duration-200 hover:shadow-lg
+                        p-4 lg:p-6 cursor-pointer transition-all duration-200 hover:shadow-lg employer-m3-card
                       ${selectedAppId === application.id ? 'ring-2 ring-blue-500 border-blue-500' : ''}
                     `}
                     onClick={() => setSelectedAppId(application.id)}
@@ -308,7 +312,7 @@ const Applications: React.FC = () => {
                   </div>
                 </Card>
               ) : (
-                <Card className="p-6 text-center">
+                <Card className="employer-empty-state p-6 text-center">
                   <UsersIcon className="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
                   <p className="text-gray-500 dark:text-gray-400">
                     Select an application to view details

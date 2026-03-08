@@ -12,7 +12,7 @@ interface AdminLayoutProps {
 
 export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, className }) => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900">
+    <div className="admin-corporate min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900">
       <div className="flex h-screen overflow-hidden">
         {/* Sidebar - Fixed width, glass effect */}
         <aside className="hidden lg:flex lg:flex-shrink-0">

@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { MagnifyingGlassIcon, StarIcon } from '@heroicons/react/24/solid';
 import { MapPinIcon } from '@heroicons/react/24/outline';
+import { Link } from 'react-router-dom';
 import { Card } from '@components/ui/Card';
 import { Button } from '@components/ui/Button';
 import { Input } from '@components/ui/Input';
@@ -35,7 +36,7 @@ const Workers: React.FC = () => {
       </div>
 
       {/* Search & Filter */}
-      <Card className="bg-white border border-[#E2E8F0] rounded-2xl p-6">
+      <Card className="bg-white border border-[#E2E8F0] rounded-2xl p-6 employer-fintech-panel">
         <div className="space-y-4">
           <div className="flex items-center space-x-2">
             <MagnifyingGlassIcon className="h-5 w-5 text-[#64748B]" />
@@ -58,14 +59,14 @@ const Workers: React.FC = () => {
 
       {/* Loading State */}
       {isLoading && (
-        <Card className="bg-white border border-[#E2E8F0] rounded-2xl p-12 text-center">
+        <Card className="bg-white border border-[#E2E8F0] rounded-2xl p-12 text-center employer-fintech-panel">
           <p className="text-[#64748B]">Loading workers...</p>
         </Card>
       )}
 
       {/* Error State */}
       {isError && error && (
-        <Card className="bg-white border border-red-200 rounded-2xl p-6">
+        <Card className="bg-white border border-red-200 rounded-2xl p-6 employer-fintech-panel">
           <p className="text-red-600">Error loading workers: {error instanceof Error ? error.message : 'Unknown error'}</p>
         </Card>
       )}
@@ -74,7 +75,7 @@ const Workers: React.FC = () => {
       {!isLoading && !isError && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {filteredWorkers.map(worker => (
-            <Card key={worker.id} className="bg-white border border-[#E2E8F0] rounded-2xl p-6 hover:shadow-lg transition-all">
+            <Card key={worker.id} className="bg-white border border-[#E2E8F0] rounded-2xl p-6 hover:shadow-lg transition-all employer-fintech-panel">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-start space-x-4 flex-1">
                   <div className="h-16 w-16 rounded-lg bg-[#2563EB]/10 flex items-center justify-center text-[#2563EB] text-xl font-semibold">
@@ -149,8 +150,15 @@ const Workers: React.FC = () => {
       )}
 
       {!isLoading && !isError && filteredWorkers.length === 0 && (
-        <Card className="bg-white border border-[#E2E8F0] rounded-2xl p-12 text-center">
-          <p className="text-[#64748B]">No workers found matching your criteria</p>
+        <Card className="employer-empty-state rounded-2xl p-12 text-center">
+          <div className="mx-auto mb-4 h-16 w-16 rounded-2xl border border-[#E9EDF2] bg-white flex items-center justify-center text-[#0A2540]">
+            <MagnifyingGlassIcon className="h-8 w-8" />
+          </div>
+          <p className="text-[#1A1A1A] font-semibold">No workers found yet</p>
+          <p className="mt-2 text-[#516176]">Post your first job to see applicants and matching workers.</p>
+          <Link to="/employer/jobs/post">
+            <Button className="mt-5 rounded-xl bg-[#0A2540] text-white hover:bg-[#081D32]">Post your first job</Button>
+          </Link>
         </Card>
       )}
     </div>

@@ -13,31 +13,34 @@
 - [x] OpenAPI documentation (`backend/app/docs/openapi.yaml`)
 
 ### Phase 5: Frontend Alignment (Completed)
-- [x] Created design tokens (`src/styles/tokens.ts`)
-- [x] Unified DashboardLayout with consistent container
-- [x] Unified Header component
-- [x] Worker Dashboard - aligned with design system
-- [x] Worker Jobs - aligned with design system
-- [x] Worker Applications - aligned with design system
-- [x] Worker Profile - aligned with design system
-- [x] Worker Settings - aligned with design system
-- [x] Employer Dashboard - aligned with design system
-- [x] Employer Applications - aligned with design system
-- [x] Employer Profile - aligned with design system
-- [x] Employer Settings - aligned with design system
-- [x] Employer PostJob - aligned with design system
-- [x] Consistent Card, Button, Input styling across pages
+- [x] Unified design system across all pages
 
 ### Phase 4: Testing & DevOps
-- [x] Test fixtures (`tests/conftest.py`)
-- [x] Auth tests (`tests/test_auth.py`)
-- [x] Worker tests (`tests/test_workers.py`)
-- [x] Job tests (`tests/test_jobs.py`)
-- [x] pytest configuration (`pytest.ini`)
-- [x] GitHub Actions CI (`/.github/workflows/ci.yml`)
-- [x] Multi-stage Dockerfile
-- [x] docker-compose for dev + production
+- [x] Test fixtures, pytest config, GitHub Actions CI, Docker
 
 ---
 
-## Phase 5: ML Features (Optional) - Not Started
+## Phase 6: Admin Dashboard (In Progress)
+
+### Release 1: Foundation ✅
+- [x] Admin roles (Super Admin, Ops Admin, Trust & Safety, Finance)
+- [x] Permission matrix + @require_permission decorator
+- [x] Audit trail for admin actions
+- [x] KPI dashboard endpoints + UI
+- [x] Activity feed
+
+### Release 2: Operations Core ✅ (Just Completed)
+- [x] User management (suspend, reactivate, reset verification)
+- [x] Job moderation (flag, unpublish, restore)
+- [x] Verification queue with bulk approve/reject
+- [x] Dispute triage board
+
+### Release 3: Finance & Risk (Not Started)
+- [ ] Payment explorer
+- [ ] Fraud signals
+- [ ] Rule engine
+
+### Release 4: Enterprise Hardening (Not Started)
+- [ ] SSO/SAML
+- [ ] Immutable audit export
+- [ ] Performance optimization

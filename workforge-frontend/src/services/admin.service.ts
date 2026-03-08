@@ -16,6 +16,81 @@ import type {
   SystemHealth,
 } from '../types/admin.types';
 
+// Admin Operations Service - Release 2
+class AdminOpsService {
+  // === USER MANAGEMENT ===
+  
+  async suspendUser(userId: number, reason: string): Promise<any> {
+    return apiClient.post(`/admin/users/${userId}/suspend`, { reason });
+  }
+  
+  async reactivateUser(userId: number): Promise<any> {
+    return apiClient.post(`/admin/users/${userId}/reactivate`);
+  }
+  
+  async resetVerification(userId: number): Promise<any> {
+    return apiClient.post(`/admin/users/${userId}/reset-verification`);
+  }
+
+  // === JOB MODERATION ===
+  
+  async flagJob(jobId: number, reason: string): Promise<any> {
+    return apiClient.post(`/admin/jobs/${jobId}/flag`, { reason });
+  }
+  
+  async unpublishJob(jobId: number, reason: string): Promise<any> {
+    return apiClient.post(`/admin/jobs/${jobId}/unpublish`, { reason });
+  }
+  
+  async restoreJob(jobId: number): Promise<any> {
+    return apiClient.post(`/admin/jobs/${jobId}/restore`);
+  }
+
+  // === VERIFICATION QUEUE ===
+  
+  async getVerificationQueue(params?: {
+    page?: number;
+    per_page?: number;
+    type?: string;
+  }): Promise<any> {
+    return apiClient.get('/admin/verifications/queue', { params });
+  }
+  
+  async approveVerification(verificationId: number, notes?: string): Promise<any> {
+    return apiClient.post(`/admin/verifications/${verificationId}/approve`, { notes });
+  }
+  
+  async rejectVerification(verificationId: number, reason: string): Promise<any> {
+    return apiClient.post(`/admin/verifications/${verificationId}/reject`, { reason });
+  }
+  
+  async bulkVerification(ids: number[], action: 'approve' | 'reject', reason?: string): Promise<any> {
+    return apiClient.post('/admin/verifications/bulk', { ids, action, reason });
+  }
+
+  // === DISPUTE MANAGEMENT ===
+  
+  async getDisputeQueue(params?: {
+    page?: number;
+    per_page?: number;
+    status?: string;
+    priority?: string;
+  }): Promise<any> {
+    return apiClient.get('/admin/disputes/queue', { params });
+  }
+  
+  async assignDispute(disputeId: number, assignedTo: number): Promise<any> {
+    return apiClient.post(`/admin/disputes/${disputeId}/assign`, { assigned_to: assignedTo });
+  }
+  
+  async resolveDispute(disputeId: number, resolution: any, notes?: string): Promise<any> {
+    return apiClient.post(`/admin/disputes/${disputeId}/resolve`, { resolution, notes });
+  }
+}
+
+export const adminOpsService = new AdminOpsService();
+export default adminOpsService;
+
 class AdminService {
   // Dashboard & Analytics
   async getPlatformStats(): Promise<PlatformStats> {

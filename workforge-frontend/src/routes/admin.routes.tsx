@@ -7,6 +7,7 @@ const AdminUsers = lazy(() => import('@pages/admin/Users/Users'));
 const AdminVerifications = lazy(() => import('@pages/admin/Verifications/VerificationQueue'));
 const AdminPayments = lazy(() => import('@pages/admin/Payments/Payments'));
 const AdminReports = lazy(() => import('@pages/admin/Reports/Reports'));
+const AdminDisputes = lazy(() => import('@pages/admin/Disputes/Disputes'));
 
 export const AdminRoutes = () => {
 	return (
@@ -16,6 +17,7 @@ export const AdminRoutes = () => {
 			<Route path="jobs" element={<AdminJobs />} />
 			<Route path="users" element={<AdminUsers />} />
 			<Route path="verifications" element={<AdminVerifications />} />
+			<Route path="disputes" element={<AdminDisputes />} />
 			<Route path="payments" element={<AdminPayments />} />
 			<Route path="reports" element={<AdminReports />} />
 		</>

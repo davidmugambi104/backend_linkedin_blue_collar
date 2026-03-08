@@ -18,6 +18,7 @@ import { UserRole } from '@types';
 
 export const Sidebar: React.FC = () => {
   const { user, logout } = useAuth();
+  const isEmployer = user?.role === UserRole.EMPLOYER;
 
   const baseRolePath = useMemo(() => {
     if (!user) return '';
@@ -67,19 +68,29 @@ export const Sidebar: React.FC = () => {
 
   const settingsPath = useMemo(() => {
     if (!user) return '/';
-    return user.role === UserRole.ADMIN ? '/admin/dashboard' : `${baseRolePath}/settings`;
+    return `${baseRolePath}/settings`;
   }, [user, baseRolePath]);
 
   return (
     // Fixed Sidebar - Always visible on desktop
-    <aside className="hidden lg:flex lg:flex-col w-64 bg-slate-900 border-r border-slate-800 h-screen overflow-hidden">
+    <aside
+      className={`hidden lg:flex lg:flex-col w-64 h-screen overflow-hidden ${
+        isEmployer
+          ? 'bg-gradient-to-b from-[#081326] via-[#0B1730] to-[#101b33] border-r border-white/10'
+          : 'bg-slate-900 border-r border-slate-800'
+      }`}
+    >
       {/* Logo Section */}
-      <div className="h-16 flex items-center px-6 border-b border-slate-800 flex-shrink-0">
+      <div
+        className={`h-16 flex items-center px-6 flex-shrink-0 ${
+          isEmployer ? 'border-b border-white/10' : 'border-b border-slate-800'
+        }`}
+      >
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-primary-600 rounded-lg flex items-center justify-center">
             <span className="text-white font-bold text-lg">W</span>
           </div>
-          <h2 className="text-xl font-bold text-white tracking-tight">
+          <h2 className={`text-xl font-bold tracking-tight ${isEmployer ? 'text-white/95' : 'text-white'}`}>
             WorkForge
           </h2>
         </div>
@@ -96,28 +107,40 @@ export const Sidebar: React.FC = () => {
               className={({ isActive }) =>
                 `flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
                   isActive
-                    ? 'bg-primary-500/20 text-primary-400 border border-primary-500/30'
-                    : 'text-slate-400 hover:bg-slate-800 hover:text-white border border-transparent'
+                    ? isEmployer
+                      ? 'bg-white/15 text-white border border-white/20 shadow-md shadow-black/20'
+                      : 'bg-primary-500/20 text-primary-400 border border-primary-500/30 font-bold'
+                    : isEmployer
+                      ? 'text-slate-300 hover:bg-white/10 hover:text-white border border-transparent font-light'
+                      : 'text-slate-400 hover:bg-slate-800 hover:text-white border border-transparent font-light'
                 }`
               }
             >
               <Icon className="w-5 h-5 flex-shrink-0" />
-              <span className="font-medium">{item.name}</span>
+              <span>{item.name}</span>
             </NavLink>
           );
         })}
       </nav>
 
       {/* Footer Section - Settings & Logout */}
-      <div className="border-t border-slate-800 p-4 space-y-2 flex-shrink-0">
+      <div
+        className={`p-4 space-y-2 flex-shrink-0 ${
+          isEmployer ? 'border-t border-white/10' : 'border-t border-slate-800'
+        }`}
+      >
         {/* Settings */}
         <NavLink
           to={settingsPath}
           className={({ isActive }) =>
             `flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
               isActive
-                ? 'bg-primary-500/20 text-primary-400 border border-primary-500/30'
-                : 'text-slate-400 hover:bg-slate-800 hover:text-white border border-transparent'
+                ? isEmployer
+                  ? 'bg-white/15 text-white border border-white/20 shadow-md shadow-black/20'
+                  : 'bg-primary-500/20 text-primary-400 border border-primary-500/30'
+                : isEmployer
+                  ? 'text-slate-300 hover:bg-white/10 hover:text-white border border-transparent'
+                  : 'text-slate-400 hover:bg-slate-800 hover:text-white border border-transparent'
             }`
           }
         >
@@ -128,7 +151,11 @@ export const Sidebar: React.FC = () => {
         {/* Logout */}
         <button
           onClick={logout}
-          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-slate-400 hover:bg-slate-800 hover:text-white border border-transparent"
+          className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 border border-transparent ${
+            isEmployer
+              ? 'text-slate-300 hover:bg-white/10 hover:text-white'
+              : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+          }`}
         >
           <ArrowRightOnRectangleIcon className="w-5 h-5 flex-shrink-0" />
           <span className="font-medium">Logout</span>

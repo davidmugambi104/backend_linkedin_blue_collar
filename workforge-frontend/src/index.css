@@ -66,13 +66,14 @@
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--text-dark));
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-family: 'SF Pro Display', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
     font-feature-settings: "rlig" 1, "calt" 1;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
   
   h1, h2, h3, h4, h5, h6 {
+    font-family: 'Neue Haas Grotesk Display Pro', 'Neue Haas Grotesk Text Pro', 'Inter', 'SF Pro Display', sans-serif;
     font-weight: 700;
     letter-spacing: -0.025em;
     color: hsl(var(--text-dark));
@@ -146,4 +147,282 @@
 
 ::-webkit-scrollbar-thumb:hover {
   background-color: #6b7280;
+}
+
+@layer components {
+  /* Admin + Worker rhythm normalization */
+  .admin-corporate .rounded-lg,
+  .worker-clean .rounded-lg {
+    border-radius: 0.75rem;
+  }
+
+  .admin-corporate .rounded-xl,
+  .worker-clean .rounded-xl {
+    border-radius: 0.875rem;
+  }
+
+  .admin-corporate .rounded-2xl,
+  .worker-clean .rounded-2xl {
+    border-radius: 1rem;
+  }
+
+  .admin-corporate .grid.gap-4,
+  .worker-clean .grid.gap-4 {
+    gap: 1.25rem;
+  }
+
+  .admin-corporate .grid.gap-6,
+  .worker-clean .grid.gap-6 {
+    gap: 1.5rem;
+  }
+
+  .admin-corporate .space-y-6 > :not([hidden]) ~ :not([hidden]),
+  .worker-clean .space-y-6 > :not([hidden]) ~ :not([hidden]) {
+    margin-top: 1.5rem;
+  }
+
+  .admin-corporate .space-y-8 > :not([hidden]) ~ :not([hidden]),
+  .worker-clean .space-y-8 > :not([hidden]) ~ :not([hidden]) {
+    margin-top: 1.75rem;
+  }
+
+  .admin-corporate svg.h-4,
+  .admin-corporate svg.h-5,
+  .admin-corporate svg.h-6,
+  .worker-clean svg.h-4,
+  .worker-clean svg.h-5,
+  .worker-clean svg.h-6 {
+    stroke-width: 1.8;
+  }
+
+  .employer-m3 {
+    --m3-navy: #0A2540;
+    --m3-white: #FFFFFF;
+    --m3-black: #1A1A1A;
+    --m3-border: #E9EDF2;
+    --m3-muted: #F8FAFC;
+    --m3-primary-tint: rgba(10, 37, 64, 0.1);
+    --m3-font: 'Google Sans', 'Google Sans Text', 'Product Sans', 'Inter', 'SF Pro Display', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    background: var(--m3-muted);
+    color: var(--m3-black);
+    font-family: var(--m3-font);
+  }
+
+  .employer-m3 h1,
+  .employer-m3 h2,
+  .employer-m3 h3,
+  .employer-m3 h4,
+  .employer-m3 h5,
+  .employer-m3 h6,
+  .employer-m3 p,
+  .employer-m3 span,
+  .employer-m3 label,
+  .employer-m3 td,
+  .employer-m3 th,
+  .employer-m3 li,
+  .employer-m3 a,
+  .employer-m3 button,
+  .employer-m3 input,
+  .employer-m3 select,
+  .employer-m3 textarea {
+    font-family: var(--m3-font);
+  }
+
+  .employer-m3 main {
+    background: var(--m3-muted) !important;
+  }
+
+  .employer-m3 .employer-shell-sidebar {
+    background: var(--m3-navy) !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.14) !important;
+    width: 88px !important;
+    transition: width 240ms ease;
+    overflow: visible;
+  }
+
+  .employer-m3 .employer-shell-sidebar:hover {
+    width: 288px !important;
+  }
+
+  .employer-m3 .employer-shell-sidebar > div {
+    width: 100% !important;
+    background: transparent !important;
+    border-right: 0 !important;
+  }
+
+  .employer-m3 .employer-shell-sidebar:not(:hover) .employer-nav-label,
+  .employer-m3 .employer-shell-sidebar:not(:hover) .employer-sidebar-title,
+  .employer-m3 .employer-shell-sidebar:not(:hover) .employer-sidebar-subtitle,
+  .employer-m3 .employer-shell-sidebar:not(:hover) .employer-sidebar-version,
+  .employer-m3 .employer-shell-sidebar:not(:hover) .employer-sidebar-section,
+  .employer-m3 .employer-shell-sidebar:not(:hover) .employer-nav-badge {
+    opacity: 0;
+    max-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+
+  .employer-m3 .employer-shell-sidebar .employer-nav-link {
+    color: rgba(255, 255, 255, 0.9) !important;
+    border-left: 3px solid transparent;
+    border-radius: 8px;
+    min-height: 44px;
+    gap: 12px;
+  }
+
+  .employer-m3 .employer-shell-sidebar .employer-nav-link[aria-current='page'] {
+    border-left-color: var(--m3-white);
+    background: var(--m3-primary-tint) !important;
+    color: #ffffff !important;
+  }
+
+  .employer-m3 .employer-shell-header {
+    background: #FFFFFF !important;
+    border-bottom: 1px solid var(--m3-border) !important;
+    backdrop-filter: none !important;
+  }
+
+  .employer-m3 .employer-shell-main {
+    background: var(--m3-muted) !important;
+  }
+
+  .employer-m3 .employer-fintech-panel,
+  .employer-m3 .employer-m3-card,
+  .employer-m3 .employer-stat-widget,
+  .employer-m3 .employer-m3-table-wrapper {
+    background: #FFFFFF !important;
+    border: 1px solid var(--m3-border) !important;
+    box-shadow: none !important;
+    color: var(--m3-black);
+  }
+
+  .employer-m3 .employer-stat-widget {
+    transition: box-shadow 180ms ease, transform 180ms ease;
+  }
+
+  .employer-m3 .employer-stat-widget:hover {
+    box-shadow: 0 8px 16px -4px rgba(0, 0, 0, 0.1) !important;
+    transform: translateY(-1px);
+  }
+
+  .employer-m3 .employer-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  .employer-m3 .employer-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: #FFFFFF;
+    color: #0A2540;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border-bottom: 1px solid #E9EDF2;
+  }
+
+  .employer-m3 .employer-table th,
+  .employer-m3 .employer-table td {
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid #E9EDF2;
+  }
+
+  .employer-m3 .employer-table tbody tr:hover {
+    background: #F8FAFC;
+  }
+
+  .employer-m3 .employer-status-published {
+    background: #E8F7ED;
+    color: #116432;
+    border: 1px solid #CBEBD6;
+    text-transform: none;
+  }
+
+  .employer-m3 .employer-status-draft {
+    background: #F3F4F6;
+    color: #374151;
+    border: 1px solid #E5E7EB;
+    text-transform: none;
+  }
+
+  .employer-m3 .employer-empty-state {
+    border: 1px dashed #C9D4E1;
+    background:
+      linear-gradient(180deg, rgba(248, 250, 252, 0.92), rgba(255, 255, 255, 0.96)),
+      repeating-linear-gradient(90deg, transparent 0 24px, rgba(10, 37, 64, 0.025) 24px 25px);
+  }
+
+  .employer-m3 .employer-floating {
+    position: relative;
+  }
+
+  .employer-m3 .employer-floating-input,
+  .employer-m3 .employer-floating-textarea,
+  .employer-m3 .employer-floating-select {
+    width: 100%;
+    border: 1px solid #E9EDF2;
+    background: #FFFFFF;
+    color: #1A1A1A;
+    border-radius: 12px;
+    padding: 20px 16px 8px;
+    min-height: 52px;
+    outline: none;
+    transition: border-color 120ms ease, box-shadow 120ms ease;
+  }
+
+  .employer-m3 .employer-floating-textarea {
+    min-height: 116px;
+    resize: vertical;
+  }
+
+  .employer-m3 .employer-floating-label {
+    position: absolute;
+    left: 12px;
+    top: 16px;
+    font-size: 14px;
+    line-height: 1;
+    color: #5B6675;
+    pointer-events: none;
+    background: #FFFFFF;
+    padding: 0 4px;
+    transition: all 120ms ease;
+  }
+
+  .employer-m3 .employer-floating-input:focus,
+  .employer-m3 .employer-floating-input:not(:placeholder-shown),
+  .employer-m3 .employer-floating-textarea:focus,
+  .employer-m3 .employer-floating-textarea:not(:placeholder-shown),
+  .employer-m3 .employer-floating-select:focus,
+  .employer-m3 .employer-floating-select.has-value {
+    border-color: #0A2540;
+    box-shadow: 0 0 0 3px rgba(10, 37, 64, 0.14);
+  }
+
+  .employer-m3 .employer-floating-input:focus + .employer-floating-label,
+  .employer-m3 .employer-floating-input:not(:placeholder-shown) + .employer-floating-label,
+  .employer-m3 .employer-floating-textarea:focus + .employer-floating-label,
+  .employer-m3 .employer-floating-textarea:not(:placeholder-shown) + .employer-floating-label,
+  .employer-m3 .employer-floating-select:focus + .employer-floating-label,
+  .employer-m3 .employer-floating-select.has-value + .employer-floating-label {
+    top: -6px;
+    font-size: 12px;
+    color: #0A2540;
+  }
+
+  .employer-m3 .employer-validation-error {
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #B91C1C;
+    background: #FEF2F2;
+    border: 1px solid #FECACA;
+    border-radius: 8px;
+    padding: 6px 8px;
+    font-size: 12px;
+  }
 }

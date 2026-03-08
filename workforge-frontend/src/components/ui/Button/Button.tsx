@@ -43,10 +43,11 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     const variants = {
       /** Primary CTA */
       default: `
-        bg-blue-600 text-white
-        shadow-sm shadow-blue-500/20
-        hover:bg-blue-700 hover:shadow-md hover:shadow-blue-500/30
-        focus-visible:ring-blue-500
+        bg-[#0A2540] text-white
+        border border-[#0A2540]
+        shadow-sm shadow-[#0A2540]/20
+        hover:bg-[#003ECF] hover:border-[#003ECF]
+        focus-visible:ring-[#0066FF]
       `,
 
       /** Premium Glow CTA */
@@ -67,11 +68,11 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
       /** Outline */
       outline: `
-        border border-slate-300 bg-white text-slate-700
-        hover:bg-slate-50 hover:border-slate-400
-        focus-visible:ring-blue-500
-        dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200
-        dark:hover:bg-slate-800
+        border border-black/70 bg-white text-black
+        hover:bg-[#F5F7FA] hover:border-black
+        focus-visible:ring-[#0066FF]
+        dark:border-white/70 dark:bg-[#151922] dark:text-white
+        dark:hover:bg-[#1A1F2B]
       `,
 
       /** Soft Secondary */
@@ -93,10 +94,10 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
       /** Link */
       link: `
-        text-blue-600 underline-offset-4
+        text-[#0066FF] underline-offset-4
         hover:underline
-        focus-visible:ring-blue-500
-        dark:text-blue-400
+        focus-visible:ring-[#0066FF]
+        dark:text-[#7FB0FF]
       `,
     };
 

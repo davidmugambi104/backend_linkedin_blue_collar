@@ -111,7 +111,7 @@ export const PostJobPage: React.FC = () => {
   const CurrentStepComponent = steps[currentStep].component;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6 employer-page-m3">
       {/* Page Header */}
       <div>
         <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
@@ -124,45 +124,25 @@ export const PostJobPage: React.FC = () => {
       </div>
 
       {/* Progress Steps */}
-      <Card className="p-4 lg:p-6">
-        <div className="flex items-center justify-between">
-          {steps.map((step, index) => (
-            <div key={step.id} className="flex-1 text-center relative">
-              <div className="relative">
-                <div
-                  className={`
-                    w-8 h-8 mx-auto rounded-full flex items-center justify-center text-sm font-medium transition-all
-                    ${index < currentStep 
-                      ? 'bg-blue-600 text-white' 
-                      : index === currentStep
-                      ? 'bg-blue-600 text-white ring-4 ring-blue-100 dark:ring-blue-900/30'
-                      : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
-                    }
-                  `}
-                >
-                  {index < currentStep ? (
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                  ) : (
-                    index + 1
-                  )}
-                </div>
-                {/* Connector Line */}
-                {index < steps.length - 1 && (
-                  <div className={`
-                    absolute top-4 left-1/2 w-full h-0.5 -translate-y-1/2
-                    ${index < currentStep ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'}
-                  `} style={{ zIndex: -1 }} />
-                )}
-              </div>
-              <span className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs whitespace-nowrap text-gray-500 dark:text-gray-400 hidden sm:block">
+      <Card className="p-4 lg:p-6 employer-m3-card">
+        <div className="space-y-3">
+          <div className="h-2 w-full rounded-full bg-[#E9EDF2]">
+            <div
+              className="h-2 rounded-full bg-[#0A2540] transition-all duration-200"
+              style={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
+            />
+          </div>
+          <div className="flex items-center justify-between text-xs text-[#516176]">
+            {steps.map((step, index) => (
+              <span
+                key={step.id}
+                className={`${index === currentStep ? 'font-semibold text-[#0A2540]' : ''}`}
+              >
                 {step.title}
               </span>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-        {/* Mobile step indicator */}
         <div className="sm:hidden mt-8 text-center text-sm text-gray-500">
           Step {currentStep + 1} of {steps.length}: {steps[currentStep].title}
         </div>
@@ -171,7 +151,7 @@ export const PostJobPage: React.FC = () => {
       {/* Form */}
       <FormProvider {...methods}>
         <form onSubmit={methods.handleSubmit(onSubmit)}>
-          <Card className="p-4 lg:p-6">
+          <Card className="p-4 lg:p-6 employer-m3-card">
             <CardBody>
               <CurrentStepComponent />
 

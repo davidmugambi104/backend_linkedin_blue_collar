@@ -14,6 +14,7 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const { user } = useAuth();
+  const isEmployer = user?.role === UserRole.EMPLOYER;
 
   const settingsPath =
     user?.role === UserRole.WORKER
@@ -26,28 +27,30 @@ export const Header: React.FC<HeaderProps> = () => {
     <header className="sticky top-0 z-30 px-4 sm:px-6 py-4">
       <div className="max-w-7xl mx-auto">
         {/* Glassmorphism Search & Notifications Bar */}
-        <div className="
+        <div className={`
           backdrop-blur-xl bg-white/70 dark:bg-slate-900/70 
           border border-blue-100/50 dark:border-slate-700/50 
           rounded-2xl px-4 py-3 
           flex items-center gap-3 sm:gap-4 
           shadow-sm hover:shadow-md transition-all duration-300
-        ">
+          ${isEmployer ? 'bg-white/12 border-white/20 shadow-lg shadow-black/20' : ''}
+        `}>
           {/* Search Bar */}
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <MagnifyingGlassIcon className="w-5 h-5 text-primary-500 flex-shrink-0" />
             <input
               type="text"
-              placeholder="Search jobs, applications, messages..."
+              placeholder={isEmployer ? 'Search pipelines, postings, applicants...' : 'Search jobs, applications, messages...'}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="
+              className={`
                 bg-transparent outline-none 
                 text-slate-700 dark:text-slate-200 
                 placeholder-slate-500 dark:placeholder-slate-400 
                 w-full text-sm font-medium
                 min-w-0
-              "
+                ${isEmployer ? 'text-white placeholder:text-white/60' : ''}
+              `}
             />
           </div>
 

@@ -106,7 +106,7 @@ const Profile: React.FC = () => {
       </div>
 
       {/* Profile Header Card */}
-      <Card className="p-4 lg:p-6">
+      <Card className="p-4 lg:p-6 employer-fintech-panel">
         <div className="flex flex-col sm:flex-row sm:items-start gap-6">
           {/* Avatar */}
           <div className="w-20 h-20 rounded-2xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
@@ -148,7 +148,7 @@ const Profile: React.FC = () => {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="p-4 lg:p-6" hoverable>
+        <Card className="p-4 lg:p-6 employer-stat-widget employer-aspect-16-9" hoverable>
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
               <BriefcaseIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
@@ -160,7 +160,7 @@ const Profile: React.FC = () => {
           </div>
         </Card>
 
-        <Card className="p-4 lg:p-6" hoverable>
+        <Card className="p-4 lg:p-6 employer-stat-widget employer-aspect-16-9" hoverable>
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
               <StarIcon className="h-6 w-6 text-green-600 dark:text-green-400" />
@@ -172,7 +172,7 @@ const Profile: React.FC = () => {
           </div>
         </Card>
 
-        <Card className="p-4 lg:p-6" hoverable>
+        <Card className="p-4 lg:p-6 employer-stat-widget employer-aspect-16-9" hoverable>
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
               <UsersIcon className="h-6 w-6 text-purple-600 dark:text-purple-400" />
@@ -184,7 +184,7 @@ const Profile: React.FC = () => {
           </div>
         </Card>
 
-        <Card className="p-4 lg:p-6" hoverable>
+        <Card className="p-4 lg:p-6 employer-stat-widget employer-aspect-16-9" hoverable>
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
               <ShieldCheckIcon className="h-6 w-6 text-amber-600 dark:text-amber-400" />
@@ -198,7 +198,7 @@ const Profile: React.FC = () => {
       </div>
 
       {/* Contact Information */}
-      <Card className="p-4 lg:p-6">
+      <Card className="p-4 lg:p-6 employer-fintech-panel">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
           Contact Information
         </h3>

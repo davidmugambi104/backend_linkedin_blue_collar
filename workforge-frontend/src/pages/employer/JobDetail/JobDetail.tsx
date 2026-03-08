@@ -93,7 +93,7 @@ const JobDetail: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Job Header */}
-      <Card className="bg-white border border-[#E2E8F0] rounded-2xl p-6">
+      <Card className="bg-white border border-[#E2E8F0] rounded-2xl p-6 employer-fintech-panel">
         <div className="flex items-start justify-between mb-4">
           <div>
             <h1 className="text-3xl font-bold text-[#0F172A] mb-2">{job.title}</h1>
@@ -127,7 +127,7 @@ const JobDetail: React.FC = () => {
         {/* Left Column - Job Details */}
         <div className="col-span-2 space-y-6">
           {/* Location & Skills */}
-          <Card className="bg-white border border-[#E2E8F0] rounded-2xl p-6">
+          <Card className="bg-white border border-[#E2E8F0] rounded-2xl p-6 employer-fintech-panel">
             <div className="space-y-4">
               <div className="flex items-center space-x-3">
                 <MapPinIcon className="h-5 w-5 text-[#64748B]" />
@@ -145,13 +145,13 @@ const JobDetail: React.FC = () => {
           </Card>
 
           {/* Description */}
-          <Card className="bg-white border border-[#E2E8F0] rounded-2xl p-6">
+          <Card className="bg-white border border-[#E2E8F0] rounded-2xl p-6 employer-fintech-panel">
             <h2 className="text-xl font-semibold text-[#0F172A] mb-3">Job Description</h2>
             <p className="text-[#64748B] leading-relaxed">{job.description}</p>
           </Card>
 
           {/* Requirements */}
-          <Card className="bg-white border border-[#E2E8F0] rounded-2xl p-6">
+          <Card className="bg-white border border-[#E2E8F0] rounded-2xl p-6 employer-fintech-panel">
             <h2 className="text-xl font-semibold text-[#0F172A] mb-4">Requirements</h2>
             <ul className="space-y-2">
               {job.requirements.map((req, idx) => (
@@ -166,7 +166,7 @@ const JobDetail: React.FC = () => {
 
         {/* Right Column - Applicants */}
         <div className="col-span-1">
-          <Card className="bg-white border border-[#E2E8F0] rounded-2xl p-6 sticky top-6">
+          <Card className="bg-white border border-[#E2E8F0] rounded-2xl p-6 sticky top-6 employer-fintech-panel">
             <h2 className="text-lg font-semibold text-[#0F172A] mb-4">Applicants ({job.applicants})</h2>
             <div className="space-y-4 max-h-96 overflow-y-auto">
               {applicants.map(applicant => (

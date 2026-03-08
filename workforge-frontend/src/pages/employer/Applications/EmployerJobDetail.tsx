@@ -105,14 +105,22 @@ export const EmployerJobDetail: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column - Job Details */}
         <div className="lg:col-span-2 space-y-6">
-          <JobOverview job={job} />
-          <ApplicantsList />
+          <div className="employer-fintech-panel rounded-2xl">
+            <JobOverview job={job} />
+          </div>
+          <div className="employer-fintech-panel rounded-2xl">
+            <ApplicantsList />
+          </div>
         </div>
 
         {/* Right Column - Management & Analytics */}
         <div className="space-y-6">
-          <JobStatusManager job={job} />
-          <JobAnalytics job={job} />
+          <div className="employer-fintech-panel rounded-2xl">
+            <JobStatusManager job={job} />
+          </div>
+          <div className="employer-fintech-panel rounded-2xl">
+            <JobAnalytics job={job} />
+          </div>
         </div>
       </div>
     </div>

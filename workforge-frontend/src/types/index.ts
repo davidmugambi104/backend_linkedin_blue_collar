@@ -152,7 +152,14 @@ export * from './models/verification.types';
 export * from './models/user.types';
 
 // Admin types
-export type { JobModerationQueue, DisputeCase, UserWithDetails, VerificationRequest } from './admin.types';
+export type {
+  JobModerationQueue,
+  DisputeCase,
+  UserWithDetails,
+  VerificationRequest,
+  PlatformSettings,
+  EmailTemplate,
+} from './admin.types';
 
 // Additional message-related types
 export interface MessageReaction {

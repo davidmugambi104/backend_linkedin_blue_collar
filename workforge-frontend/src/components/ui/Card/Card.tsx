@@ -33,25 +33,17 @@ const Card = forwardRef<HTMLDivElement, CardProps>(
       <div
         ref={ref}
         className={cn(
-          // Base glass styles
-          'relative rounded-2xl backdrop-blur-md transition-all duration-200',
-          'text-gray-900 dark:text-gray-100',
-          // Light mode glass
-          'bg-gradient-to-br from-white/30 to-white/10',
-          bordered && 'border border-white/30',
-          // Dark mode glass
-          'dark:bg-gradient-to-br dark:from-black/40 dark:to-black/20',
-          'dark:border-white/10',
-          // Shadows (with slight alpha for depth)
+          'relative rounded-2xl transition-all duration-200',
+          'text-[#0A2540] dark:text-gray-100',
+          'bg-white dark:bg-[#151922]',
+          bordered && 'border border-[#E6E9F0] dark:border-[#2A3140]',
           shadows[shadow],
-          'shadow-black/5 dark:shadow-white/5',
-          // Padding
+          'shadow-[0_4px_16px_rgba(10,37,64,0.08)] dark:shadow-[0_8px_24px_rgba(0,0,0,0.35)]',
           paddings[padding],
-          // Hover effect when hoverable
           hoverable && [
             'cursor-pointer hover:shadow-lg',
-            'hover:bg-white/40 dark:hover:bg-black/30',
-            'hover:border-white/40 dark:hover:border-white/20',
+            'hover:bg-white dark:hover:bg-[#1A1F2B]',
+            'hover:border-[#D6DEEB] dark:hover:border-[#374154]',
           ],
           className
         )}
