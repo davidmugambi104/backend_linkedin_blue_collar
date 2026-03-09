@@ -65,10 +65,10 @@ export const Avatar = forwardRef<HTMLDivElement, AvatarProps>(
     };
 
     const statusColors = {
-      online: 'bg-green-500',
-      offline: 'bg-gray-400',
+      online: 'bg-emerald-500',
+      offline: 'bg-slate-400',
       busy: 'bg-red-500',
-      away: 'bg-yellow-500',
+      away: 'bg-amber-500',
     };
 
     const initials = name ? getInitials(name) : fallback || '?';
@@ -87,7 +87,7 @@ export const Avatar = forwardRef<HTMLDivElement, AvatarProps>(
             className={cn(
               'rounded-full object-cover',
               sizes[size],
-              bordered && 'ring-2 ring-white dark:ring-slate-900'
+              bordered && 'ring-2 ring-white bg-ring-slate-900'
             )}
             onError={() => setError(true)}
           />
@@ -97,7 +97,7 @@ export const Avatar = forwardRef<HTMLDivElement, AvatarProps>(
               'flex items-center justify-center rounded-full font-medium text-white',
               sizes[size],
               bgColor,
-              bordered && 'ring-2 ring-white dark:ring-slate-900'
+              bordered && 'ring-2 ring-white bg-ring-slate-900'
             )}
           >
             {initials}
@@ -107,7 +107,7 @@ export const Avatar = forwardRef<HTMLDivElement, AvatarProps>(
         {status && (
           <span
             className={cn(
-              'absolute bottom-0 right-0 block rounded-full ring-2 ring-white dark:ring-slate-900',
+              'absolute bottom-0 right-0 block rounded-full ring-2 ring-white bg-ring-slate-900',
               statusSizes[size],
               statusColors[status]
             )}

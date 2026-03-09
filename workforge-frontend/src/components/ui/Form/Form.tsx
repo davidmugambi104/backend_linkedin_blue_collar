@@ -32,7 +32,7 @@ export const FormField = <T extends FieldValues>({
         </FormLabel>
       )}
       {children}
-      {hint && <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{hint}</p>}
+      {hint && <p className="mt-1 text-sm text-gray-500 bg-text-gray-400">{hint}</p>}
     </div>
   );
 };
@@ -47,7 +47,7 @@ export const FormLabel: React.FC<FormLabelProps> = ({
     <label
       htmlFor={htmlFor}
       className={cn(
-        'mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300',
+        'mb-1 block text-sm font-medium text-gray-700 bg-text-gray-300',
         className
       )}
     >
@@ -61,7 +61,7 @@ export const FormError: React.FC<FormErrorProps> = ({ error, className }) => {
   if (!error) return null;
   
   return (
-    <p className={cn('mt-1 text-sm text-red-600 dark:text-red-400', className)}>
+    <p className={cn('mt-1 text-sm text-red-600 bg-text-red-400', className)}>
       {error}
     </p>
   );

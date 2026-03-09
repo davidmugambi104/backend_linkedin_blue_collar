@@ -139,7 +139,7 @@ const JobDetail: React.FC = () => {
                     {job.title}
                   </h1>
                   <div className="flex items-center gap-2">
-                    <BuildingOfficeIcon className="h-5 w-5 text-gray-400" />
+                    <BuildingOfficeIcon className="h-5 w-5 text-slate-400" />
                     <span className="text-lg text-gray-600">
                       {job.employer?.company_name || 'Company'}
                     </span>
@@ -189,7 +189,7 @@ const JobDetail: React.FC = () => {
                   Job Description
                 </h2>
                 <div className="prose max-w-none">
-                  <p className="text-gray-700 whitespace-pre-line">
+                  <p className="text-slate-700 whitespace-pre-line">
                     {job.description}
                   </p>
                 </div>
@@ -210,14 +210,14 @@ const JobDetail: React.FC = () => {
 
               <div className="space-y-4 text-sm">
                 <div>
-                  <p className="text-gray-500">Applicants</p>
+                  <p className="text-slate-500">Applicants</p>
                   <p className="font-semibold text-gray-900">
                     {job.application_count || 0} applied
                   </p>
                 </div>
                 {job.created_at && (
                   <div>
-                    <p className="text-gray-500">Posted</p>
+                    <p className="text-slate-500">Posted</p>
                     <p className="font-semibold text-gray-900">
                       {formatDate(job.created_at)}
                     </p>
@@ -242,7 +242,7 @@ const JobDetail: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-slate-700 mb-2">
               Cover Letter (Optional)
             </label>
             <textarea

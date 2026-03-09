@@ -2,8 +2,7 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import { RootLayout } from '@components/layout/RootLayout';
 import { AuthLayout } from '@components/layout/AuthLayout';
-import { DashboardLayout } from '@components/layout/DashboardLayout';
-import { Layout as EmployerLayout } from '@components/organisms';
+import { UnifiedDashboardLayout } from '@components/layout/UnifiedDashboardLayout';
 import { useAuth } from '@context/AuthContext';
 import { UserRole } from '@types';
 import { LoadingScreen } from '@components/common/LoadingScreen';
@@ -16,6 +15,7 @@ const HomePage = lazy(() => import('@pages/public/Home/Home'));
 const JobsPage = lazy(() => import('@pages/public/Jobs/Jobs'));
 const JobDetailPage = lazy(() => import('@pages/public/JobDetail/JobDetail'));
 const WorkersPage = lazy(() => import('@pages/public/Workers/Workers'));
+const WorkerProfilePage = lazy(() => import('@pages/public/WorkerProfile/WorkerProfile'));
 const AboutPage = lazy(() => import('@pages/public/About/About'));
 const NotFoundPage = lazy(() => import('@pages/public/NotFound/NotFound'));
 
@@ -63,6 +63,7 @@ const AdminUsers = lazy(() => import('@pages/admin/Users/Users'));
 const AdminVerifications = lazy(() => import('@pages/admin/Verifications/Verifications'));
 const AdminPayments = lazy(() => import('@pages/admin/Payments/Payments'));
 const AdminReports = lazy(() => import('@pages/admin/Reports/Reports'));
+const AdminDisputes = lazy(() => import('@pages/admin/Disputes/Disputes'));
 const AdminSettings = lazy(() => import('@pages/admin/Settings/Settings'));
 
 /**
@@ -78,10 +79,10 @@ const CreateReview = lazy(() => import('@pages/reviews/CreateReview/CreateReview
 
 /**
  * PROTECTED DASHBOARD LAYOUT WRAPPER
- * Checks authentication status and user role before rendering DashboardLayout
+ * Checks authentication status and user role before rendering UnifiedDashboardLayout
  * @param allowedRoles - Array of roles allowed to access the routes within
  */
-const ProtectedDashboardLayout = ({
+const ProtectedUnifiedDashboardLayout = ({
   allowedRoles,
 }: {
   allowedRoles?: UserRole | UserRole[];
@@ -104,7 +105,7 @@ const ProtectedDashboardLayout = ({
     return <Navigate to="/" replace />;
   }
 
-  return <DashboardLayout />;
+  return <UnifiedDashboardLayout />;
 };
 
 const ProtectedEmployerLayout = () => {
@@ -123,7 +124,7 @@ const ProtectedEmployerLayout = () => {
     return <Navigate to="/" replace />;
   }
 
-  return <EmployerLayout />;
+  return <UnifiedDashboardLayout />;
 };
 
 /**
@@ -167,8 +168,7 @@ export const AppRouter = () => {
           {/* Workers Section */}
           <Route path="workers">
             <Route index element={<WorkersPage />} />
-            {/* Individual worker profile - placeholder for future */}
-            <Route path=":workerId" element={<div>Worker Profile Detail (TODO)</div>} />
+            <Route path=":workerId" element={<WorkerProfilePage />} />
           </Route>
 
           {/* About Page */}
@@ -189,7 +189,7 @@ export const AppRouter = () => {
 
         {/* ========================================
             EMPLOYER ROUTES
-            Layout: DashboardLayout
+            Layout: UnifiedDashboardLayout
             Protection: EMPLOYER role required
             ======================================== */}
         <Route
@@ -231,12 +231,12 @@ export const AppRouter = () => {
 
         {/* ========================================
             WORKER ROUTES
-            Layout: DashboardLayout
+            Layout: UnifiedDashboardLayout
             Protection: WORKER role required
             ======================================== */}
         <Route
           path="worker"
-          element={<ProtectedDashboardLayout allowedRoles={UserRole.WORKER} />}
+          element={<ProtectedUnifiedDashboardLayout allowedRoles={UserRole.WORKER} />}
         >
           {/* Redirect /worker to /worker/dashboard */}
           <Route index element={<Navigate to="dashboard" replace />} />
@@ -262,12 +262,12 @@ export const AppRouter = () => {
 
         {/* ========================================
             ADMIN ROUTES
-            Layout: DashboardLayout
+            Layout: UnifiedDashboardLayout
             Protection: ADMIN role required
             ======================================== */}
         <Route
           path="admin"
-          element={<ProtectedDashboardLayout allowedRoles={UserRole.ADMIN} />}
+          element={<ProtectedUnifiedDashboardLayout allowedRoles={UserRole.ADMIN} />}
         >
           {/* Redirect /admin to /admin/dashboard */}
           <Route index element={<Navigate to="dashboard" replace />} />
@@ -287,6 +287,9 @@ export const AppRouter = () => {
           {/* Payments & Disputes */}
           <Route path="payments" element={<AdminPayments />} />
 
+          {/* Disputes */}
+          <Route path="disputes" element={<AdminDisputes />} />
+
           {/* Platform Reports */}
           <Route path="reports" element={<AdminReports />} />
 
@@ -296,11 +299,11 @@ export const AppRouter = () => {
 
         {/* ========================================
             SHARED ROUTES
-            Layout: DashboardLayout
+            Layout: UnifiedDashboardLayout
             Protection: All authenticated users
             Accessible by: Worker, Employer, Admin
             ======================================== */}
-        <Route element={<ProtectedDashboardLayout />}>
+        <Route element={<ProtectedUnifiedDashboardLayout />}>
           {/* Messaging - Inbox */}
           <Route path="messages" element={<Inbox />} />
 

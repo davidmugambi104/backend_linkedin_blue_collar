@@ -71,7 +71,7 @@ export const Rating: React.FC<RatingProps> = ({
             <StarOutlineIcon
               className={cn(
                 sizes[size],
-                'text-gray-300 dark:text-gray-600 transition-colors'
+                'text-gray-300 bg-text-gray-600 transition-colors'
               )}
             />
           )}
@@ -79,7 +79,7 @@ export const Rating: React.FC<RatingProps> = ({
       ))}
       
       {!readonly && (
-        <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">
+        <span className="ml-2 text-sm text-gray-600 bg-text-gray-400">
           {value.toFixed(1)} / {max}
         </span>
       )}

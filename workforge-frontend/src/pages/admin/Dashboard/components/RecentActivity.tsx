@@ -25,11 +25,11 @@ const activityIcons = {
 };
 
 const activityColors = {
-  user: 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400',
-  job: 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400',
-  payment: 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400',
-  verification: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400',
-  moderation: 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400',
+  user: 'bg-blue-100 bg-blue-900/30 text-blue-600 text-blue-400',
+  job: 'bg-green-100 bg-green-900/30 text-green-600 text-green-400',
+  payment: 'bg-purple-100 bg-purple-900/30 text-purple-600 text-purple-400',
+  verification: 'bg-yellow-100 bg-yellow-900/30 text-yellow-600 text-yellow-400',
+  moderation: 'bg-red-100 bg-red-900/30 text-red-600 text-red-400',
 };
 
 export const RecentActivity: React.FC = () => {
@@ -97,7 +97,7 @@ export const RecentActivity: React.FC = () => {
             <select
               value={filter}
               onChange={(event) => setFilter(event.target.value as ActivityFilter)}
-              className="h-9 rounded-md border border-gray-300 bg-white px-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
+              className="h-9 rounded-md border border-gray-300 bg-white px-2 text-sm text-slate-700 border-gray-700 bg-gray-900 text-gray-200"
             >
               <option value="all">All</option>
               <option value="user">Users</option>
@@ -110,7 +110,7 @@ export const RecentActivity: React.FC = () => {
               type="button"
               onClick={handleExport}
               disabled={isExporting}
-              className="h-9 rounded-md border border-gray-300 px-3 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+              className="h-9 rounded-md border border-gray-300 px-3 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-50 border-gray-700 text-gray-200 hover:bg-gray-800"
             >
               {isExporting ? 'Exporting…' : 'Export CSV'}
             </button>
@@ -129,33 +129,33 @@ export const RecentActivity: React.FC = () => {
                   <div className="relative pb-8">
                     {entryIdx !== auditLog.entries.length - 1 && (
                       <span
-                        className="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200 dark:bg-gray-700"
+                        className="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200 bg-gray-700"
                         aria-hidden="true"
                       />
                     )}
                     <div className="relative flex space-x-3">
                       <div>
-                        <span className={cn('h-8 w-8 rounded-full flex items-center justify-center ring-8 ring-white dark:ring-gray-900', colorClass)}>
+                        <span className={cn('h-8 w-8 rounded-full flex items-center justify-center ring-8 ring-white ring-gray-900', colorClass)}>
                           <Icon className="h-5 w-5" />
                         </span>
                       </div>
                       <div className="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
                         <div>
-                          <p className="text-sm text-gray-900 dark:text-white">
+                          <p className="text-sm text-gray-900 text-[#1A1A1A]">
                             <span className="font-medium">{entry.admin_name}</span>{' '}
                             {entry.action}{' '}
-                            <span className="font-medium text-gray-900 dark:text-white">
+                            <span className="font-medium text-gray-900 text-[#1A1A1A]">
                               {entry.entity_type}
                               {entry.entity_id !== null ? ` #${entry.entity_id}` : ''}
                             </span>
                           </p>
                           {entry.changes && Object.keys(entry.changes).length > 0 && (
-                            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                            <p className="mt-1 text-xs text-slate-500 ">
                               Changed: {Object.keys(entry.changes).join(', ')}
                             </p>
                           )}
                         </div>
-                        <div className="whitespace-nowrap text-right text-sm text-gray-500 dark:text-gray-400">
+                        <div className="whitespace-nowrap text-right text-sm text-slate-500 ">
                           <time dateTime={entry.created_at}>
                             {formatDistanceToNow(new Date(entry.created_at), { addSuffix: true })}
                           </time>
@@ -171,7 +171,7 @@ export const RecentActivity: React.FC = () => {
 
         {(!auditLog?.entries || auditLog.entries.length === 0) && (
           <div className="text-center py-6">
-            <p className="text-gray-500 dark:text-gray-400">No recent activity</p>
+            <p className="text-slate-500 ">No recent activity</p>
           </div>
         )}
       </CardBody>

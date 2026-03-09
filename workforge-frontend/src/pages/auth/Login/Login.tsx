@@ -45,10 +45,10 @@ export const LoginPage: React.FC = () => {
   return (
     <Card className="w-full max-w-md">
       <div className="text-center mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+        <h1 className="text-2xl font-bold text-gray-900 text-[#1A1A1A]">
           Welcome Back
         </h1>
-        <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+        <p className="mt-2 text-sm text-gray-600 ">
           Sign in to your WorkForge account
         </p>
       </div>
@@ -79,16 +79,16 @@ export const LoginPage: React.FC = () => {
             <input
               {...register('rememberMe')}
               type="checkbox"
-              className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-800"
+              className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 border-gray-600 bg-gray-800"
             />
-            <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">
+            <span className="ml-2 text-sm text-gray-600 ">
               Remember me
             </span>
           </label>
 
           <Link
             to="/auth/forgot-password"
-            className="text-sm font-medium text-primary-600 hover:text-primary-500 dark:text-primary-400"
+            className="text-sm font-medium text-primary-600 hover:text-primary-500 text-primary-400"
           >
             Forgot password?
           </Link>
@@ -105,10 +105,10 @@ export const LoginPage: React.FC = () => {
 
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-300 dark:border-gray-700" />
+            <div className="w-full border-t border-gray-300 border-gray-700" />
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400">
+            <span className="px-2 bg-white bg-gray-900 text-slate-500 ">
               New to WorkForge?
             </span>
           </div>

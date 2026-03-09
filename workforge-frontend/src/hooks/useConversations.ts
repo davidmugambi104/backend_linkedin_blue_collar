@@ -2,11 +2,9 @@ import { useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { messageService } from '@services/message.service';
 import { messageStore } from '@store/message.store';
-import { useWebSocket } from './useWebSocket';
 
 export const useConversations = () => {
   const queryClient = useQueryClient();
-  const { markAsRead } = useWebSocket();
   
   const {
     conversations,
@@ -44,6 +42,10 @@ export const useConversations = () => {
     fetchConversation(conversationId, otherUserId);
   };
 
+  const clearActiveConversation = () => {
+    setActiveConversation(null);
+  };
+
   const refreshConversations = () => {
     queryClient.invalidateQueries({ queryKey: ['conversations'] });
   };
@@ -54,6 +56,7 @@ export const useConversations = () => {
     isLoading,
     error,
     selectConversation,
+    clearActiveConversation,
     refreshConversations,
     fetchConversation,
   };

@@ -48,7 +48,7 @@ const Users: React.FC = () => {
       accessor: (user) => (
         <div className="flex items-center">
           <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-medium text-sm">{user.first_name?.[0]?.toUpperCase() || 'U'}</div>
-          <div className="ml-3"><div className="font-medium text-gray-900 dark:text-white">{user.first_name} {user.last_name}</div><div className="text-sm text-gray-500 dark:text-gray-400">{user.email}</div></div>
+          <div className="ml-3"><div className="font-medium text-gray-900 text-[#1A1A1A]">{user.first_name} {user.last_name}</div><div className="text-sm text-slate-500 ">{user.email}</div></div>
         </div>
       ),
       sortable: true,
@@ -56,7 +56,7 @@ const Users: React.FC = () => {
     {
       key: 'role',
       header: 'Type',
-      accessor: (user) => <span className="inline-flex items-center px-3 py-1 rounded-lg text-sm font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">{user.role.charAt(0).toUpperCase() + user.role.slice(1)}</span>,
+      accessor: (user) => <span className="inline-flex items-center px-3 py-1 rounded-lg text-sm font-medium bg-blue-100 bg-blue-900/30 text-blue-700 text-blue-400">{user.role.charAt(0).toUpperCase() + user.role.slice(1)}</span>,
       sortable: true,
     },
     {
@@ -74,8 +74,8 @@ const Users: React.FC = () => {
   if (error) {
     return (
       <AdminLayout>
-        <div className="bg-rose-100/50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 rounded-2xl p-6">
-          <p className="text-rose-600 dark:text-rose-400">Error loading users: {error instanceof Error ? error.message : 'Unknown error'}</p>
+        <div className="bg-rose-100/50 bg-rose-900/20 border border-rose-200 border-rose-800 rounded-2xl p-6">
+          <p className="text-rose-600 text-rose-400">Error loading users: {error instanceof Error ? error.message : 'Unknown error'}</p>
         </div>
       </AdminLayout>
     );
@@ -83,8 +83,8 @@ const Users: React.FC = () => {
   return (
     <AdminLayout>
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">User Management</h1>
-        <p className="text-gray-600 dark:text-gray-400">Monitor and manage platform users</p>
+        <h1 className="text-3xl font-bold text-gray-900 text-[#1A1A1A]">User Management</h1>
+        <p className="text-gray-600 ">Monitor and manage platform users</p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <StatCard title="Total Users" value={stats.total} icon={UsersIcon} loading={isLoading} />
@@ -92,24 +92,24 @@ const Users: React.FC = () => {
         <StatCard title="Suspended" value={stats.suspended} icon={UserMinusIcon} loading={isLoading} />
         <StatCard title="Banned" value={stats.banned} icon={ShieldExclamationIcon} loading={isLoading} />
       </div>
-      <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 dark:border-gray-800/50 p-6 space-y-4">
+      <div className="bg-white/80 bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 border-gray-800/50 p-6 space-y-4">
         <div className="max-w-md"><Input placeholder="Search by name or email..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="rounded-xl" /></div>
         <div className="flex flex-wrap gap-2">
           {['all', 'active', 'suspended', 'banned'].map(status => (
-            <button key={`status-${status}`} onClick={() => setFilterStatus(status as any)} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${filterStatus === status ? 'bg-blue-600 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'}`}>
+            <button key={`status-${status}`} onClick={() => setFilterStatus(status as any)} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${filterStatus === status ? 'bg-blue-600 text-white' : 'bg-slate-100 bg-gray-800 text-slate-700  hover:bg-gray-200 hover:bg-gray-700'}`}>
               {status.charAt(0).toUpperCase() + status.slice(1)}
             </button>
           ))}
         </div>
         <div className="flex flex-wrap gap-2">
           {['all', 'worker', 'employer'].map(role => (
-            <button key={`role-${role}`} onClick={() => setFilterRole(role as any)} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${filterRole === role ? 'bg-indigo-600 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'}`}>
+            <button key={`role-${role}`} onClick={() => setFilterRole(role as any)} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${filterRole === role ? 'bg-indigo-600 text-white' : 'bg-slate-100 bg-gray-800 text-slate-700  hover:bg-gray-200 hover:bg-gray-700'}`}>
               {role.charAt(0).toUpperCase() + role.slice(1)}
             </button>
           ))}
         </div>
       </div>
-      <AdminTable columns={columns} data={filteredUsers} loading={isLoading} sortConfig={sortConfig} onSort={(config) => setSortConfig(config)} emptyState={<div className="text-center py-8 text-gray-500">No users matching your filters</div>} />
+      <AdminTable columns={columns} data={filteredUsers} loading={isLoading} sortConfig={sortConfig} onSort={(config) => setSortConfig(config)} emptyState={<div className="text-center py-8 text-slate-500">No users matching your filters</div>} />
     </AdminLayout>
   );
 };

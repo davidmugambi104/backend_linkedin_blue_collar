@@ -14,8 +14,8 @@ export default function PaymentDetail() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Payment Details</h1>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">Transaction ID: {paymentId}</p>
+          <h1 className="text-3xl font-bold text-gray-900 text-[#1A1A1A]">Payment Details</h1>
+          <p className="mt-2 text-gray-600 ">Transaction ID: {paymentId}</p>
         </div>
         <Card>
           <CardBody>
@@ -30,7 +30,7 @@ export default function PaymentDetail() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Payment Details</h1>
+          <h1 className="text-3xl font-bold text-gray-900 text-[#1A1A1A]">Payment Details</h1>
         </div>
         <Card>
           <CardBody>
@@ -44,8 +44,8 @@ export default function PaymentDetail() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Payment Details</h1>
-        <p className="mt-2 text-gray-600 dark:text-gray-400">Transaction ID: {paymentId}</p>
+        <h1 className="text-3xl font-bold text-gray-900 text-[#1A1A1A]">Payment Details</h1>
+        <p className="mt-2 text-gray-600 ">Transaction ID: {paymentId}</p>
       </div>
 
       <Card>

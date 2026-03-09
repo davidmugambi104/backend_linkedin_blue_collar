@@ -67,8 +67,8 @@ export const BanUserModal: React.FC<BanUserModalProps> = ({
       </Modal.Header>
       <Modal.Body>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-4">
-            <p className="text-sm text-yellow-800 dark:text-yellow-300">
+          <div className="bg-yellow-50 bg-yellow-900/20 rounded-lg p-4">
+            <p className="text-sm text-yellow-800 text-yellow-300">
               You are about to ban <span className="font-semibold">{userName}</span>.
               This action will restrict their access to the platform.
             </p>
@@ -102,7 +102,7 @@ export const BanUserModal: React.FC<BanUserModalProps> = ({
               type="checkbox"
               className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
             />
-            <span className="text-sm text-gray-700 dark:text-gray-300">
+            <span className="text-sm text-slate-700 ">
               Notify the user via email about this ban
             </span>
           </label>

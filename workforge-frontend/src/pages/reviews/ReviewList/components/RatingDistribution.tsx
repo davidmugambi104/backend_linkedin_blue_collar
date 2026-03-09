@@ -26,7 +26,7 @@ export const RatingDistribution: React.FC<RatingDistributionProps> = ({ stats })
   return (
     <Card>
       <CardHeader>
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+        <h3 className="text-lg font-semibold text-gray-900 text-[#1A1A1A]">
           Rating Distribution
         </h3>
       </CardHeader>
@@ -34,7 +34,7 @@ export const RatingDistribution: React.FC<RatingDistributionProps> = ({ stats })
         <div className="space-y-4">
           {/* Average Rating */}
           <div className="text-center">
-            <div className="text-4xl font-bold text-gray-900 dark:text-white">
+            <div className="text-4xl font-bold text-gray-900 text-[#1A1A1A]">
               {stats.average_rating.toFixed(1)}
             </div>
             <div className="flex items-center justify-center mt-2">
@@ -44,12 +44,12 @@ export const RatingDistribution: React.FC<RatingDistributionProps> = ({ stats })
                   className={`w-5 h-5 ${
                     star <= Math.round(stats.average_rating)
                       ? 'text-yellow-400'
-                      : 'text-gray-300 dark:text-gray-600'
+                      : 'text-slate-300 text-gray-600'
                   }`}
                 />
               ))}
             </div>
-            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+            <p className="mt-2 text-sm text-gray-600 ">
               Based on {stats.total_reviews} reviews
             </p>
           </div>
@@ -59,18 +59,18 @@ export const RatingDistribution: React.FC<RatingDistributionProps> = ({ stats })
             {ratings.map((rating) => (
               <div key={rating.value} className="flex items-center space-x-3">
                 <div className="flex items-center w-12">
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <span className="text-sm font-medium text-slate-700 ">
                     {rating.value} ★
                   </span>
                 </div>
-                <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                <div className="flex-1 h-2 bg-gray-200 bg-gray-700 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-yellow-400 rounded-full"
                     style={{ width: `${getPercentage(rating.count)}%` }}
                   />
                 </div>
                 <div className="w-12 text-right">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                  <span className="text-sm text-gray-600 ">
                     {rating.count}
                   </span>
                 </div>
@@ -80,12 +80,12 @@ export const RatingDistribution: React.FC<RatingDistributionProps> = ({ stats })
 
           {/* Recommendation Rate */}
           {stats.recommendation_rate > 0 && (
-            <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-800">
+            <div className="mt-6 pt-6 border-t border-gray-200 border-gray-800">
               <div className="text-center">
-                <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                <div className="text-2xl font-bold text-green-600 text-green-400">
                   {stats.recommendation_rate}%
                 </div>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                <p className="text-sm text-gray-600  mt-1">
                   would recommend this worker
                 </p>
               </div>

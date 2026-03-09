@@ -57,7 +57,7 @@ export const WorkerReviews: React.FC = () => {
                       className={`w-5 h-5 ${
                         i < Math.floor(Number(avgRating))
                           ? 'text-yellow-400 fill-current'
-                          : 'text-gray-300'
+                          : 'text-slate-300'
                       }`}
                     />
                   ))}
@@ -123,7 +123,7 @@ export const WorkerReviews: React.FC = () => {
                         className={`w-5 h-5 ${
                           i < review.rating
                             ? 'text-yellow-400 fill-current'
-                            : 'text-gray-300'
+                            : 'text-slate-300'
                         }`}
                       />
                     ))}
@@ -135,14 +135,14 @@ export const WorkerReviews: React.FC = () => {
               </div>
 
               {review.comment && (
-                <p className="text-gray-700 leading-relaxed">{review.comment}</p>
+                <p className="text-slate-700 leading-relaxed">{review.comment}</p>
               )}
             </Card>
           ))}
         </div>
       ) : (
         <Card className="p-12 text-center">
-          <StarIcon className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+          <StarIcon className="w-16 h-16 mx-auto text-slate-400 mb-4" />
           <h2 className="text-xl font-semibold text-gray-900 mb-2">No reviews yet</h2>
           <p className="text-gray-600">
             Complete jobs to earn reviews from employers and build your reputation.

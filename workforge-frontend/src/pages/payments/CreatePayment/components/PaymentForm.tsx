@@ -103,7 +103,7 @@ export const PaymentForm: React.FC = () => {
     return (
       <Card>
         <CardBody>
-          <p className="text-center text-gray-500">Job not found</p>
+          <p className="text-center text-slate-500">Job not found</p>
         </CardBody>
       </Card>
     );
@@ -115,10 +115,10 @@ export const PaymentForm: React.FC = () => {
   return (
     <Card>
       <CardHeader>
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+        <h2 className="text-xl font-semibold text-gray-900 text-[#1A1A1A]">
           Complete Payment
         </h2>
-        <p className="text-sm text-gray-600 dark:text-gray-400">
+        <p className="text-sm text-gray-600 ">
           Pay for job: {job.title}
         </p>
       </CardHeader>
@@ -126,32 +126,32 @@ export const PaymentForm: React.FC = () => {
         {!clientSecret ? (
           // Payment Details Form
           <form onSubmit={handleSubmit(handleCreatePaymentIntent)} className="space-y-6">
-            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 mb-6">
-              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <div className="bg-gray-50 bg-gray-800 rounded-lg p-4 mb-6">
+              <h3 className="text-sm font-medium text-slate-700  mb-2">
                 Payment Summary
               </h3>
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600 dark:text-gray-400">Job Amount:</span>
-                  <span className="font-medium text-gray-900 dark:text-white">
+                  <span className="text-gray-600 ">Job Amount:</span>
+                  <span className="font-medium text-gray-900 text-[#1A1A1A]">
                     {formatCurrency(amount)}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600 dark:text-gray-400">Platform Fee (10%):</span>
-                  <span className="font-medium text-gray-900 dark:text-white">
+                  <span className="text-gray-600 ">Platform Fee (10%):</span>
+                  <span className="font-medium text-gray-900 text-[#1A1A1A]">
                     {formatCurrency(platformFee)}
                   </span>
                 </div>
-                <div className="border-t border-gray-200 dark:border-gray-700 my-2 pt-2">
+                <div className="border-t border-gray-200 border-gray-700 my-2 pt-2">
                   <div className="flex justify-between font-medium">
-                    <span className="text-gray-900 dark:text-white">Total:</span>
-                    <span className="text-primary-600 dark:text-primary-400">
+                    <span className="text-gray-900 text-[#1A1A1A]">Total:</span>
+                    <span className="text-primary-600 text-primary-400">
                       {formatCurrency(amount)}
                     </span>
                   </div>
                 </div>
-                <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                <div className="text-xs text-slate-500  mt-2">
                   Worker receives: {formatCurrency(workerAmount)}
                 </div>
               </div>
@@ -163,7 +163,7 @@ export const PaymentForm: React.FC = () => {
               step="0.01"
               label="Payment Amount"
               error={errors.amount?.message}
-              leftIcon={<span className="text-gray-500">$</span>}
+              leftIcon={<span className="text-slate-500">$</span>}
               required
             />
 

@@ -1,23 +1,39 @@
 import React, { useEffect, useRef } from 'react';
-import { ArrowLeftIcon } from '@heroicons/react/24/outline';
-import { Button } from '@components/ui/Button';
+import { ArrowLeftIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { useMessages } from '@hooks/useMessages';
-import { MessageBubble } from './MessageBubble';
 import { MessageInput } from './MessageInput';
 import { TypingIndicator } from './TypingIndicator';
+import { MessageList } from './MessageList';
+import { UserProfileChip } from './UserProfileChip';
+
+interface ChatWindowUser {
+  id: number;
+  username: string;
+  role: string;
+  profile?: {
+    full_name?: string;
+    company_name?: string;
+    profile_picture?: string;
+    logo?: string;
+  } | null;
+}
 
 interface ChatWindowProps {
   conversationId: string;
   otherUserId: number;
+  otherUser?: ChatWindowUser;
   isMobile?: boolean;
   onBack?: () => void;
+  onNewMessage?: () => void;
 }
 
 export const ChatWindow: React.FC<ChatWindowProps> = ({
   conversationId,
   otherUserId,
+  otherUser,
   isMobile = false,
   onBack,
+  onNewMessage,
 }) => {
   const {
     messages,
@@ -39,42 +55,59 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-800">
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-charcoal-200 bg-white">
         <div className="flex items-center gap-3">
           {isMobile && onBack && (
-            <Button variant="ghost" size="icon" onClick={onBack}>
+            <button
+              onClick={onBack}
+              className="icon-btn"
+            >
               <ArrowLeftIcon className="w-5 h-5" />
-            </Button>
+            </button>
           )}
-          <div>
-            <p className="text-sm font-semibold text-gray-900 dark:text-white">
-              Conversation
-            </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              {isUserOnline ? 'Online' : 'Offline'}
-            </p>
-          </div>
+          {otherUser ? (
+            <UserProfileChip user={otherUser} />
+          ) : (
+            <div>
+              <p className="text-sm font-semibold text-charcoal">
+                Conversation
+              </p>
+            </div>
+          )}
+          <span className={`text-xs px-2 py-1 rounded-full ${
+            isUserOnline 
+              ? 'bg-green-100 text-green-700' 
+              : 'bg-charcoal-100 text-charcoal-500'
+          }`}>
+            {isUserOnline ? 'Online' : 'Offline'}
+          </span>
+        </div>
+        {onNewMessage && (
+          <button 
+            onClick={onNewMessage} 
+            className="btn-ghost flex items-center gap-1 text-sm"
+          >
+            <PlusIcon className="w-4 h-4" />
+            New Message
+          </button>
+        )}
+      </div>
+
+      {/* Messages Area */}
+      <div className="flex-1 overflow-y-auto bg-charcoal-50">
+        <MessageList
+          messages={messages}
+          conversationId={conversationId}
+          otherUserId={otherUserId}
+        />
+        <div className="px-4 pb-2">
+          {typingUsers.length > 0 && <TypingIndicator />}
+          <div ref={endRef} />
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((message, index) => {
-          const showAvatar =
-            index === 0 || messages[index - 1].sender_id !== message.sender_id;
-          return (
-            <MessageBubble
-              key={message.id}
-              message={message}
-              conversationId={conversationId}
-              otherUserId={otherUserId}
-              showAvatar={showAvatar}
-            />
-          );
-        })}
-        {typingUsers.length > 0 && <TypingIndicator />}
-        <div ref={endRef} />
-      </div>
-
+      {/* Input Area */}
       <MessageInput
         onSendMessage={handleSend}
         onTyping={handleTyping}

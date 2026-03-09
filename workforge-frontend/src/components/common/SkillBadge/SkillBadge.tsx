@@ -34,7 +34,7 @@ export const SkillBadge: React.FC<SkillBadgeProps> = ({
   return (
     <div
       className={cn(
-        'inline-flex items-center gap-2 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300 rounded-full',
+        'inline-flex items-center gap-2 bg-primary-50 bg-bg-primary-900/20 text-primary-700 bg-text-primary-300 rounded-full',
         sizes[size],
         className
       )}
@@ -48,7 +48,7 @@ export const SkillBadge: React.FC<SkillBadgeProps> = ({
       {onRemove && (
         <button
           onClick={onRemove}
-          className="ml-1 hover:bg-primary-200 dark:hover:bg-primary-800 rounded-full p-0.5 transition-colors"
+          className="ml-1 hover:bg-primary-200 bg-hover:bg-primary-800 rounded-full p-0.5 transition-colors"
         >
           <XMarkIcon className="w-4 h-4" />
         </button>

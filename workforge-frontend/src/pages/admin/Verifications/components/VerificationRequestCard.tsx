@@ -61,7 +61,7 @@ export const VerificationRequestCard: React.FC<VerificationRequestCardProps> = (
               />
               <div>
                 <div className="flex items-center space-x-2">
-                  <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  <h4 className="text-lg font-semibold text-gray-900 text-[#1A1A1A]">
                     {request.worker?.full_name}
                   </h4>
                   <Badge
@@ -78,13 +78,13 @@ export const VerificationRequestCard: React.FC<VerificationRequestCardProps> = (
                 </div>
                 
                 <div className="flex items-center space-x-4 mt-2">
-                  <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                  <div className="flex items-center text-sm text-gray-600 ">
                     <Icon className="w-4 h-4 mr-1" />
                     <span className="capitalize">
                       {request.type.replace('_', ' ')}
                     </span>
                   </div>
-                  <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                  <div className="flex items-center text-sm text-gray-600 ">
                     <ClockIcon className="w-4 h-4 mr-1" />
                     <span>Submitted {format(new Date(request.created_at), 'MMM dd, yyyy')}</span>
                   </div>
@@ -103,21 +103,21 @@ export const VerificationRequestCard: React.FC<VerificationRequestCardProps> = (
 
           {/* Worker Stats */}
           <div className="mt-4 grid grid-cols-3 gap-4">
-            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
-              <p className="text-xs text-gray-500 dark:text-gray-400">Email</p>
-              <p className="text-sm font-medium text-gray-900 dark:text-white mt-1">
+            <div className="bg-gray-50 bg-gray-800 rounded-lg p-3">
+              <p className="text-xs text-slate-500 ">Email</p>
+              <p className="text-sm font-medium text-gray-900 text-[#1A1A1A] mt-1">
                 {request.worker?.email}
               </p>
             </div>
-            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
-              <p className="text-xs text-gray-500 dark:text-gray-400">Phone</p>
-              <p className="text-sm font-medium text-gray-900 dark:text-white mt-1">
+            <div className="bg-gray-50 bg-gray-800 rounded-lg p-3">
+              <p className="text-xs text-slate-500 ">Phone</p>
+              <p className="text-sm font-medium text-gray-900 text-[#1A1A1A] mt-1">
                 {request.worker?.phone || 'Not provided'}
               </p>
             </div>
-            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
-              <p className="text-xs text-gray-500 dark:text-gray-400">Current Score</p>
-              <p className="text-sm font-medium text-gray-900 dark:text-white mt-1">
+            <div className="bg-gray-50 bg-gray-800 rounded-lg p-3">
+              <p className="text-xs text-slate-500 ">Current Score</p>
+              <p className="text-sm font-medium text-gray-900 text-[#1A1A1A] mt-1">
                 {request.worker?.verification_score}%
               </p>
             </div>
@@ -125,10 +125,10 @@ export const VerificationRequestCard: React.FC<VerificationRequestCardProps> = (
 
           {/* Document Preview */}
           {isExpanded && (
-            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-800">
-              <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4">
+            <div className="mt-4 pt-4 border-t border-gray-200 border-gray-800">
+              <div className="bg-slate-100 bg-gray-800 rounded-lg p-4">
                 <div className="flex items-center justify-between mb-3">
-                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <p className="text-sm font-medium text-slate-700 ">
                     Document: {documentUrl ? documentUrl.split('/').pop() : 'N/A'}
                   </p>
                   <Button
@@ -139,8 +139,8 @@ export const VerificationRequestCard: React.FC<VerificationRequestCardProps> = (
                     View Full Document
                   </Button>
                 </div>
-                <div className="aspect-video bg-gray-200 dark:bg-gray-700 rounded flex items-center justify-center">
-                  <DocumentCheckIcon className="w-12 h-12 text-gray-400" />
+                <div className="aspect-video bg-gray-200 bg-gray-700 rounded flex items-center justify-center">
+                  <DocumentCheckIcon className="w-12 h-12 text-slate-400" />
                 </div>
               </div>
 
@@ -155,15 +155,15 @@ export const VerificationRequestCard: React.FC<VerificationRequestCardProps> = (
 
               {/* Review Notes */}
               {request.review_notes && (
-                <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                <div className="mt-4 p-4 bg-gray-50 bg-gray-800 rounded-lg">
+                  <p className="text-xs font-medium text-slate-500  mb-1">
                     Review Notes:
                   </p>
-                  <p className="text-sm text-gray-700 dark:text-gray-300">
+                  <p className="text-sm text-slate-700 ">
                     {request.review_notes}
                   </p>
                   {request.reviewed_by && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                    <p className="text-xs text-slate-500  mt-2">
                       Reviewed by Admin #{request.reviewed_by} •{' '}
                       {format(new Date(request.updated_at), 'MMM dd, yyyy h:mm a')}
                     </p>

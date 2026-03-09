@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { 
+import {
   BriefcaseIcon, 
   Squares2X2Icon, 
   TableCellsIcon,
@@ -12,10 +12,10 @@ import {
   UsersIcon,
   EyeIcon,
   EllipsisHorizontalIcon,
-  PencilIcon,
   TrashIcon,
   ArrowTopRightOnSquareIcon
 } from '@heroicons/react/24/outline';
+import { useEmployerJobs, useDeleteJob } from '@hooks/useEmployerJobs';
 
 // Search Input Component
 const SearchInput: React.FC<{ 
@@ -112,9 +112,9 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
             <p className="text-sm text-muted">{job.location}</p>
           </div>
         </div>
-        <button className="icon-btn opacity-0 group-hover:opacity-100 transition-opacity">
+        <Link to={`/employer/jobs/${job.id}`} className="icon-btn opacity-0 group-hover:opacity-100 transition-opacity">
           <EllipsisHorizontalIcon className="w-5 h-5" />
-        </button>
+        </Link>
       </div>
 
       <div className="flex items-center gap-4 mb-4">
@@ -172,16 +172,15 @@ const JobTableRow: React.FC<{ job: JobItem }> = ({ job }) => {
       <td>
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <Link to={`/employer/jobs/${job.id}`}>
-            <button className="icon-btn">
+            <button className="icon-btn" type="button">
               <EyeIcon className="w-4 h-4" />
             </button>
           </Link>
-          <button className="icon-btn">
-            <PencilIcon className="w-4 h-4" />
-          </button>
-          <button className="icon-btn text-error">
-            <TrashIcon className="w-4 h-4" />
-          </button>
+            <Link to={`/employer/jobs/${job.id}`}>
+              <button className="icon-btn" type="button">
+                <ArrowTopRightOnSquareIcon className="w-4 h-4" />
+              </button>
+            </Link>
         </div>
       </td>
     </tr>
@@ -205,7 +204,7 @@ const EmptyState: React.FC = () => (
   </div>
 );
 
-// Types & Mock Data
+// Types
 interface JobItem {
   id: number;
   title: string;
@@ -216,36 +215,49 @@ interface JobItem {
   location: string;
 }
 
-const mockJobs: JobItem[] = [
-  { id: 1, title: 'Journeyman Electrician', status: 'Open', applicants: 14, views: 140, salaryRange: '$34-$42/hr', location: 'Dallas, TX' },
-  { id: 2, title: 'Welding Specialist', status: 'Draft', applicants: 0, views: 28, salaryRange: '$28-$36/hr', location: 'Houston, TX' },
-  { id: 3, title: 'Heavy Equipment Operator', status: 'Open', applicants: 6, views: 91, salaryRange: '$30-$38/hr', location: 'San Antonio, TX' },
-  { id: 4, title: 'Senior Carpenter', status: 'Open', applicants: 22, views: 340, salaryRange: '$32-$40/hr', location: 'Austin, TX' },
-  { id: 5, title: 'Mason Specialist', status: 'Closed', applicants: 18, views: 256, salaryRange: '$26-$34/hr', location: 'Fort Worth, TX' },
-  { id: 6, title: 'Project Manager', status: 'Open', applicants: 8, views: 124, salaryRange: '$45-$55/hr', location: 'Dallas, TX' },
-];
-
 const Jobs = () => {
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('all');
   const [view, setView] = useState<'grid' | 'table'>('table');
   const [page, setPage] = useState(1);
+  const { data: jobs = [], isLoading } = useEmployerJobs();
+  const deleteJobMutation = useDeleteJob();
+
+  const jobItems = useMemo<JobItem[]>(() => jobs.map((job) => {
+    const payMin = job.pay_min ?? job.salary_min;
+    const payMax = job.pay_max ?? job.salary_max;
+    const payType = String(job.pay_type || 'hourly').toLowerCase();
+
+    return {
+      id: job.id,
+      title: job.title,
+      status: String(job.status || 'open'),
+      applicants: job.application_count || 0,
+      views: Number((job as any).views || (job as any).view_count || 0),
+      salaryRange: payMin || payMax ? `$${payMin ?? 0}-$${payMax ?? payMin ?? 0}/${payType}` : 'N/A',
+      location: job.address || 'Location not specified',
+    };
+  }), [jobs]);
 
   // Filter jobs
   const filtered = useMemo(() => {
-    return mockJobs.filter((job) => {
+    return jobItems.filter((job) => {
       const matchesQuery = job.title.toLowerCase().includes(query.toLowerCase());
       const matchesFilter = filter === 'all' || job.status.toLowerCase() === filter;
       return matchesQuery && matchesFilter;
     });
-  }, [query, filter]);
+  }, [jobItems, query, filter]);
 
   // Stats for filter chips
   const jobCounts = useMemo(() => ({
-    all: mockJobs.length,
-    open: mockJobs.filter(j => j.status.toLowerCase() === 'open').length,
-    draft: mockJobs.filter(j => j.status.toLowerCase() === 'draft').length,
-  }), []);
+    all: jobItems.length,
+    open: jobItems.filter(j => j.status.toLowerCase() === 'open').length,
+    draft: jobItems.filter(j => j.status.toLowerCase() === 'draft').length,
+  }), [jobItems]);
+
+  const handleDelete = async (jobId: number) => {
+    await deleteJobMutation.mutateAsync(jobId);
+  };
 
   return (
     <div className="animate-fade-in-up">
@@ -325,11 +337,35 @@ const Jobs = () => {
               </thead>
               <tbody>
                 {filtered.map((job) => (
-                  <JobTableRow key={job.id} job={job} />
+                  <tr key={job.id} className="interactive-row group">
+                    <td className="font-medium text-charcoal">{job.title}</td>
+                    <td>
+                      <span className={`badge ${job.status.toLowerCase() === 'open' ? 'badge-success' : job.status.toLowerCase() === 'draft' ? 'badge-neutral' : 'badge-error'}`}>
+                        {job.status}
+                      </span>
+                    </td>
+                    <td className="text-charcoal">{job.applicants}</td>
+                    <td className="text-charcoal">{job.views}</td>
+                    <td className="text-charcoal">{job.salaryRange}</td>
+                    <td className="text-muted">{job.location}</td>
+                    <td>
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Link to={`/employer/jobs/${job.id}`}>
+                          <button className="icon-btn">
+                            <EyeIcon className="w-4 h-4" />
+                          </button>
+                        </Link>
+                        <button className="icon-btn" onClick={() => handleDelete(job.id)}>
+                          <TrashIcon className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
                 ))}
               </tbody>
             </table>
           </div>
+          {isLoading && <p className="p-4 text-sm text-muted">Loading jobs...</p>}
         </div>
       )}
 
@@ -337,7 +373,7 @@ const Jobs = () => {
       {filtered.length > 0 && (
         <div className="flex items-center justify-between mt-6">
           <p className="text-sm text-muted">
-            Showing {filtered.length} of {mockJobs.length} jobs
+            Showing {filtered.length} of {jobItems.length} jobs
           </p>
           <div className="flex items-center gap-2">
             <button 

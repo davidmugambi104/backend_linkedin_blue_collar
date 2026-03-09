@@ -96,8 +96,8 @@ const userColumns: DataTableColumn<User>[] = [
           inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
           ${
             value === 'active'
-              ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-              : 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-400'
+              ? 'bg-green-100 text-green-800 bg-bg-green-900/30 bg-text-green-400'
+              : 'bg-slate-100 text-slate-800 bg-bg-slate-800 bg-text-slate-400'
           }
         `}
       >

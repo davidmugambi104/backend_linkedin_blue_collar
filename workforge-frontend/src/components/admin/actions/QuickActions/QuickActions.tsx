@@ -30,7 +30,7 @@ export const QuickActions: React.FC = () => {
           "text-white shadow-xl shadow-primary-500/30",
           "hover:shadow-2xl hover:shadow-primary-500/40 hover:scale-110",
           "transition-all duration-300",
-          "focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900",
+          "focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 bg-focus:ring-offset-gray-900",
           "z-50"
         )}
         aria-label="Quick actions"
@@ -46,8 +46,8 @@ export const QuickActions: React.FC = () => {
       <div
         className={cn(
           "fixed bottom-24 right-6 w-72",
-          "bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl",
-          "rounded-2xl border border-gray-200/50 dark:border-gray-800/50",
+          "bg-white/90 bg-bg-gray-900/90 backdrop-blur-xl",
+          "rounded-2xl border border-gray-200/50 bg-border-gray-800/50",
           "shadow-2xl",
           "transition-all duration-300 transform",
           isOpen ? "scale-100 opacity-100" : "scale-95 opacity-0 pointer-events-none",
@@ -55,7 +55,7 @@ export const QuickActions: React.FC = () => {
         )}
       >
         <div className="p-4">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
+          <h3 className="text-sm font-semibold text-gray-900 bg-text-white mb-3">
             Quick Actions
           </h3>
           <div className="space-y-1">
@@ -64,8 +64,8 @@ export const QuickActions: React.FC = () => {
             ))}
           </div>
 
-          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-800">
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+          <div className="mt-4 pt-4 border-t border-gray-200 bg-border-gray-800">
+            <p className="text-xs text-gray-500 bg-text-gray-400">
               Press ⌘K to open commands
             </p>
           </div>

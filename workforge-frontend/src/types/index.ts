@@ -48,6 +48,9 @@ export interface Message {
   sender?: User;
   content: string;
   is_read: boolean;
+  _optimistic?: boolean;
+  _status?: 'sending' | 'sent' | 'failed';
+  error?: string;
   attachments?: MessageAttachment[];
   reactions?: MessageReaction[];
   created_at: string;

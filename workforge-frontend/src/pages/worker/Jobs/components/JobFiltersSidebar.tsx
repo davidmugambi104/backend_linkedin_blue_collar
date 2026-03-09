@@ -88,7 +88,7 @@ export const JobFiltersSidebar: React.FC<JobFiltersSidebarProps> = ({
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       {/* Skills Filter */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <label className="block text-sm font-medium text-slate-700  mb-2">
           Skill
         </label>
         <Select {...register('skill_id')}>
@@ -107,9 +107,9 @@ export const JobFiltersSidebar: React.FC<JobFiltersSidebarProps> = ({
           <input
             type="checkbox"
             {...register('use_location')}
-            className="rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-800"
+            className="rounded border-gray-300 text-primary-600 focus:ring-primary-500 border-gray-600 bg-gray-800"
           />
-          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+          <span className="text-sm font-medium text-slate-700 ">
             Near my location
           </span>
         </label>
@@ -129,7 +129,7 @@ export const JobFiltersSidebar: React.FC<JobFiltersSidebarProps> = ({
 
       {/* Pay Range */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <label className="block text-sm font-medium text-slate-700  mb-2">
           Pay Range
         </label>
         <div className="space-y-3">
@@ -146,13 +146,13 @@ export const JobFiltersSidebar: React.FC<JobFiltersSidebarProps> = ({
               {...register('pay_min')}
               type="number"
               placeholder="Min"
-              leftIcon={<span className="text-gray-500">$</span>}
+              leftIcon={<span className="text-slate-500">$</span>}
             />
             <Input
               {...register('pay_max')}
               type="number"
               placeholder="Max"
-              leftIcon={<span className="text-gray-500">$</span>}
+              leftIcon={<span className="text-slate-500">$</span>}
             />
           </div>
         </div>
@@ -177,12 +177,12 @@ export const JobFiltersSidebar: React.FC<JobFiltersSidebarProps> = ({
 
   if (isMobile) {
     return (
-      <div className="fixed inset-0 z-50 bg-white dark:bg-gray-900 overflow-y-auto">
-        <div className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 p-4 flex items-center justify-between">
+      <div className="fixed inset-0 z-50 bg-white bg-gray-900 overflow-y-auto">
+        <div className="sticky top-0 bg-white bg-gray-900 border-b border-gray-200 border-gray-800 p-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold">Filters</h2>
           <button
             onClick={onClose}
-            className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
+            className="p-2 rounded-md hover:bg-slate-100 hover:bg-gray-800"
           >
             <XMarkIcon className="h-6 w-6" />
           </button>

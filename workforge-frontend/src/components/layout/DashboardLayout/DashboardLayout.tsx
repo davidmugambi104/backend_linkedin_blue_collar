@@ -8,7 +8,7 @@ import { Header } from './Header';
 
 export const DashboardLayout: React.FC = () => {
   return (
-    <div className="h-screen w-full flex overflow-hidden bg-gradient-to-br from-slate-50 to-blue-50/30 dark:from-slate-900 dark:to-slate-800">
+    <div className="h-screen w-full flex overflow-hidden bg-gradient-to-br from-slate-50 to-blue-50/30 bg-from-slate-900 bg-to-slate-800">
       {/* Fixed Sidebar - Always visible on desktop */}
       <Sidebar />
 

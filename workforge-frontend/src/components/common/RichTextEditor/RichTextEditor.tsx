@@ -23,7 +23,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   return (
     <div className={cn('space-y-2', className)}>
       {label && (
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+        <label className="block text-sm font-medium text-gray-700 bg-text-gray-300">
           {label}
           {required && <span className="text-red-500 ml-1">*</span>}
         </label>
@@ -34,12 +34,12 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
         placeholder={placeholder}
         rows={8}
         className={cn(
-          'w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-600 dark:text-white',
+          'w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-bg-gray-800 bg-border-gray-600 bg-text-white',
           error && 'border-red-500 focus:ring-red-500'
         )}
       />
       {error && <p className="text-sm text-red-500">{error}</p>}
-      <p className="text-xs text-gray-500 dark:text-gray-400">
+      <p className="text-xs text-gray-500 bg-text-gray-400">
         Markdown formatting coming soon
       </p>
     </div>

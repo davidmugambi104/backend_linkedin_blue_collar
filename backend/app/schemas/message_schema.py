@@ -13,7 +13,7 @@ class MessageSchema(Schema):
     created_at = fields.DateTime(dump_only=True)
 
     @validates("receiver_id")
-    def validate_receiver_id(self, value):
+    def validate_receiver_id(self, value, **kwargs):
         if not User.query.get(value):
             raise ValidationError("Receiver does not exist.")
 

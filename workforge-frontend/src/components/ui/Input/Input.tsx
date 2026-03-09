@@ -33,7 +33,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label
             htmlFor={inputId}
-            className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300"
+            className="mb-2 text-sm font-medium text-slate-700"
           >
             {label}
           </label>
@@ -42,7 +42,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         <div className="relative">
           {leftIcon && (
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <span className="text-gray-500 dark:text-gray-400 sm:text-sm">
+              <span className="text-slate-400">
                 {leftIcon}
               </span>
             </div>
@@ -53,17 +53,12 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             id={inputId}
             type={type}
             className={cn(
-              // Base glassmorphism styles
-              'flex h-10 w-full rounded-xl border px-4 py-2 text-sm transition-all duration-200',
-              'backdrop-blur-md shadow-lg',
-              // Light mode glass
-              'bg-gradient-to-br from-white/30 to-white/10 border-slate-300/50 text-gray-900 placeholder:text-gray-500 shadow-black/5',
-              // Dark mode glass
-              'dark:bg-gradient-to-br dark:from-black/30 dark:to-black/10 dark:border-slate-600/50 dark:text-white dark:placeholder:text-gray-400 dark:shadow-white/10',
-              // Hover effect: slightly increase opacity
-              'hover:bg-white/40 dark:hover:bg-black/40',
-              // Focus ring with blue highlight
-              'focus:outline-none focus:ring-2 focus:ring-blue-500/70 focus:border-transparent',
+              // Base styles
+              'flex h-11 w-full rounded-xl border px-4 py-2 text-sm transition-all duration-200',
+              // Light mode
+              'bg-white border-slate-200 text-slate-900 placeholder:text-slate-400',
+              // Focus ring with navy highlight
+              'focus:outline-none focus:ring-2 focus:ring-[#0A2540]/30 focus:border-[#0A2540]',
               // Disabled state
               'disabled:cursor-not-allowed disabled:opacity-50',
               // Icon padding
@@ -71,7 +66,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               rightIcon && 'pr-10',
               // Error state overrides
               error &&
-                'border-red-500 focus:ring-red-500 dark:border-red-500 dark:focus:ring-red-500',
+                'border-red-500 focus:ring-red-500',
               className
             )}
             aria-invalid={!!error}
@@ -83,7 +78,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 
           {rightIcon && (
             <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-              <span className="text-gray-500 dark:text-gray-400 sm:text-sm">
+              <span className="text-slate-400">
                 {rightIcon}
               </span>
             </div>
@@ -93,7 +88,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         {error && (
           <p
             id={`${inputId}-error`}
-            className="mt-1 text-sm text-red-600 dark:text-red-400"
+            className="mt-1.5 text-sm text-red-600"
           >
             {error}
           </p>
@@ -102,7 +97,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         {hint && !error && (
           <p
             id={`${inputId}-hint`}
-            className="mt-1 text-sm text-gray-500 dark:text-gray-400"
+            className="mt-1.5 text-sm text-slate-500"
           >
             {hint}
           </p>

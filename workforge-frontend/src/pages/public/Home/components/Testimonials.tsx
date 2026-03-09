@@ -56,15 +56,15 @@ const benefits = [
 
 export const Testimonials: React.FC = () => {
   return (
-    <div className="py-20 bg-white dark:bg-gray-900">
+    <div className="py-20 bg-white bg-gray-900">
       <div className="container">
         {/* Benefits Section */}
         <div className="mb-20">
           <div className="text-center max-w-2xl mx-auto mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white sm:text-4xl">
+            <h2 className="text-3xl font-bold text-gray-900 text-[#1A1A1A] sm:text-4xl">
               Why Choose WorkForge?
             </h2>
-            <p className="mt-4 text-lg text-gray-600 dark:text-gray-400">
+            <p className="mt-4 text-lg text-gray-600 ">
               Trusted by thousands for secure, reliable, and efficient hiring
             </p>
           </div>
@@ -72,13 +72,13 @@ export const Testimonials: React.FC = () => {
           <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
             {benefits.map((benefit, index) => (
               <div key={index} className="text-center">
-                <div className="mx-auto w-16 h-16 bg-primary-100 dark:bg-primary-900/30 rounded-2xl flex items-center justify-center mb-4">
-                  <benefit.icon className="h-8 w-8 text-primary-600 dark:text-primary-400" />
+                <div className="mx-auto w-16 h-16 bg-primary-100 bg-primary-900/30 rounded-2xl flex items-center justify-center mb-4">
+                  <benefit.icon className="h-8 w-8 text-primary-600 text-primary-400" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                <h3 className="text-lg font-semibold text-gray-900 text-[#1A1A1A] mb-2">
                   {benefit.title}
                 </h3>
-                <p className="text-gray-600 dark:text-gray-400 text-sm">
+                <p className="text-gray-600  text-sm">
                   {benefit.description}
                 </p>
               </div>
@@ -89,7 +89,7 @@ export const Testimonials: React.FC = () => {
         {/* Testimonials Section */}
         <div>
           <div className="text-center max-w-2xl mx-auto mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white sm:text-4xl">
+            <h2 className="text-3xl font-bold text-gray-900 text-[#1A1A1A] sm:text-4xl">
               What Our Users Say
             </h2>
           </div>
@@ -98,7 +98,7 @@ export const Testimonials: React.FC = () => {
             {testimonials.map((testimonial, index) => (
               <div
                 key={index}
-                className="relative p-6 bg-gray-50 dark:bg-gray-800 rounded-2xl"
+                className="relative p-6 bg-gray-50 bg-gray-800 rounded-2xl"
               >
                 <div className="flex items-center gap-1 mb-4">
                   {[...Array(testimonial.rating)].map((_, i) => (
@@ -109,21 +109,21 @@ export const Testimonials: React.FC = () => {
                   ))}
                 </div>
                 
-                <p className="text-gray-700 dark:text-gray-300 mb-6">
+                <p className="text-slate-700  mb-6">
                   "{testimonial.text}"
                 </p>
                 
                 <div className="flex items-center">
-                  <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center mr-3">
-                    <span className="text-primary-600 dark:text-primary-400 font-semibold text-lg">
+                  <div className="w-12 h-12 bg-primary-100 bg-primary-900/30 rounded-full flex items-center justify-center mr-3">
+                    <span className="text-primary-600 text-primary-400 font-semibold text-lg">
                       {testimonial.name.charAt(0)}
                     </span>
                   </div>
                   <div>
-                    <div className="font-semibold text-gray-900 dark:text-white">
+                    <div className="font-semibold text-gray-900 text-[#1A1A1A]">
                       {testimonial.name}
                     </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                    <div className="text-sm text-gray-600 ">
                       {testimonial.role}
                     </div>
                   </div>

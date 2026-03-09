@@ -302,7 +302,7 @@ export const DataTablePagination = forwardRef<HTMLDivElement, DataTablePaginatio
       >
         {/* Left: Item count */}
         {showItemCount && (
-          <div className="text-sm text-slate-600 dark:text-slate-400">
+          <div className="text-sm text-slate-600 bg-text-slate-400">
             Showing <span className="font-medium">{startItem}</span> to{' '}
             <span className="font-medium">{endItem}</span> of{' '}
             <span className="font-medium">{total}</span> results
@@ -316,7 +316,7 @@ export const DataTablePagination = forwardRef<HTMLDivElement, DataTablePaginatio
             <div className="flex items-center gap-2">
               <label
                 htmlFor="page-size"
-                className="text-sm text-slate-600 dark:text-slate-400"
+                className="text-sm text-slate-600 bg-text-slate-400"
               >
                 Show
               </label>
@@ -324,7 +324,7 @@ export const DataTablePagination = forwardRef<HTMLDivElement, DataTablePaginatio
                 id="page-size"
                 value={pagination.pageSize}
                 onChange={(e) => setPageSize(Number(e.target.value))}
-                className="px-3 py-1.5 text-sm border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="px-3 py-1.5 text-sm border border-slate-300 bg-border-slate-600 rounded-xl bg-white bg-bg-slate-800 text-slate-900 bg-text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 aria-label="Items per page"
               >
                 {pageSizeOptions.map((size) => (
@@ -350,7 +350,7 @@ export const DataTablePagination = forwardRef<HTMLDivElement, DataTablePaginatio
               <ChevronLeftIcon className="w-5 h-5" />
             </button>
 
-            <div className="px-4 text-sm text-slate-600 dark:text-slate-400">
+            <div className="px-4 text-sm text-slate-600 bg-text-slate-400">
               Page <span className="font-medium">{pagination.pageIndex + 1}</span> of{' '}
               <span className="font-medium">{pageCount}</span>
             </div>
@@ -420,7 +420,7 @@ export const DataTableToolbar = forwardRef<HTMLDivElement, DataTableToolbarProps
           <div className="flex items-center gap-2">
             {enableColumnVisibility && (
               <button
-                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl border border-slate-300 bg-border-slate-600 bg-white bg-bg-slate-800 text-slate-700 bg-text-slate-200 hover:bg-slate-50 bg-hover:bg-slate-700 transition-colors"
                 aria-label="Toggle column visibility"
               >
                 <FunnelIcon className="w-4 h-4" />
@@ -455,7 +455,7 @@ export const DataTableEmpty = forwardRef<
       role="status"
       aria-live="polite"
     >
-      <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+      <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 bg-bg-slate-800 flex items-center justify-center">
         <svg
           className="w-8 h-8 text-slate-400"
           fill="none"
@@ -471,10 +471,10 @@ export const DataTableEmpty = forwardRef<
           />
         </svg>
       </div>
-      <p className="text-slate-900 dark:text-slate-100 font-medium mb-1">
+      <p className="text-slate-900 bg-text-slate-100 font-medium mb-1">
         {message || 'No data available'}
       </p>
-      <p className="text-sm text-slate-600 dark:text-slate-400">
+      <p className="text-sm text-slate-600 bg-text-slate-400">
         Try adjusting your filters or search terms
       </p>
     </motion.div>

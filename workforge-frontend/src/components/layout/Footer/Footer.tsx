@@ -34,15 +34,15 @@ const navigation = {
 
 export const Footer: React.FC = () => {
   return (
-    <footer className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
+    <footer className="bg-white bg-bg-slate-900 border-t border-slate-200 bg-border-slate-800">
       <div className="container py-12 lg:py-16">
         <div className="xl:grid xl:grid-cols-3 xl:gap-8">
           {/* Brand */}
           <div className="space-y-8 xl:col-span-1">
-            <Link to="/" className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+            <Link to="/" className="text-2xl font-bold text-blue-600 bg-text-blue-400">
               WorkForge
             </Link>
-            <p className="text-sm text-slate-600 dark:text-slate-400 max-w-xs">
+            <p className="text-sm text-slate-600 bg-text-slate-400 max-w-xs">
               Connecting skilled workers with employers who need their expertise. 
               Find work, hire talent, and get the job done.
             </p>
@@ -51,7 +51,7 @@ export const Footer: React.FC = () => {
                 <a
                   key={item.name}
                   href={item.href}
-                  className="text-gray-500 hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-300"
+                  className="text-gray-500 hover:text-gray-600 bg-text-gray-400 bg-hover:text-gray-300"
                 >
                   <span className="sr-only">{item.name}</span>
                   <item.icon className="h-6 w-6" aria-hidden="true" />
@@ -64,7 +64,7 @@ export const Footer: React.FC = () => {
           <div className="mt-12 grid grid-cols-2 gap-8 xl:col-span-2 xl:mt-0">
             <div className="md:grid md:grid-cols-2 md:gap-8">
               <div>
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
+                <h3 className="text-sm font-semibold text-gray-900 bg-text-white uppercase tracking-wider">
                   Platform
                 </h3>
                 <ul className="mt-4 space-y-4">
@@ -72,7 +72,7 @@ export const Footer: React.FC = () => {
                     <li key={item.name}>
                       <Link
                         to={item.href}
-                        className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+                        className="text-sm text-gray-600 hover:text-gray-900 bg-text-gray-400 bg-hover:text-white"
                       >
                         {item.name}
                       </Link>
@@ -81,7 +81,7 @@ export const Footer: React.FC = () => {
                 </ul>
               </div>
               <div className="mt-12 md:mt-0">
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
+                <h3 className="text-sm font-semibold text-gray-900 bg-text-white uppercase tracking-wider">
                   Company
                 </h3>
                 <ul className="mt-4 space-y-4">
@@ -89,7 +89,7 @@ export const Footer: React.FC = () => {
                     <li key={item.name}>
                       <Link
                         to={item.href}
-                        className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+                        className="text-sm text-gray-600 hover:text-gray-900 bg-text-gray-400 bg-hover:text-white"
                       >
                         {item.name}
                       </Link>
@@ -100,7 +100,7 @@ export const Footer: React.FC = () => {
             </div>
             <div className="md:grid md:grid-cols-1 md:gap-8">
               <div>
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
+                <h3 className="text-sm font-semibold text-gray-900 bg-text-white uppercase tracking-wider">
                   Support
                 </h3>
                 <ul className="mt-4 space-y-4">
@@ -108,7 +108,7 @@ export const Footer: React.FC = () => {
                     <li key={item.name}>
                       <Link
                         to={item.href}
-                        className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+                        className="text-sm text-gray-600 hover:text-gray-900 bg-text-gray-400 bg-hover:text-white"
                       >
                         {item.name}
                       </Link>
@@ -121,8 +121,8 @@ export const Footer: React.FC = () => {
         </div>
 
         {/* Copyright */}
-        <div className="mt-12 border-t border-gray-200 dark:border-gray-800 pt-8">
-          <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
+        <div className="mt-12 border-t border-gray-200 bg-border-gray-800 pt-8">
+          <p className="text-sm text-gray-500 bg-text-gray-400 text-center">
             &copy; {new Date().getFullYear()} WorkForge. All rights reserved.
           </p>
         </div>

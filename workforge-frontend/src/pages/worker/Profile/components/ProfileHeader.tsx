@@ -19,7 +19,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   isOwnProfile = true,
 }) => {
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 p-6">
+    <div className="bg-white bg-gray-900 rounded-lg shadow-sm border border-gray-200 border-gray-800 p-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between">
         <div className="flex items-center space-x-4">
           <Avatar
@@ -30,7 +30,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
           />
           <div>
             <div className="flex items-center space-x-2">
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+              <h1 className="text-2xl font-bold text-gray-900 text-[#1A1A1A]">
                 {worker.full_name}
               </h1>
               {worker.is_verified && (
@@ -39,18 +39,18 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                 </Badge>
               )}
             </div>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">
+            <p className="text-gray-600  mt-1">
               @{worker.user?.username}
             </p>
             <div className="flex items-center mt-2 space-x-4">
               <div className="flex items-center">
                 <Rating rating={worker.average_rating || 0} total={worker.total_ratings} />
-                <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">
+                <span className="ml-2 text-sm text-gray-600 ">
                   ({worker.total_ratings} reviews)
                 </span>
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">
-                <span className="font-semibold text-gray-900 dark:text-white">
+              <div className="text-sm text-gray-600 ">
+                <span className="font-semibold text-gray-900 text-[#1A1A1A]">
                   {formatCurrency(worker.hourly_rate || 0)}
                 </span>
                 /hr
@@ -72,11 +72,11 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
       </div>
 
       {worker.bio && (
-        <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-800">
-          <h2 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <div className="mt-6 pt-6 border-t border-gray-200 border-gray-800">
+          <h2 className="text-sm font-medium text-slate-700  mb-2">
             About
           </h2>
-          <p className="text-gray-600 dark:text-gray-400 whitespace-pre-line">
+          <p className="text-gray-600  whitespace-pre-line">
             {worker.bio}
           </p>
         </div>

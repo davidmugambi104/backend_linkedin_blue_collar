@@ -61,3 +61,12 @@ export const useWorkerReviews = () => {
     queryFn: () => workerService.getReviews(),
   });
 };
+
+// Hook for getting reviews of a specific worker (public profile)
+export const useWorkerPublicReviews = (workerId: number) => {
+  return useQuery({
+    queryKey: ['worker-public-reviews', workerId],
+    queryFn: () => workerService.getWorkerReviews(workerId),
+    enabled: !!workerId,
+  });
+};

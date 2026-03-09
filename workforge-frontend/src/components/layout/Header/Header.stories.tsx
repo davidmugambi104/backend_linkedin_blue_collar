@@ -10,7 +10,7 @@ const meta: Meta<typeof Header> = {
     (Story) => (
       <MemoryRouter>
         <AuthProvider>
-          <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+          <div className="min-h-screen bg-slate-50 bg-bg-slate-900">
             <Story />
           </div>
         </AuthProvider>

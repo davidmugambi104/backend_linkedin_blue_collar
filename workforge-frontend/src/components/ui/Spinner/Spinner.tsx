@@ -12,7 +12,7 @@ export const Spinner = forwardRef<HTMLDivElement, SpinnerProps>(
     };
 
     const colors = {
-      primary: 'text-blue-600',
+      primary: 'text-[#0A2540]',
       secondary: 'text-slate-600',
       white: 'text-white',
       gray: 'text-slate-400',

@@ -16,13 +16,13 @@ export const Badge = forwardRef<HTMLSpanElement, BadgeProps>(
     ref
   ) => {
     const variants = {
-      default: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
-      success: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-      warning: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
-      error: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
-      info: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-      purple: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
-      outline: 'border border-slate-300 text-slate-700 dark:border-slate-600 dark:text-slate-200',
+      default: 'bg-slate-100 text-slate-700 bg-bg-slate-800 bg-text-slate-300',
+      success: 'bg-emerald-100 text-emerald-700 bg-bg-emerald-900/30 bg-text-emerald-400',
+      warning: 'bg-amber-100 text-amber-700 bg-bg-amber-900/30 bg-text-amber-400',
+      error: 'bg-red-100 text-red-700 bg-bg-red-900/30 bg-text-red-400',
+      info: 'bg-navy-100 text-navy-700 bg-bg-navy-900/30 bg-text-navy-400',
+      purple: 'bg-purple-100 text-purple-700 bg-bg-purple-900/30 bg-text-purple-400',
+      outline: 'border border-slate-300 text-slate-700 bg-border-slate-600 bg-text-slate-200',
     };
 
     const sizes = {
@@ -48,13 +48,13 @@ export const Badge = forwardRef<HTMLSpanElement, BadgeProps>(
             className={cn(
               'w-1.5 h-1.5 mr-1.5 rounded-full',
               {
-                'bg-gray-800 dark:bg-gray-300': variant === 'default',
-                'bg-green-800 dark:bg-green-300': variant === 'success',
-                'bg-yellow-800 dark:bg-yellow-300': variant === 'warning',
-                'bg-red-800 dark:bg-red-300': variant === 'error',
-                'bg-blue-800 dark:bg-blue-300': variant === 'info',
-                'bg-purple-800 dark:bg-purple-300': variant === 'purple',
-                'bg-slate-500 dark:bg-slate-300': variant === 'outline',
+                'bg-gray-800 bg-bg-gray-300': variant === 'default',
+                'bg-green-800 bg-bg-green-300': variant === 'success',
+                'bg-yellow-800 bg-bg-yellow-300': variant === 'warning',
+                'bg-red-800 bg-bg-red-300': variant === 'error',
+                'bg-blue-800 bg-bg-blue-300': variant === 'info',
+                'bg-purple-800 bg-bg-purple-300': variant === 'purple',
+                'bg-slate-500 bg-bg-slate-300': variant === 'outline',
               }
             )}
           />

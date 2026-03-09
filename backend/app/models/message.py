@@ -16,10 +16,22 @@ class Message(db.Model):
 
     # Relationships for sender and receiver
     sender = db.relationship(
-        "User", foreign_keys=[sender_id], backref="sent_messages"
+        "User",
+        foreign_keys=[sender_id],
+        backref=db.backref(
+            "sent_messages",
+            overlaps="sender_employer,sender_worker,sent_messages",
+        ),
+        overlaps="sender_employer,sender_worker,sent_messages",
     )
     receiver = db.relationship(
-        "User", foreign_keys=[receiver_id], backref="received_messages"
+        "User",
+        foreign_keys=[receiver_id],
+        backref=db.backref(
+            "received_messages",
+            overlaps="receiver_employer,receiver_worker,received_messages",
+        ),
+        overlaps="receiver_employer,receiver_worker,received_messages",
     )
 
     def to_dict(self):

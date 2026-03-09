@@ -102,7 +102,7 @@ export const Stats: React.FC = () => {
                 </div>
 
                 {/* Stat Label */}
-                <div className="text-xs md:text-sm font-medium text-gray-700">
+                <div className="text-xs md:text-sm font-medium text-slate-700">
                   {stat.name}
                 </div>
 

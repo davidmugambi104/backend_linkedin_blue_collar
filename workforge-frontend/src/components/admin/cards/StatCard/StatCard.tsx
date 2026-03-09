@@ -19,10 +19,10 @@ export const StatCard: React.FC<StatCardProps> = ({
 
   if (loading) {
     return (
-      <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 dark:border-gray-800/50 p-6 animate-pulse">
-        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-24 mb-4"></div>
-        <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-32 mb-2"></div>
-        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-20"></div>
+      <div className="bg-white/80 bg-bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 bg-border-gray-800/50 p-6 animate-pulse">
+        <div className="h-4 bg-gray-200 bg-bg-gray-700 rounded w-24 mb-4"></div>
+        <div className="h-8 bg-gray-200 bg-bg-gray-700 rounded w-32 mb-2"></div>
+        <div className="h-4 bg-gray-200 bg-bg-gray-700 rounded w-20"></div>
       </div>
     );
   }
@@ -30,35 +30,35 @@ export const StatCard: React.FC<StatCardProps> = ({
   return (
     <div
       className={cn(
-        "group relative bg-white dark:bg-[#151922]",
-        "rounded-2xl border border-[#E6E9F0] dark:border-[#2A3140]",
+        "group relative bg-white bg-bg-[#151922]",
+        "rounded-2xl border border-[#E6E9F0] bg-border-[#2A3140]",
         "p-6 transition-all duration-200",
         "shadow-[0_4px_16px_rgba(10,37,64,0.08)] hover:shadow-[0_8px_22px_rgba(10,37,64,0.14)]",
-        "hover:border-[#D6DEEB] dark:hover:border-[#374154]",
+        "hover:border-[#D6DEEB] bg-hover:border-[#374154]",
         "hover:scale-[1.02]",
         className
       )}
     >
       {/* Gradient Overlay */}
-      <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-transparent via-transparent to-[#F5F7FA]/60 dark:to-[#1A1F2B]/70 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+      <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-transparent via-transparent to-[#F5F7FA]/60 bg-to-[#1A1F2B]/70 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
 
       <div className="relative">
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-sm font-medium text-[#9CA3AF] dark:text-gray-400 mb-1 font-['SF_Pro_Display','Inter',sans-serif]">
+            <p className="text-sm font-medium text-[#9CA3AF] bg-text-gray-400 mb-1 font-['SF_Pro_Display','Inter',sans-serif]">
               {title}
             </p>
-            <p className="text-3xl font-bold text-[#0A2540] dark:text-white tracking-tight font-['Neue_Haas_Grotesk_Display_Pro','Inter',sans-serif]">
+            <p className="text-3xl font-bold text-[#0A2540] bg-text-white tracking-tight font-['Neue_Haas_Grotesk_Display_Pro','Inter',sans-serif]">
               {value}
             </p>
             {subtitle && (
-              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              <p className="mt-1 text-sm text-gray-500 bg-text-gray-400">
                 {subtitle}
               </p>
             )}
           </div>
-          <div className="p-3 bg-primary-50 dark:bg-primary-900/20 rounded-xl">
-            <Icon className="w-6 h-6 text-primary-600 dark:text-primary-400" />
+          <div className="p-3 bg-primary-50 bg-bg-primary-900/20 rounded-xl">
+            <Icon className="w-6 h-6 text-primary-600 bg-text-primary-400" />
           </div>
         </div>
 
@@ -68,7 +68,7 @@ export const StatCard: React.FC<StatCardProps> = ({
               <TrendIcon className="w-4 h-4 mr-1" />
               {Math.abs(change)}%
             </div>
-            <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">
+            <span className="ml-2 text-sm text-gray-500 bg-text-gray-400">
               vs last month
             </span>
           </div>

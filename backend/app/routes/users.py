@@ -23,7 +23,7 @@ def update_current_user():
     current_user_id = get_current_user_id()
     user = User.query.get_or_404(current_user_id)
 
-    schema = UserUpdateSchema(context={"user": user})
+    schema = UserUpdateSchema()
     data = schema.load(request.json, partial=True)
 
     for key, value in data.items():
@@ -53,7 +53,7 @@ def get_user(user_id):
 def update_user(user_id):
     user = User.query.get_or_404(user_id)
 
-    schema = UserUpdateSchema(context={"user": user})
+    schema = UserUpdateSchema()
     data = schema.load(request.json, partial=True)
 
     for key, value in data.items():

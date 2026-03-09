@@ -71,14 +71,14 @@ export const ProfileCompletion: React.FC = () => {
         <div className="space-y-4">
           <div>
             <div className="flex items-center justify-between mb-1">
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+              <span className="text-sm font-medium text-slate-700 text-slate-300">
                 {completion}% Complete
               </span>
               <span className={`text-sm font-medium ${isComplete ? 'text-success-600' : 'text-warning-600'}`}>
                 {isComplete ? 'Ready to apply!' : 'Needs attention'}
               </span>
             </div>
-            <div className="w-full bg-slate-200 rounded-full h-2.5 dark:bg-slate-700 overflow-hidden">
+            <div className="w-full bg-slate-200 rounded-full h-2.5 bg-slate-700 overflow-hidden">
               <div
                 className={`h-2.5 rounded-full transition-all duration-500 ${isComplete ? 'bg-success-500' : 'bg-primary-500'}`}
                 style={{ width: `${completion}%` }}
@@ -88,18 +88,18 @@ export const ProfileCompletion: React.FC = () => {
 
           {!isComplete && (
             <div className="space-y-2">
-              <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
+              <p className="text-sm font-medium text-slate-700 text-slate-300">
                 Complete your profile to get more job opportunities:
               </p>
               <ul className="space-y-1">
                 {missingItems.slice(0, 3).map((item, index) => (
-                  <li key={index} className="text-sm text-slate-600 dark:text-slate-400 flex items-start">
+                  <li key={index} className="text-sm text-slate-600 text-slate-400 flex items-start">
                     <span className="text-warning-500 mr-2">•</span>
                     {item}
                   </li>
                 ))}
                 {missingItems.length > 3 && (
-                  <li className="text-sm text-slate-500 dark:text-slate-500">
+                  <li className="text-sm text-slate-500 text-slate-500">
                     +{missingItems.length - 3} more items
                   </li>
                 )}

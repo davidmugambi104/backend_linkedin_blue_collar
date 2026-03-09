@@ -28,11 +28,11 @@ export const AdminSearch: React.FC = () => {
     <div className="relative">
       <button
         onClick={() => setIsOpen(true)}
-        className="flex items-center px-4 py-2 text-sm text-gray-500 dark:text-gray-400 bg-gray-100/50 dark:bg-gray-800/50 rounded-xl hover:bg-gray-200/50 dark:hover:bg-gray-700/50 transition-colors"
+        className="flex items-center px-4 py-2 text-sm text-gray-500 bg-text-gray-400 bg-gray-100/50 bg-bg-gray-800/50 rounded-xl hover:bg-gray-200/50 bg-hover:bg-gray-700/50 transition-colors"
       >
         <MagnifyingGlassIcon className="w-4 h-4 mr-2" />
         <span>Search...</span>
-        <span className="ml-4 text-xs bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-md">
+        <span className="ml-4 text-xs bg-gray-200 bg-bg-gray-700 px-2 py-0.5 rounded-md">
           ⌘K
         </span>
       </button>
@@ -48,7 +48,7 @@ export const AdminSearch: React.FC = () => {
           <div className="flex items-start justify-center min-h-screen pt-24 px-4">
             {/* Backdrop */}
             <div
-              className="fixed inset-0 bg-gray-500/25 dark:bg-gray-900/50 backdrop-blur-sm transition-opacity"
+              className="fixed inset-0 bg-gray-500/25 bg-bg-gray-900/50 backdrop-blur-sm transition-opacity"
               onClick={() => setIsOpen(false)}
             />
 
@@ -56,8 +56,8 @@ export const AdminSearch: React.FC = () => {
             <div
               className={cn(
                 "relative w-full max-w-2xl",
-                "bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl",
-                "rounded-2xl border border-gray-200/50 dark:border-gray-800/50",
+                "bg-white/90 bg-bg-gray-900/90 backdrop-blur-xl",
+                "rounded-2xl border border-gray-200/50 bg-border-gray-800/50",
                 "shadow-2xl",
                 "transform transition-all"
               )}
@@ -71,7 +71,7 @@ export const AdminSearch: React.FC = () => {
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder="Search users, jobs, payments..."
-                    className="flex-1 bg-transparent border-0 focus:ring-0 text-gray-900 dark:text-white placeholder-gray-400 text-lg"
+                    className="flex-1 bg-transparent border-0 focus:ring-0 text-gray-900 bg-text-white placeholder-gray-400 text-lg"
                     autoFocus
                   />
                   <kbd className="text-xs text-gray-400">ESC</kbd>
@@ -80,8 +80,8 @@ export const AdminSearch: React.FC = () => {
 
               {/* Search Results */}
               {query && (
-                <div className="border-t border-gray-200 dark:border-gray-800 p-4">
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                <div className="border-t border-gray-200 bg-border-gray-800 p-4">
+                  <p className="text-sm text-gray-500 bg-text-gray-400">
                     Searching for "{query}"...
                   </p>
                 </div>

@@ -68,7 +68,7 @@ export const Modal: React.FC<ModalProps> & {
             >
               <Dialog.Panel
                 className={cn(
-                  'w-full transform overflow-hidden rounded-2xl bg-white text-left align-middle shadow-xl transition-all dark:bg-slate-900',
+                  'w-full transform overflow-hidden rounded-2xl bg-white text-left align-middle shadow-xl transition-all',
                   sizes[size]
                 )}
               >
@@ -84,14 +84,14 @@ export const Modal: React.FC<ModalProps> & {
 
 const ModalHeader: React.FC<ModalHeaderProps> = ({ children, onClose, showCloseButton }) => {
   return (
-    <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-slate-800">
-      <Dialog.Title as="h3" className="text-lg font-semibold text-slate-900 dark:text-white">
+    <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4 bg-border-slate-800">
+      <Dialog.Title as="h3" className="text-lg font-semibold text-slate-900 bg-text-white">
         {children}
       </Dialog.Title>
       {showCloseButton && onClose && (
         <button
           onClick={onClose}
-          className="rounded-xl p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-500 transition-colors dark:hover:bg-slate-800"
+          className="rounded-xl p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-500 transition-colors bg-hover:bg-slate-800"
         >
           <XMarkIcon className="h-5 w-5" />
         </button>
@@ -106,7 +106,7 @@ const ModalBody: React.FC<ModalBodyProps> = ({ children }) => {
 
 const ModalFooter: React.FC<ModalFooterProps> = ({ children }) => {
   return (
-    <div className="flex items-center justify-end gap-3 border-t border-gray-200 px-6 py-4 dark:border-gray-800">
+    <div className="flex items-center justify-end gap-3 border-t border-gray-200 px-6 py-4 bg-border-gray-800">
       {children}
     </div>
   );

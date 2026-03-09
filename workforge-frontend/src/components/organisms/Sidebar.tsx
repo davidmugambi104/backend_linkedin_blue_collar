@@ -1,6 +1,7 @@
 import {
   BriefcaseIcon,
   BuildingOffice2Icon,
+  ChatBubbleLeftRightIcon,
   ChartBarSquareIcon,
   Cog6ToothIcon,
   StarIcon,
@@ -18,6 +19,7 @@ const items = [
   { to: '/employer/dashboard', label: 'Dashboard', icon: ChartBarSquareIcon },
   { to: '/employer/jobs', label: 'Jobs', icon: BriefcaseIcon },
   { to: '/employer/applications', label: 'Applications', icon: BuildingOffice2Icon },
+  { to: '/messages', label: 'Messages', icon: ChatBubbleLeftRightIcon },
   { to: '/employer/workers', label: 'Workers', icon: UserGroupIcon },
   { to: '/employer/reviews', label: 'Reviews', icon: StarIcon },
   { to: '/employer/settings', label: 'Settings', icon: Cog6ToothIcon },

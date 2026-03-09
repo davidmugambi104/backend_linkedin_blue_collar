@@ -52,14 +52,14 @@ export const Dropdown: React.FC<DropdownProps> = ({
       {isOpen && (
         <div
           className={cn(
-            'absolute z-50 mt-2 min-w-[200px] rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 dark:bg-gray-800',
+            'absolute z-50 mt-2 min-w-[200px] rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 bg-bg-gray-800',
             align === 'right' ? 'right-0' : 'left-0'
           )}
         >
           <div className="py-1">
             {items.map((item, index) => (
               item.type === 'divider' ? (
-                <div key={index} className="my-1 border-t border-gray-200 dark:border-gray-700" />
+                <div key={index} className="my-1 border-t border-gray-200 bg-border-gray-700" />
               ) : (
                 <button
                   key={index}
@@ -74,8 +74,8 @@ export const Dropdown: React.FC<DropdownProps> = ({
                     'flex w-full items-center px-4 py-2 text-sm text-left',
                     item.disabled
                       ? 'cursor-not-allowed opacity-50'
-                      : 'hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer',
-                    'text-gray-700 dark:text-gray-200',
+                      : 'hover:bg-gray-100 bg-hover:bg-gray-700 cursor-pointer',
+                    'text-gray-700 bg-text-gray-200',
                     item.className
                   )}
                 >

@@ -7,6 +7,7 @@ from ..schemas import (
     ApplicationUpdateSchema,
 )
 from ..utils.helpers import get_current_user_id
+from ..models.application import ApplicationStatus
 
 applications_bp = Blueprint("applications", __name__)
 
@@ -176,7 +177,9 @@ def update_application(application_id):
                 400,
             )
 
-        if data.get("status") == "accepted":
+        status_value = data.get("status")
+
+        if status_value == "accepted":
             from ..models.job import JobStatus
 
             if job.status != JobStatus.OPEN:
@@ -190,7 +193,7 @@ def update_application(application_id):
                 )
 
             existing_accepted = Application.query.filter_by(
-                job_id=application.job_id, status="accepted"
+                job_id=application.job_id, status=ApplicationStatus.ACCEPTED
             ).first()
             if existing_accepted and existing_accepted.id != application_id:
                 return (
@@ -204,7 +207,8 @@ def update_application(application_id):
 
             job.status = JobStatus.IN_PROGRESS
 
-        application.status = data["status"]
+        if status_value is not None:
+            application.status = ApplicationStatus(status_value)
 
     elif current_user.role.value == "worker":
         worker = Worker.query.filter_by(user_id=current_user_id).first()
@@ -227,11 +231,14 @@ def update_application(application_id):
         if "proposed_rate" in data:
             application.proposed_rate = data["proposed_rate"]
         if "status" in data:
-            application.status = data["status"]
+            application.status = ApplicationStatus(data["status"])
 
     else:  # admin
         for key, value in data.items():
-            setattr(application, key, value)
+            if key == "status":
+                setattr(application, key, ApplicationStatus(value))
+            else:
+                setattr(application, key, value)
 
     db.session.commit()
     return jsonify(application.to_dict()), 200

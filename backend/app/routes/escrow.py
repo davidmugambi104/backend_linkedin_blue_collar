@@ -1,10 +1,11 @@
 # ----- FILE: backend/app/routes/escrow.py -----
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required
 from ..extensions import db
 from ..models.payment import Payment, PaymentStatus
 from ..models.job import Job
 from ..models.application import Application, ApplicationStatus
+from ..utils.helpers import get_current_user_id
 from decimal import Decimal
 
 escrow_bp = Blueprint('escrow', __name__, url_prefix='/api/escrow')
@@ -14,7 +15,7 @@ escrow_bp = Blueprint('escrow', __name__, url_prefix='/api/escrow')
 @jwt_required()
 def hold_payment():
     """Hold payment in escrow for a job"""
-    current_user_id = get_jwt_identity()
+    current_user_id = get_current_user_id()
     data = request.get_json()
     
     job_id = data.get('job_id')
@@ -63,7 +64,7 @@ def hold_payment():
 @jwt_required()
 def release_payment():
     """Release escrow payment to worker (job completed)"""
-    current_user_id = get_jwt_identity()
+    current_user_id = get_current_user_id()
     data = request.get_json()
     
     job_id = data.get('job_id')
@@ -116,7 +117,7 @@ def release_payment():
 @jwt_required()
 def refund_payment():
     """Refund escrow payment to employer (job cancelled)"""
-    current_user_id = get_jwt_identity()
+    current_user_id = get_current_user_id()
     data = request.get_json()
     
     job_id = data.get('job_id')

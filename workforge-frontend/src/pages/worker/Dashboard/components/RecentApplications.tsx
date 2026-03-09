@@ -52,7 +52,7 @@ export const RecentApplications: React.FC = () => {
       <CardBody>
         <div className="space-y-4">
           {recentApplications.length === 0 ? (
-            <p className="text-center text-gray-500 dark:text-gray-400 py-4">
+            <p className="text-center text-slate-500  py-4">
               No applications yet. Start applying to jobs!
             </p>
           ) : (
@@ -60,7 +60,7 @@ export const RecentApplications: React.FC = () => {
               <Link
                 key={application.id}
                 to={application.job_id ? `/jobs/${application.job_id}` : '/worker/applications'}
-                className="block p-4 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                className="block p-4 rounded-lg hover:bg-gray-50 hover:bg-gray-800 transition-colors"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex items-start space-x-3">
@@ -69,13 +69,13 @@ export const RecentApplications: React.FC = () => {
                       size="sm"
                     />
                     <div>
-                      <h4 className="font-medium text-gray-900 dark:text-white">
+                      <h4 className="font-medium text-gray-900 text-[#1A1A1A]">
                         {application.job?.title}
                       </h4>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                      <p className="text-sm text-slate-500 ">
                         {application.job?.employer?.company_name}
                       </p>
-                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                      <p className="text-xs text-slate-400 text-slate-500 mt-1">
                         Applied {formatDistanceToNow(new Date(application.created_at), { addSuffix: true })}
                       </p>
                     </div>

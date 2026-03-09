@@ -38,7 +38,7 @@ const Payments: React.FC = () => {
       accessor: (tx) => (
         <div className="flex items-center gap-2">
           {tx.type === 'income' ? <ArrowDownLeftIcon className="w-5 h-5 text-emerald-600" /> : <ArrowUpRightIcon className="w-5 h-5 text-blue-600" />}
-          <div><div className="font-medium text-gray-900 dark:text-white">{tx.description}</div><div className="text-sm text-gray-500 dark:text-gray-400">{tx.user}</div></div>
+          <div><div className="font-medium text-gray-900 text-[#1A1A1A]">{tx.description}</div><div className="text-sm text-slate-500 ">{tx.user}</div></div>
         </div>
       ),
     },
@@ -53,8 +53,8 @@ const Payments: React.FC = () => {
   return (
     <AdminLayout>
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Payments & Revenue</h1>
-        <p className="text-gray-600 dark:text-gray-400">Monitor financial transactions and payments</p>
+        <h1 className="text-3xl font-bold text-gray-900 text-[#1A1A1A]">Payments & Revenue</h1>
+        <p className="text-gray-600 ">Monitor financial transactions and payments</p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <StatCard title="Total Income" value={formatCurrency(stats.totalIncome)} trend="up" change={12} icon={CurrencyDollarIcon} />
@@ -62,7 +62,7 @@ const Payments: React.FC = () => {
         <StatCard title="Net Revenue" value={formatCurrency(stats.revenue)} trend="up" change={18} icon={CurrencyDollarIcon} />
         <StatCard title="Pending" value={formatCurrency(stats.pending)} icon={CurrencyDollarIcon} />
       </div>
-      <AdminTable columns={columns} data={transactions} sortConfig={sortConfig} onSort={(config) => setSortConfig(config)} emptyState={<div className="text-center py-8 text-gray-500">No transactions found</div>} />
+      <AdminTable columns={columns} data={transactions} sortConfig={sortConfig} onSort={(config) => setSortConfig(config)} emptyState={<div className="text-center py-8 text-slate-500">No transactions found</div>} />
     </AdminLayout>
   );
 };

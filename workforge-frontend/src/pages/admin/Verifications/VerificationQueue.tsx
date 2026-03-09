@@ -80,10 +80,10 @@ export const AdminVerifications: React.FC = () => {
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 text-[#1A1A1A]">
             Verification Queue
           </h1>
-          <p className="mt-1 text-gray-500 dark:text-gray-400">
+          <p className="mt-1 text-slate-500 ">
             Review and approve user verification requests
           </p>
         </div>
@@ -92,7 +92,7 @@ export const AdminVerifications: React.FC = () => {
         <select
           value={filterType}
           onChange={(e) => { setFilterType(e.target.value); setPage(1); }}
-          className="h-10 rounded-xl border px-4 py-2 text-sm bg-white dark:bg-slate-800 border-gray-300 dark:border-gray-600"
+          className="h-10 rounded-xl border px-4 py-2 text-sm bg-white bg-slate-800 border-gray-300 border-gray-600"
         >
           <option value="">All Types</option>
           <option value="id_verification">ID Verification</option>
@@ -104,9 +104,9 @@ export const AdminVerifications: React.FC = () => {
 
       {/* Bulk Actions */}
       {selectedIds.length > 0 && (
-        <Card className="p-4 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+        <Card className="p-4 bg-blue-50 bg-blue-900/20 border-blue-200 border-blue-800">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="text-sm text-blue-800 dark:text-blue-300">
+            <div className="text-sm text-blue-800 text-blue-300">
               {selectedIds.length} verification(s) selected
             </div>
             <div className="flex gap-2">
@@ -143,13 +143,13 @@ export const AdminVerifications: React.FC = () => {
         </div>
       ) : queue?.verifications?.length === 0 ? (
         <Card className="p-8 lg:p-12 text-center">
-          <div className="w-20 h-20 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-4">
+          <div className="w-20 h-20 rounded-full bg-green-100 bg-green-900/30 flex items-center justify-center mx-auto mb-4">
             <ShieldCheckIcon className="h-10 w-10 text-green-600" />
           </div>
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+          <h2 className="text-xl font-semibold text-gray-900 text-[#1A1A1A] mb-2">
             All Caught Up!
           </h2>
-          <p className="text-gray-500 dark:text-gray-400">
+          <p className="text-slate-500 ">
             No pending verifications in the queue
           </p>
         </Card>
@@ -163,7 +163,7 @@ export const AdminVerifications: React.FC = () => {
               onChange={handleSelectAll}
               className="w-4 h-4 rounded"
             />
-            <span className="text-sm text-gray-500">Select all</span>
+            <span className="text-sm text-slate-500">Select all</span>
           </div>
 
           {queue?.verifications?.map((verification: any) => (
@@ -182,19 +182,19 @@ export const AdminVerifications: React.FC = () => {
 
                 {/* User Info */}
                 <div className="flex items-start gap-4 flex-1">
-                  <div className="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
+                  <div className="w-12 h-12 rounded-xl bg-blue-100 bg-blue-900/30 flex items-center justify-center flex-shrink-0">
                     <UserIcon className="h-6 w-6 text-blue-600" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <h3 className="font-semibold text-gray-900 dark:text-white">
+                      <h3 className="font-semibold text-gray-900 text-[#1A1A1A]">
                         {verification.user.username}
                       </h3>
                       <Badge variant={verification.user.role === 'worker' ? 'info' : 'default'}>
                         {verification.user.role}
                       </Badge>
                     </div>
-                    <div className="flex flex-wrap items-center gap-4 mt-1 text-sm text-gray-500">
+                    <div className="flex flex-wrap items-center gap-4 mt-1 text-sm text-slate-500">
                       <span className="flex items-center gap-1">
                         <EnvelopeIcon className="h-4 w-4" />
                         {verification.user.email}
@@ -211,7 +211,7 @@ export const AdminVerifications: React.FC = () => {
                   </Badge>
                   
                   {/* Time since submission */}
-                  <span className="text-xs text-gray-500">
+                  <span className="text-xs text-slate-500">
                     {formatDate(verification.created_at)}
                   </span>
                 </div>
@@ -252,7 +252,7 @@ export const AdminVerifications: React.FC = () => {
               >
                 Previous
               </Button>
-              <span className="flex items-center px-4 text-sm text-gray-500">
+              <span className="flex items-center px-4 text-sm text-slate-500">
                 Page {page} of {queue.pagination.pages}
               </span>
               <Button

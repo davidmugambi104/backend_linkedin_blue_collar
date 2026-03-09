@@ -26,11 +26,11 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
             <iframe
               title={documentType || 'document'}
               src={documentUrl}
-              className="w-full h-full rounded-lg border border-gray-200 dark:border-gray-700"
+              className="w-full h-full rounded-lg border border-gray-200 border-gray-700"
             />
           </div>
         ) : (
-          <div className="text-center py-12 text-gray-600 dark:text-gray-400">
+          <div className="text-center py-12 text-gray-600 ">
             No document available.
           </div>
         )}

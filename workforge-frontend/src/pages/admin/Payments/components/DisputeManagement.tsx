@@ -87,8 +87,8 @@ export const DisputeManagement: React.FC = () => {
           <div className="space-y-4">
             {data?.disputes.length === 0 ? (
               <div className="text-center py-6">
-                <ExclamationTriangleIcon className="w-12 h-12 mx-auto text-gray-400" />
-                <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                <ExclamationTriangleIcon className="w-12 h-12 mx-auto text-slate-400" />
+                <p className="mt-2 text-sm text-slate-500 ">
                   No active disputes
                 </p>
               </div>
@@ -96,14 +96,14 @@ export const DisputeManagement: React.FC = () => {
               data?.disputes.map((dispute) => (
                 <div
                   key={dispute.id}
-                  className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg space-y-3"
+                  className="p-4 bg-gray-50 bg-gray-800 rounded-lg space-y-3"
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex items-start space-x-3">
                       <ExclamationTriangleIcon className="w-5 h-5 text-red-500 mt-0.5" />
                       <div>
                         <div className="flex items-center space-x-2">
-                          <h4 className="font-medium text-gray-900 dark:text-white">
+                          <h4 className="font-medium text-gray-900 text-[#1A1A1A]">
                             Dispute #{dispute.id}
                           </h4>
                           <Badge variant={priorityColors[dispute.priority] as any} size="sm">
@@ -113,7 +113,7 @@ export const DisputeManagement: React.FC = () => {
                             {dispute.status}
                           </Badge>
                         </div>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                        <p className="text-sm text-gray-600  mt-1">
                           {dispute.reason}
                         </p>
                       </div>
@@ -127,23 +127,23 @@ export const DisputeManagement: React.FC = () => {
                   </div>
 
                   <div className="grid grid-cols-3 gap-4 text-sm">
-                    <div className="flex items-center text-gray-600 dark:text-gray-400">
+                    <div className="flex items-center text-gray-600 ">
                       <UserIcon className="w-4 h-4 mr-2" />
                       <span>
                         {dispute.initiated_by === 'employer' ? 'Employer' : 'Worker'}
                       </span>
                     </div>
-                    <div className="flex items-center text-gray-600 dark:text-gray-400">
+                    <div className="flex items-center text-gray-600 ">
                       <BriefcaseIcon className="w-4 h-4 mr-2" />
                       <span>Job #{dispute.job_id}</span>
                     </div>
-                    <div className="flex items-center text-gray-600 dark:text-gray-400">
+                    <div className="flex items-center text-gray-600 ">
                       <CurrencyDollarIcon className="w-4 h-4 mr-2" />
                       <span>${dispute.payment_id}</span>
                     </div>
                   </div>
 
-                  <div className="text-xs text-gray-500 dark:text-gray-500">
+                  <div className="text-xs text-slate-500 text-slate-500">
                     Created {format(new Date(dispute.created_at), 'MMM dd, yyyy h:mm a')}
                   </div>
                 </div>
@@ -166,16 +166,16 @@ export const DisputeManagement: React.FC = () => {
           {selectedDispute && (
             <div className="space-y-6">
               {/* Dispute Details */}
-              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <div className="bg-gray-50 bg-gray-800 rounded-lg p-4">
+                <h4 className="text-sm font-medium text-slate-700  mb-2">
                   Dispute Details
                 </h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-sm text-gray-600 ">
                   {selectedDispute.description}
                 </p>
                 {selectedDispute.evidence_urls && (
                   <div className="mt-3">
-                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">
+                    <p className="text-xs font-medium text-slate-500  mb-2">
                       Evidence:
                     </p>
                     <div className="flex space-x-2">
@@ -208,27 +208,27 @@ export const DisputeManagement: React.FC = () => {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    <label className="block text-sm font-medium text-slate-700  mb-1">
                       Refund Amount (Optional)
                     </label>
                     <div className="relative">
-                      <span className="absolute left-3 top-2 text-gray-500">$</span>
+                      <span className="absolute left-3 top-2 text-slate-500">$</span>
                       <input
                         type="number"
                         step="0.01"
                         min="0"
                         value={refundAmount || ''}
                         onChange={(e) => setRefundAmount(parseFloat(e.target.value))}
-                        className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-900 dark:border-gray-700"
+                        className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500 bg-gray-900 border-gray-700"
                         placeholder="0.00"
                       />
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    <label className="block text-sm font-medium text-slate-700  mb-1">
                       Payment Amount
                     </label>
-                    <p className="text-lg font-semibold text-gray-900 dark:text-white">
+                    <p className="text-lg font-semibold text-gray-900 text-[#1A1A1A]">
                       {formatCurrency(selectedDispute.payment_id)} {/* This should be payment.amount */}
                     </p>
                   </div>

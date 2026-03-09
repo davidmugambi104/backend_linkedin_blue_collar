@@ -72,17 +72,17 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
       <Modal.Body>
         <div className="space-y-4">
           {/* Recipient Info */}
-          <div className="flex items-center space-x-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+          <div className="flex items-center space-x-3 p-4 bg-gray-50 bg-bg-gray-800 rounded-lg">
             <Avatar
               src={getRecipientAvatar()}
               name={getRecipientName()}
               size="md"
             />
             <div>
-              <p className="text-sm font-medium text-gray-900 dark:text-white">
+              <p className="text-sm font-medium text-gray-900 bg-text-white">
                 To: {getRecipientName()}
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">
+              <p className="text-xs text-gray-500 bg-text-gray-400 capitalize">
                 {recipientRole}
               </p>
             </div>
@@ -96,11 +96,11 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
               placeholder="Type your message here..."
               rows={6}
               autoFocus
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-bg-gray-800 bg-border-gray-600 bg-text-white"
             />
           </div>
 
-          <div className="text-xs text-gray-500 dark:text-gray-400">
+          <div className="text-xs text-gray-500 bg-text-gray-400">
             Messages are private and will only be visible to you and the recipient.
           </div>
         </div>

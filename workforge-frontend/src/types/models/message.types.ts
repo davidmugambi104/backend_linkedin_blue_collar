@@ -5,6 +5,9 @@ export interface Message {
   receiver_id: number;
   content: string;
   is_read: boolean;
+  _optimistic?: boolean;
+  _status?: 'sending' | 'sent' | 'failed';
+  error?: string;
   reactions?: Array<{
     id: number;
     message_id: number;
@@ -47,4 +50,17 @@ export interface Conversation {
 
 export interface UnreadCount {
   unread_count: number;
+}
+
+export interface ChatUser {
+  id: number;
+  username: string;
+  email: string;
+  role: string;
+  profile?: {
+    full_name?: string;
+    company_name?: string;
+    profile_picture?: string;
+    logo?: string;
+  } | null;
 }

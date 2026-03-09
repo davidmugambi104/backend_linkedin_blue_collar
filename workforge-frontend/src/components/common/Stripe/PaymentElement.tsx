@@ -55,16 +55,16 @@ export const PaymentElement: React.FC<PaymentElementProps> = ({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+      <div className="bg-gray-50 bg-bg-gray-800 p-4 rounded-lg">
         <StripePaymentElement />
       </div>
 
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-sm text-gray-600 bg-text-gray-400">
             Total Amount:
           </p>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">
+          <p className="text-2xl font-bold text-gray-900 bg-text-white">
             ${amount.toFixed(2)}
           </p>
         </div>

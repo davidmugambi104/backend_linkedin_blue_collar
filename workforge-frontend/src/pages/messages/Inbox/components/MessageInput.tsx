@@ -2,11 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   PaperAirplaneIcon,
   PaperClipIcon,
-  FaceSmileIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
-import { Button } from '@components/ui/Button';
-import { Textarea } from '@components/ui/Textarea';
 import { cn } from '@lib/utils/cn';
 
 interface MessageInputProps {
@@ -88,27 +85,27 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   };
 
   return (
-    <div className="p-4 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
+    <div className="p-4 border-t border-charcoal-200 bg-white">
       {/* Attachments Preview */}
       {attachments.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-3">
           {attachments.map((file, index) => (
             <div
               key={index}
-              className="flex items-center space-x-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-lg"
+              className="flex items-center gap-2 px-3 py-2 bg-navy-50 rounded-lg"
             >
-              <PaperClipIcon className="w-4 h-4 text-gray-500" />
-              <span className="text-sm text-gray-700 dark:text-gray-300">
+              <PaperClipIcon className="w-4 h-4 text-navy" />
+              <span className="text-sm text-charcoal max-w-[150px] truncate">
                 {file.name}
               </span>
-              <span className="text-xs text-gray-500">
+              <span className="text-xs text-muted">
                 ({(file.size / 1024).toFixed(1)} KB)
               </span>
               <button
                 onClick={() => removeAttachment(index)}
-                className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full"
+                className="p-1 hover:bg-navy-100 rounded-full transition-colors"
               >
-                <XMarkIcon className="w-4 h-4" />
+                <XMarkIcon className="w-4 h-4 text-navy" />
               </button>
             </div>
           ))}
@@ -116,9 +113,9 @@ export const MessageInput: React.FC<MessageInputProps> = ({
       )}
 
       {/* Input Area */}
-      <div className="flex items-end space-x-2">
+      <div className="flex items-end gap-2">
         <div className="flex-1">
-          <Textarea
+          <textarea
             ref={textareaRef}
             value={message}
             onChange={(e) => handleTyping(e.target.value)}
@@ -126,11 +123,11 @@ export const MessageInput: React.FC<MessageInputProps> = ({
             placeholder={placeholder}
             disabled={disabled}
             rows={1}
-            className="resize-none min-h-[40px] max-h-[120px]"
+            className="input-field resize-none min-h-[44px] max-h-[120px] py-3"
           />
         </div>
 
-        <div className="flex items-center space-x-1">
+        <div className="flex items-center gap-1">
           {/* Attachments Button */}
           <input
             type="file"
@@ -139,30 +136,29 @@ export const MessageInput: React.FC<MessageInputProps> = ({
             className="hidden"
             multiple
           />
-          <Button
-            variant="ghost"
-            size="icon"
+          <button
             onClick={() => fileInputRef.current?.click()}
             disabled={disabled}
-            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+            className="icon-btn"
+            type="button"
           >
             <PaperClipIcon className="w-5 h-5" />
-          </Button>
+          </button>
 
           {/* Send Button */}
-          <Button
+          <button
             onClick={handleSend}
             disabled={(!message.trim() && attachments.length === 0) || disabled}
-            size="icon"
             className={cn(
-              'transition-all',
+              'w-11 h-11 flex items-center justify-center rounded-xl transition-all',
               message.trim() || attachments.length > 0
-                ? 'bg-primary-600 hover:bg-primary-700'
-                : 'bg-gray-400 dark:bg-gray-600'
+                ? 'bg-navy-700 hover:bg-navy-800 text-white'
+                : 'bg-charcoal-200 text-charcoal-400'
             )}
+            type="button"
           >
             <PaperAirplaneIcon className="w-5 h-5" />
-          </Button>
+          </button>
         </div>
       </div>
     </div>

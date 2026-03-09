@@ -76,7 +76,7 @@ export const ReviewForm: React.FC = () => {
     return (
       <Card>
         <CardBody>
-          <p className="text-center text-gray-500">Job not found</p>
+          <p className="text-center text-slate-500">Job not found</p>
         </CardBody>
       </Card>
     );
@@ -85,10 +85,10 @@ export const ReviewForm: React.FC = () => {
   return (
     <Card>
       <CardHeader>
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+        <h2 className="text-xl font-semibold text-gray-900 text-[#1A1A1A]">
           Review Worker
         </h2>
-        <p className="text-sm text-gray-600 dark:text-gray-400">
+        <p className="text-sm text-gray-600 ">
           Job: {job.title} • Worker: {job.worker?.full_name}
         </p>
       </CardHeader>
@@ -146,7 +146,7 @@ export const ReviewForm: React.FC = () => {
                 type="checkbox"
                 className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
               />
-              <span className="text-sm text-gray-700 dark:text-gray-300">
+              <span className="text-sm text-slate-700 ">
                 I would recommend this worker
               </span>
             </label>
@@ -157,18 +157,18 @@ export const ReviewForm: React.FC = () => {
                 type="checkbox"
                 className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
               />
-              <span className="text-sm text-gray-700 dark:text-gray-300">
+              <span className="text-sm text-slate-700 ">
                 Submit anonymously (your name will not be shown)
               </span>
             </label>
           </div>
 
           {/* Guidelines */}
-          <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
-            <h4 className="text-sm font-medium text-blue-800 dark:text-blue-300 mb-2">
+          <div className="bg-blue-50 bg-blue-900/20 rounded-lg p-4">
+            <h4 className="text-sm font-medium text-blue-800 text-blue-300 mb-2">
               Review Guidelines
             </h4>
-            <ul className="text-xs text-blue-700 dark:text-blue-400 space-y-1">
+            <ul className="text-xs text-blue-700 text-blue-400 space-y-1">
               <li>• Be honest and constructive in your feedback</li>
               <li>• Focus on the work quality and professionalism</li>
               <li>• Avoid personal attacks or inappropriate language</li>

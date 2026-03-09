@@ -34,7 +34,7 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onApply }) => {
               <div className="flex items-center space-x-2">
                 <Link
                   to={`/jobs/${job.id}`}
-                  className="text-lg font-semibold text-gray-900 dark:text-white hover:text-primary-600 dark:hover:text-primary-400"
+                  className="text-lg font-semibold text-gray-900 text-[#1A1A1A] hover:text-primary-600 hover:text-primary-400"
                 >
                   {job.title}
                 </Link>
@@ -43,11 +43,11 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onApply }) => {
                 </Badge>
               </div>
               
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+              <p className="text-sm text-gray-600  mt-1">
                 {job.employer?.company_name}
               </p>
 
-              <div className="flex flex-wrap items-center gap-4 mt-3 text-sm text-gray-500 dark:text-gray-400">
+              <div className="flex flex-wrap items-center gap-4 mt-3 text-sm text-slate-500 ">
                 <div className="flex items-center">
                   <MapPinIcon className="w-4 h-4 mr-1" />
                   <span>
@@ -79,15 +79,15 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onApply }) => {
                 </div>
               </div>
 
-              <p className="mt-3 text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
+              <p className="mt-3 text-sm text-gray-600  line-clamp-2">
                 {job.description}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-800 flex items-center justify-between">
-          <div className="text-sm text-gray-500 dark:text-gray-400">
+        <div className="mt-4 pt-4 border-t border-gray-200 border-gray-800 flex items-center justify-between">
+          <div className="text-sm text-slate-500 ">
             {job.application_count} applications
           </div>
           {onApply && job.status === JobStatus.OPEN && (

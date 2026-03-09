@@ -60,7 +60,7 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           rows={3}
-          className="border employer-border rounded-lg focus:ring-[#0A2540] focus:border-[#0A2540]"
+          className="border employer-border rounded-lg employer-focus-accent"
         />
       </div>
 
@@ -84,7 +84,7 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({
       </div>
 
       {/* Tips */}
-      <div className="employer-bg-muted border-l-4 border-[#0A2540] rounded-lg p-4">
+      <div className="employer-bg-muted border-l-4 employer-border-accent rounded-lg p-4">
         <p className="text-sm text-blue-800">
           <strong>Tip:</strong> Accepting an application will mark this job as "In Progress" 
           and notify the worker. You can only accept one applicant per job.

@@ -8,7 +8,7 @@ const AnimatedStat: React.FC<{ value: string; label: string }> = ({ value, label
   return (
     <div className="flex flex-col items-center p-3 rounded-lg bg-white/80 shadow-md border border-gray-200 hover:shadow-lg hover:border-primary-300 transition-all duration-300">
       <div className="text-xl sm:text-2xl font-bold text-gray-900">{value}</div>
-      <div className="text-xs sm:text-sm text-gray-700 whitespace-nowrap">{label}</div>
+      <div className="text-xs sm:text-sm text-slate-700 whitespace-nowrap">{label}</div>
     </div>
   );
 };
@@ -89,21 +89,21 @@ export const Hero: React.FC = () => {
             </h1>
 
             {/* Subheading */}
-            <p className="text-lg lg:text-xl text-gray-700 leading-relaxed mb-8 max-w-xl">
+            <p className="text-lg lg:text-xl text-slate-700 leading-relaxed mb-8 max-w-xl">
               WorkForge connects talented professionals with employers who value their skills. Whether you're looking for your next role or searching for top talent, we make it happen—fast, fair, and transparent.
             </p>
 
             {/* Trust indicators */}
             <div className="flex flex-col sm:flex-row gap-3 mb-10">
-              <div className="flex items-center gap-2 text-sm text-gray-700">
+              <div className="flex items-center gap-2 text-sm text-slate-700">
                 <CheckCircleIcon className="h-5 w-5 text-emerald-600 flex-shrink-0" />
                 <span>Verified Profiles</span>
               </div>
-              <div className="flex items-center gap-2 text-sm text-gray-700">
+              <div className="flex items-center gap-2 text-sm text-slate-700">
                 <CheckCircleIcon className="h-5 w-5 text-emerald-600 flex-shrink-0" />
                 <span>Secure Payments</span>
               </div>
-              <div className="flex items-center gap-2 text-sm text-gray-700">
+              <div className="flex items-center gap-2 text-sm text-slate-700">
                 <CheckCircleIcon className="h-5 w-5 text-emerald-600 flex-shrink-0" />
                 <span>24/7 Support</span>
               </div>
@@ -156,7 +156,7 @@ export const Hero: React.FC = () => {
                   <div>
                     <div className="h-12 w-12 bg-gradient-to-br from-primary-400 to-blue-400 rounded-xl mb-4 opacity-90"></div>
                     <h3 className="text-gray-900 font-semibold text-lg mb-2">Senior Developer</h3>
-                    <p className="text-gray-700 text-sm">Remote • Full-time</p>
+                    <p className="text-slate-700 text-sm">Remote • Full-time</p>
                   </div>
                   <div className="text-primary-700 font-bold text-2xl">$120k/yr</div>
                 </div>
@@ -173,7 +173,7 @@ export const Hero: React.FC = () => {
                   <div>
                     <div className="h-10 w-10 bg-gradient-to-br from-emerald-400 to-teal-400 rounded-lg mb-3 opacity-90"></div>
                     <h3 className="text-gray-900 font-semibold text-base mb-2">Marketing Manager</h3>
-                    <p className="text-gray-700 text-sm">NYC • Contract</p>
+                    <p className="text-slate-700 text-sm">NYC • Contract</p>
                   </div>
                   <div className="text-emerald-700 font-bold text-xl">$85k/yr</div>
                 </div>

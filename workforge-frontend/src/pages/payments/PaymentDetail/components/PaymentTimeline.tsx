@@ -118,7 +118,7 @@ export const PaymentTimeline: React.FC<PaymentTimelineProps> = ({ payment }) => 
   return (
     <Card>
       <CardHeader>
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+        <h3 className="text-lg font-semibold text-gray-900 text-[#1A1A1A]">
           Payment Timeline
         </h3>
       </CardHeader>
@@ -130,7 +130,7 @@ export const PaymentTimeline: React.FC<PaymentTimelineProps> = ({ payment }) => 
                 <div className="relative pb-8">
                   {eventIdx !== events.filter(e => e.completed).length - 1 && (
                     <span
-                      className="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200 dark:bg-gray-700"
+                      className="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200 bg-gray-700"
                       aria-hidden="true"
                     />
                   )}
@@ -138,7 +138,7 @@ export const PaymentTimeline: React.FC<PaymentTimelineProps> = ({ payment }) => 
                     <div>
                       <span
                         className={cn(
-                          'h-8 w-8 rounded-full flex items-center justify-center ring-8 ring-white dark:ring-gray-900',
+                          'h-8 w-8 rounded-full flex items-center justify-center ring-8 ring-white ring-gray-900',
                           {
                             'bg-green-500': event.status === PaymentStatus.PAID || 
                                            event.status === PaymentStatus.RELEASED,
@@ -157,16 +157,16 @@ export const PaymentTimeline: React.FC<PaymentTimelineProps> = ({ payment }) => 
                     </div>
                     <div className="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
                       <div>
-                        <p className="text-sm font-medium text-gray-900 dark:text-white">
+                        <p className="text-sm font-medium text-gray-900 text-[#1A1A1A]">
                           {event.title}
                         </p>
                         {event.description && (
-                          <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
+                          <p className="mt-0.5 text-sm text-slate-500 ">
                             {event.description}
                           </p>
                         )}
                       </div>
-                      <div className="whitespace-nowrap text-right text-sm text-gray-500 dark:text-gray-400">
+                      <div className="whitespace-nowrap text-right text-sm text-slate-500 ">
                         <time dateTime={event.timestamp}>
                           {format(new Date(event.timestamp), 'MMM d, yyyy • h:mm a')}
                         </time>
@@ -180,26 +180,26 @@ export const PaymentTimeline: React.FC<PaymentTimelineProps> = ({ payment }) => 
         </div>
 
         {payment.disputes && payment.disputes.length > 0 && (
-          <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-800">
-            <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-4">
+          <div className="mt-6 pt-6 border-t border-gray-200 border-gray-800">
+            <h4 className="text-sm font-medium text-gray-900 text-[#1A1A1A] mb-4">
               Dispute Details
             </h4>
             {payment.disputes.map((dispute) => (
               <div
                 key={dispute.id}
-                className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4"
+                className="bg-red-50 bg-red-900/20 rounded-lg p-4"
               >
                 <div className="flex items-start">
-                  <ExclamationTriangleIcon className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5 mr-3" />
+                  <ExclamationTriangleIcon className="w-5 h-5 text-red-600 text-red-400 mt-0.5 mr-3" />
                   <div>
-                    <p className="text-sm font-medium text-red-800 dark:text-red-300">
+                    <p className="text-sm font-medium text-red-800 text-red-300">
                       {dispute.reason}
                     </p>
-                    <p className="text-xs text-red-700 dark:text-red-400 mt-1">
+                    <p className="text-xs text-red-700 text-red-400 mt-1">
                       Status: {dispute.status} • Filed {format(new Date(dispute.created_at), 'MMM d, yyyy')}
                     </p>
                     {dispute.resolution && (
-                      <p className="text-xs text-red-700 dark:text-red-400 mt-2">
+                      <p className="text-xs text-red-700 text-red-400 mt-2">
                         Resolution: {dispute.resolution}
                       </p>
                     )}

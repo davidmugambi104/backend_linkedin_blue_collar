@@ -11,6 +11,7 @@ export { adminService } from './admin.service';
 export { analyticsService, type AnalyticsOverview, type RevenueData, type WorkerRanking, type SkillAnalytics } from './analytics.service';
 export { websocketService } from './websocket.service';
 export { locationService, type Location, type NearbyJob, type NearbyWorker, type JobMatch } from './location.service';
+export { uploadService } from './upload.service';
 export { 
   escrowService, 
   disputeService, 

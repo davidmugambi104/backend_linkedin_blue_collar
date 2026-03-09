@@ -34,16 +34,16 @@ const Card = forwardRef<HTMLDivElement, CardProps>(
         ref={ref}
         className={cn(
           'relative rounded-2xl transition-all duration-200',
-          'text-[#0A2540] dark:text-gray-100',
-          'bg-white dark:bg-[#151922]',
-          bordered && 'border border-[#E6E9F0] dark:border-[#2A3140]',
+          'text-[#0A2540] bg-text-gray-100',
+          'bg-white bg-bg-[#151922]',
+          bordered && 'border border-[#E6E9F0] bg-border-[#2A3140]',
           shadows[shadow],
-          'shadow-[0_4px_16px_rgba(10,37,64,0.08)] dark:shadow-[0_8px_24px_rgba(0,0,0,0.35)]',
+          'shadow-[0_4px_16px_rgba(10,37,64,0.08)] bg-shadow-[0_8px_24px_rgba(0,0,0,0.35)]',
           paddings[padding],
           hoverable && [
             'cursor-pointer hover:shadow-lg',
-            'hover:bg-white dark:hover:bg-[#1A1F2B]',
-            'hover:border-[#D6DEEB] dark:hover:border-[#374154]',
+            'hover:bg-white bg-hover:bg-[#1A1F2B]',
+            'hover:border-[#D6DEEB] bg-hover:border-[#374154]',
           ],
           className
         )}
@@ -64,7 +64,7 @@ const CardHeader = forwardRef<HTMLDivElement, CardHeaderProps>(
         ref={ref}
         className={cn(
           'flex items-center justify-between mb-4',
-          'text-gray-900 dark:text-gray-100', // Ensure header text contrast
+          'text-gray-900 bg-text-gray-100', // Ensure header text contrast
           className
         )}
         {...props}
@@ -83,7 +83,7 @@ const CardBody = forwardRef<HTMLDivElement, CardBodyProps>(
       <div
         ref={ref}
         className={cn(
-          'text-gray-900 dark:text-gray-100', // Base text color for body content
+          'text-gray-900 bg-text-gray-100', // Base text color for body content
           className
         )}
         {...props}
@@ -103,8 +103,8 @@ const CardFooter = forwardRef<HTMLDivElement, CardFooterProps>(
         ref={ref}
         className={cn(
           'flex items-center justify-between mt-4 pt-4',
-          'border-t border-gray-200/50 dark:border-gray-700/50', // Softer border for glass
-          'text-gray-900 dark:text-gray-100',
+          'border-t border-gray-200/50 bg-border-gray-700/50', // Softer border for glass
+          'text-gray-900 bg-text-gray-100',
           className
         )}
         {...props}

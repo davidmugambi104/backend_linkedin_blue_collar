@@ -73,7 +73,7 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
               ))}
             </div>
           ) : (
-            <p className="text-center text-gray-500 dark:text-gray-400 py-4">
+            <p className="text-center text-slate-500  py-4">
               {isOwnProfile
                 ? 'Add skills to get better job recommendations'
                 : 'No skills listed yet'}

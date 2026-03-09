@@ -42,10 +42,10 @@ export const ForgotPasswordPage: React.FC = () => {
   return (
     <Card className="w-full max-w-md">
       <div className="text-center mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+        <h1 className="text-2xl font-bold text-gray-900 text-[#1A1A1A]">
           Forgot Password?
         </h1>
-        <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+        <p className="mt-2 text-sm text-gray-600 ">
           {!isSubmitted
             ? "Enter your email and we'll send you a reset link"
             : 'Check your email for the reset link'}
@@ -70,8 +70,8 @@ export const ForgotPasswordPage: React.FC = () => {
         </form>
       ) : (
         <div className="text-center space-y-6">
-          <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
-            <p className="text-sm text-green-800 dark:text-green-300">
+          <div className="bg-green-50 bg-green-900/20 rounded-lg p-4">
+            <p className="text-sm text-green-800 text-green-300">
               We've sent a password reset link to your email address.
               Please check your inbox and follow the instructions.
             </p>
@@ -89,7 +89,7 @@ export const ForgotPasswordPage: React.FC = () => {
 
       <Link
         to="/auth/login"
-        className="mt-6 flex items-center justify-center text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+        className="mt-6 flex items-center justify-center text-sm text-gray-600 hover:text-gray-900  hover:text-gray-100"
       >
         <ArrowLeftIcon className="h-4 w-4 mr-2" />
         Back to sign in

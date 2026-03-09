@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeftIcon,
   PencilIcon,
@@ -20,14 +20,19 @@ import {
   XMarkIcon,
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
+import { useEmployerJob, useDeleteJob, useUpdateJob } from '@hooks/useEmployerJobs';
+import { useCreateJob } from '@hooks/useEmployerJobs';
+import { useJobApplications } from '@hooks/useEmployerApplications';
+import { toast } from 'react-toastify';
 
 // Badge Component
 const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
   const config: Record<string, { class: string; label: string }> = {
     open: { class: 'badge-success', label: 'Open' },
+    in_progress: { class: 'badge-warning', label: 'In Progress' },
+    completed: { class: 'badge-neutral', label: 'Completed' },
+    cancelled: { class: 'badge-error', label: 'Cancelled' },
     draft: { class: 'badge-neutral', label: 'Draft' },
-    closed: { class: 'badge-error', label: 'Closed' },
-    paused: { class: 'badge-warning', label: 'Paused' },
   };
   const { class: className, label } = config[status.toLowerCase()] || config.open;
   return <span className={className}>{label}</span>;
@@ -113,63 +118,138 @@ const StatsRow: React.FC<{ stats: { label: string; value: string; icon: React.Re
 // Main JobDetail Component
 const JobDetail = () => {
   const { jobId } = useParams();
+  const navigate = useNavigate();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const parsedJobId = Number(jobId);
+  const { data: jobData } = useEmployerJob(parsedJobId);
+  const { data: applications = [] } = useJobApplications(parsedJobId);
+  const deleteJobMutation = useDeleteJob();
+  const updateJobMutation = useUpdateJob();
+  const createJobMutation = useCreateJob();
+  const [editForm, setEditForm] = useState({
+    title: '',
+    description: '',
+    address: '',
+    pay_min: '',
+    pay_max: '',
+    pay_type: 'hourly',
+  });
 
-  // Mock job data
   const job = {
-    id: jobId || '1',
-    title: 'Commercial Electrician',
-    company: 'WorkForge Builders',
-    category: 'Electrical',
-    type: 'Full-time',
-    experience: 'Senior',
-    status: 'open',
-    description: `We are seeking an experienced Commercial Electrician to join our growing team. The ideal candidate will have extensive experience with commercial electrical systems, including:
-
-• Installation, maintenance, and repair of electrical systems in commercial buildings
-• Reading and interpreting blueprints, schematics, and diagrams
-• Working with PLCs and automated systems
-• Ensuring compliance with NEC codes and safety regulations
-• Mentoring junior electricians
-
-This is a great opportunity to join a established company with competitive benefits and growth opportunities.`,
-    requirements: [
-      '5+ years of commercial electrical experience',
-      'Valid Journeyman or Master Electrician license',
-      'OSHA 10-Hour Construction Safety certification',
-      'Experience with PLC programming preferred',
-      'Valid drivers license and reliable transportation',
-    ],
-    benefits: [
-      'Health, dental, and vision insurance',
-      '401(k) with company match',
-      'Paid time off',
-      'Professional development opportunities',
-      'Company truck and tools provided',
-    ],
-    payMin: 35,
-    payMax: 45,
-    payPeriod: 'hourly',
-    city: 'Dallas',
-    state: 'TX',
-    zip: '75201',
-    posted: '5 days ago',
-    expires: '30 days',
-    views: 432,
-    uniqueViews: 389,
-    applicants: 18,
-    shortlisted: 5,
-    hires: 0,
+    id: jobData?.id || jobId || '1',
+    title: jobData?.title || 'Untitled job',
+    company: jobData?.employer?.company_name || 'Company',
+    category: jobData?.required_skill?.name || 'General',
+    type: jobData?.employment_type || 'Full-time',
+    experience: jobData?.required_experience_years ? `${jobData.required_experience_years}+ years` : 'Not specified',
+    status: String(jobData?.status || 'open'),
+    description: jobData?.description || 'No description provided.',
+    requirements: jobData?.requirements
+      ? String(jobData.requirements).split('\n').filter(Boolean)
+      : ['Requirements not specified'],
+    benefits: ['Benefits not specified'],
+    payMin: jobData?.pay_min || 0,
+    payMax: jobData?.pay_max || 0,
+    payPeriod: String(jobData?.pay_type || 'hourly'),
+    city: (jobData?.address || '').split(',')[0] || '—',
+    state: (jobData?.address || '').split(',')[1]?.trim() || '—',
+    zip: '',
+    posted: jobData?.created_at ? new Date(jobData.created_at).toLocaleDateString() : '—',
+    expires: jobData?.expiration_date ? new Date(jobData.expiration_date).toLocaleDateString() : '—',
+    views: Number((jobData as any)?.views || (jobData as any)?.view_count || 0),
+    uniqueViews: Number((jobData as any)?.unique_views || 0),
+    applicants: applications.length,
+    shortlisted: applications.filter((app) => String(app.status).toLowerCase() === 'accepted').length,
+    hires: applications.filter((app) => String(app.status).toLowerCase() === 'hired').length,
   };
 
-  const applicants: Applicant[] = [
-    { id: 1, name: 'James Wilson', role: 'Electrician', applied: '2 hours ago', status: 'shortlisted', rating: 5 },
-    { id: 2, name: 'Sarah Chen', role: 'Electrician', applied: '5 hours ago', status: 'pending', rating: 4 },
-    { id: 3, name: 'Michael Brown', role: 'Electrician', applied: '1 day ago', status: 'reviewed', rating: 4 },
-    { id: 4, name: 'Emily Davis', role: 'Electrician', applied: '2 days ago', status: 'shortlisted', rating: 5 },
-    { id: 5, name: 'Robert Miller', role: 'Electrician', applied: '3 days ago', status: 'pending', rating: 3 },
-  ];
+  const applicants: Applicant[] = applications.slice(0, 5).map((application) => ({
+    id: application.id,
+    name: application.worker?.full_name || `Applicant #${application.worker_id}`,
+    role: application.job?.title || 'Worker',
+    applied: application.created_at ? new Date(application.created_at).toLocaleDateString() : '—',
+    status: String(application.status || 'pending'),
+    rating: Number(application.worker?.average_rating || 0),
+  }));
+
+  useEffect(() => {
+    if (!jobData) return;
+
+    setEditForm({
+      title: jobData.title || '',
+      description: jobData.description || '',
+      address: jobData.address || '',
+      pay_min: jobData.pay_min !== undefined && jobData.pay_min !== null ? String(jobData.pay_min) : '',
+      pay_max: jobData.pay_max !== undefined && jobData.pay_max !== null ? String(jobData.pay_max) : '',
+      pay_type: String(jobData.pay_type || 'hourly'),
+    });
+  }, [jobData]);
+
+  const handleCloseJob = async () => {
+    if (!parsedJobId) return;
+    await updateJobMutation.mutateAsync({
+      jobId: parsedJobId,
+      data: { status: 'cancelled' as any },
+    });
+  };
+
+  const handleDeleteJob = async () => {
+    if (!parsedJobId) return;
+    await deleteJobMutation.mutateAsync(parsedJobId);
+    setShowDeleteModal(false);
+    navigate('/employer/jobs');
+  };
+
+  const handleShare = async () => {
+    const shareUrl = `${window.location.origin}/employer/jobs/${job.id}`;
+    await navigator.clipboard.writeText(shareUrl);
+    toast.success('Job link copied to clipboard');
+  };
+
+  const handleDuplicate = async () => {
+    if (!jobData?.required_skill_id) {
+      toast.error('This job is missing required skill data and cannot be duplicated.');
+      return;
+    }
+
+    const duplicated = await createJobMutation.mutateAsync({
+      title: `${jobData.title} (Copy)`,
+      description: jobData.description,
+      required_skill_id: jobData.required_skill_id,
+      pay_min: Number(jobData.pay_min || 0),
+      pay_max: Number(jobData.pay_max || 0),
+      pay_type: String(jobData.pay_type || 'hourly') as any,
+      address: jobData.address || undefined,
+      county: jobData.county || undefined,
+      sub_county: jobData.sub_county || undefined,
+      required_experience_years: jobData.required_experience_years || undefined,
+      number_of_fundis_needed: jobData.number_of_fundis_needed || undefined,
+      is_flexible_hours: jobData.is_flexible_hours,
+      expiration_date: jobData.expiration_date || undefined,
+    } as any);
+
+    toast.success('Job duplicated successfully');
+    navigate(`/employer/jobs/${duplicated.id}`);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!parsedJobId) return;
+
+    await updateJobMutation.mutateAsync({
+      jobId: parsedJobId,
+      data: {
+        title: editForm.title,
+        description: editForm.description,
+        address: editForm.address || undefined,
+        pay_min: editForm.pay_min ? Number(editForm.pay_min) : undefined,
+        pay_max: editForm.pay_max ? Number(editForm.pay_max) : undefined,
+        pay_type: editForm.pay_type as any,
+      },
+    });
+
+    setIsEditing(false);
+  };
 
   const stats = [
     { label: 'Total Views', value: job.views.toString(), icon: <EyeIcon className="w-5 h-5" /> },
@@ -199,11 +279,11 @@ This is a great opportunity to join a established company with competitive benef
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-          <button className="btn-secondary text-sm">
+          <button type="button" onClick={handleShare} className="btn-secondary text-sm">
             <ShareIcon className="w-4 h-4" />
             Share
           </button>
-          <button className="btn-secondary text-sm">
+          <button type="button" onClick={handleDuplicate} className="btn-secondary text-sm">
             <DocumentDuplicateIcon className="w-4 h-4" />
             Duplicate
           </button>
@@ -221,6 +301,61 @@ This is a great opportunity to join a established company with competitive benef
       <div className="mb-6">
         <StatsRow stats={stats} />
       </div>
+
+      {isEditing && (
+        <div className="solid-card p-6 mb-6">
+          <h3 className="text-lg font-semibold text-charcoal mb-4">Edit Job</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <input
+              type="text"
+              className="input-field"
+              value={editForm.title}
+              onChange={(e) => setEditForm((prev) => ({ ...prev, title: e.target.value }))}
+              placeholder="Job title"
+            />
+            <input
+              type="text"
+              className="input-field"
+              value={editForm.address}
+              onChange={(e) => setEditForm((prev) => ({ ...prev, address: e.target.value }))}
+              placeholder="Address"
+            />
+            <input
+              type="number"
+              className="input-field"
+              value={editForm.pay_min}
+              onChange={(e) => setEditForm((prev) => ({ ...prev, pay_min: e.target.value }))}
+              placeholder="Minimum pay"
+            />
+            <input
+              type="number"
+              className="input-field"
+              value={editForm.pay_max}
+              onChange={(e) => setEditForm((prev) => ({ ...prev, pay_max: e.target.value }))}
+              placeholder="Maximum pay"
+            />
+            <select
+              className="input-field"
+              value={editForm.pay_type}
+              onChange={(e) => setEditForm((prev) => ({ ...prev, pay_type: e.target.value }))}
+            >
+              <option value="hourly">Hourly</option>
+              <option value="daily">Daily</option>
+              <option value="fixed">Fixed</option>
+            </select>
+          </div>
+          <textarea
+            className="input-field mt-4 min-h-[120px]"
+            value={editForm.description}
+            onChange={(e) => setEditForm((prev) => ({ ...prev, description: e.target.value }))}
+            placeholder="Job description"
+          />
+          <div className="flex items-center justify-end gap-3 mt-4">
+            <button type="button" onClick={() => setIsEditing(false)} className="btn-secondary">Cancel</button>
+            <button type="button" onClick={handleSaveEdit} className="btn-primary">Save</button>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Content */}
@@ -329,7 +464,7 @@ This is a great opportunity to join a established company with competitive benef
               Danger Zone
             </h4>
             <div className="space-y-2">
-              <button className="w-full btn-secondary text-sm justify-start text-red-600 hover:bg-red-50 border-red-200">
+              <button onClick={handleCloseJob} className="w-full btn-secondary text-sm justify-start text-red-600 hover:bg-red-50 border-red-200">
                 <TrashIcon className="w-4 h-4" />
                 Close Job
               </button>
@@ -368,7 +503,7 @@ This is a great opportunity to join a established company with competitive benef
               >
                 Cancel
               </button>
-              <button className="btn-primary bg-red-600 hover:bg-red-700">
+              <button onClick={handleDeleteJob} className="btn-primary bg-red-600 hover:bg-red-700">
                 Delete Job
               </button>
             </div>

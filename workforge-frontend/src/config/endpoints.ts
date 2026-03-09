@@ -73,6 +73,7 @@ export const ENDPOINTS = {
     SHORTLIST: (jobId: number, workerId: number) => `/jobs/${jobId}/shortlist/${workerId}`,
     COMPLETE: (jobId: number) => `/jobs/${jobId}/complete`,
     CANCEL: (jobId: number) => `/jobs/${jobId}/cancel`,
+    CONTEXT: (userId: number) => `/jobs/context/${userId}`,
   },
 
   // ============ APPLICATIONS ============
@@ -124,6 +125,7 @@ export const ENDPOINTS = {
     CONVERSATIONS: '/messages/conversations',
     CONVERSATION: (userId: number) => `/messages/conversations/${userId}`,
     MARK_READ: (userId: number) => `/messages/conversations/${userId}/mark-read`,
+    USERS: '/messages/users',
     LIST: '/messages',
     SEND: '/messages/send',
     UNREAD_COUNT: '/messages/unread/count',

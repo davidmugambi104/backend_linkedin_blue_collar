@@ -44,16 +44,18 @@ class Employer(db.Model):
     sent_messages = db.relationship(
         "Message",
         primaryjoin="Employer.user_id==Message.sender_id",
-        backref="sender_employer",
+        backref=db.backref("sender_employer", overlaps="sender_worker"),
         cascade="all, delete-orphan",
         foreign_keys="Message.sender_id",
+        overlaps="sender,sender_worker,sent_messages",
     )
     received_messages = db.relationship(
         "Message",
         primaryjoin="Employer.user_id==Message.receiver_id",
-        backref="receiver_employer",
+        backref=db.backref("receiver_employer", overlaps="receiver_worker"),
         cascade="all, delete-orphan",
         foreign_keys="Message.receiver_id",
+        overlaps="receiver,receiver_worker,received_messages",
     )
 
     payments = db.relationship(

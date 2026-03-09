@@ -72,16 +72,16 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
       </form>
 
       {value?.address && (
-        <div className="text-sm text-gray-600 dark:text-gray-400">
+        <div className="text-sm text-gray-600 bg-text-gray-400">
           Selected: {value.address}
         </div>
       )}
 
       <div
         style={{ height }}
-        className="rounded-lg overflow-hidden border-2 border-dashed border-gray-300 dark:border-gray-700 flex items-center justify-center bg-gray-50 dark:bg-gray-800"
+        className="rounded-lg overflow-hidden border-2 border-dashed border-gray-300 bg-border-gray-700 flex items-center justify-center bg-gray-50 bg-bg-gray-800"
       >
-        <p className="text-gray-500 dark:text-gray-400 text-center px-4">
+        <p className="text-gray-500 bg-text-gray-400 text-center px-4">
           Map support coming soon. Your location: {value ? `${value.lat.toFixed(4)}, ${value.lng.toFixed(4)}` : 'Not selected'}
         </p>
       </div>

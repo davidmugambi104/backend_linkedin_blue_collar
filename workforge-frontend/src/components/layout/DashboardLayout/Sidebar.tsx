@@ -17,10 +17,12 @@ import { useAuth } from '@context/AuthContext';
 import { UserRole } from '@types';
 
 interface SidebarProps {
+  isOpen?: boolean;
+  onClose?: () => void;
   className?: string;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, className }) => {
   const { user, logout } = useAuth();
   const isEmployer = user?.role === UserRole.EMPLOYER;
 
@@ -76,13 +78,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
   }, [user, baseRolePath]);
 
   return (
-    // Fixed Sidebar - Always visible on desktop
+    // Fixed Sidebar - Always visible
     <aside
-      className={`hidden lg:flex lg:flex-col h-screen overflow-hidden ${
-        isEmployer
-          ? 'group w-[88px] hover:w-72 transition-all duration-200 bg-[#0A2540] border-r border-white/10'
-          : 'w-64 bg-slate-900 border-r border-slate-800'
-      } ${className || ''}`}
+      className="fixed left-0 top-0 h-screen w-64 bg-[#0A2540] z-40 flex flex-col"
     >
       {/* Logo Section */}
       <div

@@ -28,11 +28,11 @@ export const NavMenu: React.FC<NavMenuProps> = ({ mobile = false, onItemClick })
           to={item.path}
           onClick={onItemClick}
           className={cn(
-            'text-sm font-medium transition-colors hover:text-blue-600 dark:hover:text-blue-400',
+            'text-sm font-medium transition-colors hover:text-blue-600 bg-hover:text-blue-400',
             location.pathname === item.path
-              ? 'text-blue-600 dark:text-blue-400'
-              : 'text-slate-700 dark:text-slate-300',
-            mobile && 'px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800'
+              ? 'text-blue-600 bg-text-blue-400'
+              : 'text-slate-700 bg-text-slate-300',
+            mobile && 'px-3 py-2 rounded-xl hover:bg-slate-100 bg-hover:bg-slate-800'
           )}
         >
           {item.name}

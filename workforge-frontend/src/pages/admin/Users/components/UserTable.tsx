@@ -77,12 +77,12 @@ export const UserTable: React.FC<UserTableProps> = ({
             size="sm"
           />
           <div>
-            <div className="font-medium text-gray-900 dark:text-white">
+            <div className="font-medium text-gray-900 text-[#1A1A1A]">
               {user.role === UserRole.WORKER
                 ? user.worker_profile?.full_name
                 : user.employer_profile?.company_name}
             </div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">
+            <div className="text-xs text-slate-500 ">
               {user.email}
             </div>
           </div>
@@ -131,7 +131,7 @@ export const UserTable: React.FC<UserTableProps> = ({
       key: 'stats',
       header: 'Stats',
       accessor: (user) => (
-        <div className="text-sm text-gray-600 dark:text-gray-400">
+        <div className="text-sm text-gray-600 ">
           {user.role === UserRole.WORKER && (
             <>
               <div>{user.worker_profile?.total_jobs_completed || 0} jobs</div>
@@ -155,7 +155,7 @@ export const UserTable: React.FC<UserTableProps> = ({
       key: 'joined',
       header: 'Joined',
       accessor: (user) => (
-        <div className="text-sm text-gray-600 dark:text-gray-400">
+        <div className="text-sm text-gray-600 ">
           {format(new Date(user.created_at), 'MMM dd, yyyy')}
           <div className="text-xs">
             Last active: {format(new Date(user.last_active), 'MMM dd')}

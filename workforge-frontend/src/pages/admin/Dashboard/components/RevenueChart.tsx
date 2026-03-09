@@ -56,11 +56,11 @@ export const RevenueChart: React.FC = () => {
               <XAxis
                 dataKey="date"
                 tickFormatter={(date) => new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                className="text-xs text-gray-600 dark:text-gray-400"
+                className="text-xs text-gray-600 "
               />
               <YAxis
                 tickFormatter={(value) => `$${value.toLocaleString()}`}
-                className="text-xs text-gray-600 dark:text-gray-400"
+                className="text-xs text-gray-600 "
               />
               <Tooltip
                 formatter={(value: number) => [formatCurrency(value), 'Revenue']}
@@ -92,24 +92,24 @@ export const RevenueChart: React.FC = () => {
         </div>
 
         {/* Summary Stats */}
-        <div className="mt-6 grid grid-cols-3 gap-4 pt-6 border-t border-gray-200 dark:border-gray-800">
+        <div className="mt-6 grid grid-cols-3 gap-4 pt-6 border-t border-gray-200 border-gray-800">
           <div className="text-center">
-            <p className="text-sm text-gray-600 dark:text-gray-400">Total Revenue</p>
-            <p className="mt-1 text-xl font-bold text-gray-900 dark:text-white">
+            <p className="text-sm text-gray-600 ">Total Revenue</p>
+            <p className="mt-1 text-xl font-bold text-gray-900 text-[#1A1A1A]">
               {formatCurrency(revenueData?.reduce((sum, day) => sum + day.value, 0) || 0)}
             </p>
           </div>
           <div className="text-center">
-            <p className="text-sm text-gray-600 dark:text-gray-400">Average Daily</p>
-            <p className="mt-1 text-xl font-bold text-gray-900 dark:text-white">
+            <p className="text-sm text-gray-600 ">Average Daily</p>
+            <p className="mt-1 text-xl font-bold text-gray-900 text-[#1A1A1A]">
               {formatCurrency(
                 (revenueData?.reduce((sum, day) => sum + day.value, 0) || 0) / (revenueData?.length || 1)
               )}
             </p>
           </div>
           <div className="text-center">
-            <p className="text-sm text-gray-600 dark:text-gray-400">Best Day</p>
-            <p className="mt-1 text-xl font-bold text-gray-900 dark:text-white">
+            <p className="text-sm text-gray-600 ">Best Day</p>
+            <p className="mt-1 text-xl font-bold text-gray-900 text-[#1A1A1A]">
               {formatCurrency(Math.max(...(revenueData?.map(d => d.value) || [0])))}
             </p>
           </div>

@@ -58,10 +58,10 @@ export const PaymentTable: React.FC<PaymentTableProps> = ({
       header: 'Description',
       accessor: (payment) => (
         <div>
-          <div className="font-medium text-gray-900 dark:text-white">
+          <div className="font-medium text-gray-900 text-[#1A1A1A]">
             {payment.job?.title || `Payment #${payment.id}`}
           </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">
+          <div className="text-xs text-slate-500 ">
             {user?.role === 'employer' 
               ? `To: ${payment.worker?.full_name}`
               : `From: ${payment.employer?.company_name}`
@@ -75,10 +75,10 @@ export const PaymentTable: React.FC<PaymentTableProps> = ({
       header: 'Amount',
       accessor: (payment) => (
         <div>
-          <div className="font-medium text-gray-900 dark:text-white">
+          <div className="font-medium text-gray-900 text-[#1A1A1A]">
             {formatCurrency(payment.amount)}
           </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">
+          <div className="text-xs text-slate-500 ">
             Fee: {formatCurrency(payment.platform_fee)}
           </div>
         </div>
@@ -106,7 +106,7 @@ export const PaymentTable: React.FC<PaymentTableProps> = ({
       key: 'method',
       header: 'Method',
       accessor: (payment) => (
-        <span className="text-sm text-gray-600 dark:text-gray-400 capitalize">
+        <span className="text-sm text-gray-600  capitalize">
           {payment.payment_method?.replace('_', ' ')}
         </span>
       ),
@@ -166,11 +166,11 @@ export const PaymentTable: React.FC<PaymentTableProps> = ({
 
       {!isLoading && payments.length === 0 && (
         <div className="text-center py-12">
-          <BanknotesIcon className="w-12 h-12 mx-auto text-gray-400" />
-          <h3 className="mt-4 text-lg font-medium text-gray-900 dark:text-white">
+          <BanknotesIcon className="w-12 h-12 mx-auto text-slate-400" />
+          <h3 className="mt-4 text-lg font-medium text-gray-900 text-[#1A1A1A]">
             No payments yet
           </h3>
-          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+          <p className="mt-2 text-sm text-slate-500 ">
             {user?.role === 'employer' 
               ? 'Complete jobs to make payments to workers'
               : 'Complete jobs to receive payments from employers'

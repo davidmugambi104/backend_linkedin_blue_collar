@@ -42,7 +42,7 @@ export const Header: React.FC<HeaderProps> = ({
         border-b border-slate-200/70
         bg-white/80 backdrop-blur-xl
         transition-all duration-200
-        dark:border-slate-800 dark:bg-slate-950/70
+        bg-border-slate-800 bg-bg-slate-950/70
       `,
         isScrolled && 'shadow-sm',
         className
@@ -67,7 +67,7 @@ export const Header: React.FC<HeaderProps> = ({
                 hover:bg-slate-100
                 focus-visible:outline-none focus-visible:ring-2
                 focus-visible:ring-blue-500 focus-visible:ring-offset-2
-                dark:text-slate-300 dark:hover:bg-slate-800
+                bg-text-slate-300 bg-hover:bg-slate-800
               "
               aria-label="Toggle sidebar"
             >
@@ -77,7 +77,7 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Brand */}
           <Link to="/" className="flex items-center gap-2">
-            <span className="text-xl font-extrabold tracking-tight text-[#0A2540] dark:text-blue-300">
+            <span className="text-xl font-extrabold tracking-tight text-[#0A2540] bg-text-blue-300">
               WorkForge
             </span>
           </Link>
@@ -88,11 +88,11 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Dashboard title */}
           {variant === 'dashboard' && title ? (
             <div className="hidden sm:flex flex-col items-center text-center">
-              <h1 className="text-sm font-semibold text-slate-900 dark:text-white">
+              <h1 className="text-sm font-semibold text-slate-900 bg-text-white">
                 {title}
               </h1>
               {subtitle && (
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-slate-500 bg-text-slate-400">
                   {subtitle}
                 </p>
               )}
@@ -113,7 +113,7 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               type="button"
               onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#E9EDF2] text-[#0A2540] hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#E9EDF2] text-[#0A2540] hover:bg-slate-100 bg-border-slate-700 bg-text-slate-200 bg-hover:bg-slate-800"
               aria-label="Toggle dark mode"
             >
               {theme === 'light' ? (
@@ -136,11 +136,11 @@ export const Header: React.FC<HeaderProps> = ({
                     hover:bg-slate-100
                     focus-visible:outline-none focus-visible:ring-2
                     focus-visible:ring-blue-500 focus-visible:ring-offset-2
-                    dark:hover:bg-slate-800
+                    bg-hover:bg-slate-800
                   "
                 >
                   <Avatar name={user?.username} size="sm" />
-                  <span className="hidden lg:block text-sm font-medium text-slate-700 dark:text-slate-200">
+                  <span className="hidden lg:block text-sm font-medium text-slate-700 bg-text-slate-200">
                     {user?.username}
                   </span>
                 </button>
@@ -174,7 +174,7 @@ export const Header: React.FC<HeaderProps> = ({
             hover:bg-slate-100
             focus-visible:outline-none focus-visible:ring-2
             focus-visible:ring-blue-500 focus-visible:ring-offset-2
-            dark:text-slate-300 dark:hover:bg-slate-800
+            bg-text-slate-300 bg-hover:bg-slate-800
             md:hidden
           "
           aria-label="Toggle mobile menu"

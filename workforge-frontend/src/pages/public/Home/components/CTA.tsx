@@ -7,7 +7,7 @@ export const CTA: React.FC = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="relative z-50 pointer-events-auto bg-gradient-to-r from-primary-600 to-primary-700 dark:from-primary-700 dark:to-primary-800">
+    <div className="relative z-50 pointer-events-auto bg-gradient-to-r from-primary-600 to-primary-700 from-primary-700 to-primary-800">
       <div className="container py-16 lg:py-24 relative z-50 pointer-events-auto">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-3xl font-bold text-white sm:text-4xl">

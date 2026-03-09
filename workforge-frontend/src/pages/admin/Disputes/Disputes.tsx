@@ -60,10 +60,10 @@ export const AdminDisputes: React.FC = () => {
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 text-[#1A1A1A]">
             Dispute Queue
           </h1>
-          <p className="mt-1 text-gray-500 dark:text-gray-400">
+          <p className="mt-1 text-slate-500 ">
             Manage and resolve platform disputes
           </p>
         </div>
@@ -78,7 +78,7 @@ export const AdminDisputes: React.FC = () => {
             className={`px-4 py-2 rounded-xl font-medium text-sm transition-all ${
               (status === 'all' && !filterStatus) || filterStatus === status
                 ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200'
+                : 'bg-slate-100 bg-gray-800 text-gray-600  hover:bg-gray-200'
             }`}
           >
             {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -97,13 +97,13 @@ export const AdminDisputes: React.FC = () => {
         </div>
       ) : disputes?.disputes?.length === 0 ? (
         <Card className="p-8 lg:p-12 text-center">
-          <div className="w-20 h-20 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-4">
+          <div className="w-20 h-20 rounded-full bg-green-100 bg-green-900/30 flex items-center justify-center mx-auto mb-4">
             <CheckCircleIcon className="h-10 w-10 text-green-600" />
           </div>
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+          <h2 className="text-xl font-semibold text-gray-900 text-[#1A1A1A] mb-2">
             No Disputes
           </h2>
-          <p className="text-gray-500 dark:text-gray-400">
+          <p className="text-slate-500 ">
             All disputes have been resolved
           </p>
         </Card>
@@ -115,15 +115,15 @@ export const AdminDisputes: React.FC = () => {
                 {/* Icon & ID */}
                 <div className="flex items-center gap-4">
                   <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                    dispute.status === 'resolved' ? 'bg-green-100 dark:bg-green-900/30' : 'bg-red-100 dark:bg-red-900/30'
+                    dispute.status === 'resolved' ? 'bg-green-100 bg-green-900/30' : 'bg-red-100 bg-red-900/30'
                   }`}>
                     <ExclamationTriangleIcon className={`h-6 w-6 ${
                       dispute.status === 'resolved' ? 'text-green-600' : 'text-red-600'
                     }`} />
                   </div>
                   <div>
-                    <p className="font-mono text-sm text-gray-500">#{dispute.id}</p>
-                    <p className="font-semibold text-gray-900 dark:text-white">
+                    <p className="font-mono text-sm text-slate-500">#{dispute.id}</p>
+                    <p className="font-semibold text-gray-900 text-[#1A1A1A]">
                       {dispute.dispute_type?.replace('_', ' ')}
                     </p>
                   </div>
@@ -140,7 +140,7 @@ export const AdminDisputes: React.FC = () => {
                 </div>
 
                 {/* Date */}
-                <div className="flex items-center gap-2 text-sm text-gray-500">
+                <div className="flex items-center gap-2 text-sm text-slate-500">
                   <ClockIcon className="h-4 w-4" />
                   {formatDate(dispute.created_at)}
                 </div>
@@ -171,7 +171,7 @@ export const AdminDisputes: React.FC = () => {
               >
                 Previous
               </Button>
-              <span className="flex items-center px-4 text-sm text-gray-500">
+              <span className="flex items-center px-4 text-sm text-slate-500">
                 Page {page} of {disputes.pagination.pages}
               </span>
               <Button

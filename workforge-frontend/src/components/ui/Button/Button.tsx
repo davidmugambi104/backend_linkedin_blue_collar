@@ -45,34 +45,32 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       default: `
         bg-[#0A2540] text-white
         border border-[#0A2540]
-        shadow-sm shadow-[#0A2540]/20
-        hover:bg-[#003ECF] hover:border-[#003ECF]
-        focus-visible:ring-[#0066FF]
+        shadow-sm
+        hover:bg-[#081D32]
+        focus-visible:ring-[#0A2540]
       `,
 
       /** Premium Glow CTA */
       premium: `
-        bg-gradient-to-r from-blue-600 to-indigo-600
-        text-white shadow-md shadow-blue-500/30
-        hover:from-blue-700 hover:to-indigo-700
-        focus-visible:ring-indigo-500
+        bg-gradient-to-r from-[#0A2540] to-[#1B395D]
+        text-white shadow-md
+        hover:from-[#081D32] hover:to-[#152D4A]
+        focus-visible:ring-[#0A2540]
       `,
 
       /** Danger */
       destructive: `
         bg-red-600 text-white
-        shadow-sm shadow-red-500/20
-        hover:bg-red-700 hover:shadow-md hover:shadow-red-500/30
+        shadow-sm
+        hover:bg-red-700
         focus-visible:ring-red-500
       `,
 
       /** Outline */
       outline: `
-        border border-black/70 bg-white text-black
-        hover:bg-[#F5F7FA] hover:border-black
-        focus-visible:ring-[#0066FF]
-        dark:border-white/70 dark:bg-[#151922] dark:text-white
-        dark:hover:bg-[#1A1F2B]
+        border border-slate-300 bg-white text-slate-900
+        hover:bg-slate-50 hover:border-slate-400
+        focus-visible:ring-[#0A2540]
       `,
 
       /** Soft Secondary */
@@ -80,8 +78,6 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         bg-slate-100 text-slate-900
         hover:bg-slate-200
         focus-visible:ring-slate-400
-        dark:bg-slate-800 dark:text-slate-100
-        dark:hover:bg-slate-700
       `,
 
       /** Ghost */
@@ -89,15 +85,13 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         text-slate-700
         hover:bg-slate-100 hover:text-slate-900
         focus-visible:ring-slate-400
-        dark:text-slate-200 dark:hover:bg-slate-800
       `,
 
       /** Link */
       link: `
-        text-[#0066FF] underline-offset-4
+        text-[#0A2540] underline-offset-4
         hover:underline
-        focus-visible:ring-[#0066FF]
-        dark:text-[#7FB0FF]
+        focus-visible:ring-[#0A2540]
       `,
     };
 

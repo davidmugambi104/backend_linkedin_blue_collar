@@ -33,7 +33,7 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({
     <AnimatePresence>
       {isOpen ? (
         <motion.div
-          className="fixed inset-0 z-40 flex flex-col bg-white dark:bg-slate-900 md:hidden"
+          className="fixed inset-0 z-40 flex flex-col bg-white bg-bg-slate-900 md:hidden"
           initial="hidden"
           animate="visible"
           exit="exit"
@@ -44,11 +44,11 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({
           }}
         >
           {/* Close button area */}
-          <div className="border-b border-slate-200 dark:border-slate-800 px-4 py-4 flex justify-between items-center">
-            <span className="font-semibold text-slate-900 dark:text-white">Menu</span>
+          <div className="border-b border-slate-200 bg-border-slate-800 px-4 py-4 flex justify-between items-center">
+            <span className="font-semibold text-slate-900 bg-text-white">Menu</span>
             <button
               onClick={onClose}
-              className="text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+              className="text-slate-500 hover:text-slate-700 bg-hover:text-slate-300"
               aria-label="Close menu"
             >
               <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -67,22 +67,22 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({
           </div>
 
           {/* Auth Actions */}
-          <div className="border-t border-slate-200 dark:border-slate-800 px-4 py-4 space-y-2">
+          <div className="border-t border-slate-200 bg-border-slate-800 px-4 py-4 space-y-2">
             {isAuthenticated ? (
               <>
                 <button
-                  className="w-full flex items-center space-x-3 px-4 py-2 text-left hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl"
+                  className="w-full flex items-center space-x-3 px-4 py-2 text-left hover:bg-slate-100 bg-hover:bg-slate-800 rounded-xl"
                   onClick={() => handleNavigate(`/${user?.role}/dashboard`)}
                 >
                   <Avatar name={user?.username} size="sm" />
                   <div>
-                    <div className="font-medium text-slate-900 dark:text-white">{user?.username}</div>
-                    <div className="text-xs text-slate-500 dark:text-slate-400">{user?.role}</div>
+                    <div className="font-medium text-slate-900 bg-text-white">{user?.username}</div>
+                    <div className="text-xs text-slate-500 bg-text-slate-400">{user?.role}</div>
                   </div>
                 </button>
 
                 <button
-                  className="w-full text-center py-2 px-4 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 rounded-xl font-medium"
+                  className="w-full text-center py-2 px-4 text-red-600 hover:bg-red-50 bg-text-red-400 bg-hover:bg-red-900/20 rounded-xl font-medium"
                   onClick={() => {
                     user?.role && handleNavigate(`/${user.role}/settings`);
                   }}
@@ -91,7 +91,7 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({
                 </button>
 
                 <button
-                  className="w-full text-center py-2 px-4 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 rounded-xl font-medium"
+                  className="w-full text-center py-2 px-4 text-red-600 hover:bg-red-50 bg-text-red-400 bg-hover:bg-red-900/20 rounded-xl font-medium"
                   onClick={onClose}
                 >
                   Sign out

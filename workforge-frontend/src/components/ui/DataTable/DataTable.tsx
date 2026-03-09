@@ -169,7 +169,7 @@ const DataTableRootBase = forwardRef<HTMLDivElement, DataTableRootProps<unknown>
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="p-8 text-center text-red-600 dark:text-red-400"
+                className="p-8 text-center text-red-600 bg-text-red-400"
               >
                 <p className="font-semibold">Error loading data</p>
                 <p className="text-sm mt-2">{error.message}</p>

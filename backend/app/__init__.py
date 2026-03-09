@@ -9,7 +9,7 @@ import os
 from sqlalchemy import text
 
 from .config import config_by_name
-from .extensions import db, jwt, migrate, socketio, limiter
+from .extensions import db, jwt, migrate, socketio, limiter, redis_client
 from .routes import register_blueprints
 from .db_safety import register_database_safety
 from .security_middleware import register_security_middleware
@@ -86,7 +86,13 @@ def create_app(config_name=None):
     jwt.init_app(app)
     migrate.init_app(app, db)
     limiter.init_app(app)
-    socketio.init_app(app, cors_allowed_origins=app.config["CORS_ORIGINS"])
+    socketio_options = {
+        "cors_allowed_origins": app.config["CORS_ORIGINS"],
+    }
+    if redis_client is not None:
+        socketio_options["message_queue"] = app.config.get("SOCKETIO_MESSAGE_QUEUE")
+
+    socketio.init_app(app, **socketio_options)
     register_security_middleware(app)
     
     # Initialize Swagger
@@ -138,10 +144,10 @@ def create_app(config_name=None):
     register_blueprints(app)
 
     # Import and register socket events
-    from .sockets import chat, notifications
+    from .sockets import notifications, messaging
 
-    chat.register_socket_events()
     notifications.register_notification_handlers()
+    messaging.register_messaging_events()
 
     # Shell context for flask cli
     @app.shell_context_processor

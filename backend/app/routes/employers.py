@@ -1,6 +1,7 @@
 # ----- FILE: backend/app/routes/employers.py -----
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from marshmallow import ValidationError
 from ..extensions import db
 from ..models import (
     User,
@@ -101,7 +102,7 @@ def create_job():
 def get_job(job_id):
     job = Job.query.get_or_404(job_id)
 
-    current_user_id = get_jwt_identity()
+    current_user_id = int(get_jwt_identity())
     current_user = User.query.get(current_user_id)
 
     if current_user.role.value != "admin" and job.employer.user_id != current_user_id:
@@ -125,7 +126,10 @@ def update_job(job_id):
     job = Job.query.filter_by(id=job_id, employer_id=employer.id).first_or_404()
 
     schema = JobUpdateSchema()
-    data = schema.load(request.json, partial=True)
+    try:
+        data = schema.load(request.json, partial=True)
+    except ValidationError as err:
+        return jsonify({"error": "Invalid job update data", "details": err.messages}), 400
 
     # Validate skill exists if provided
     if "required_skill_id" in data:

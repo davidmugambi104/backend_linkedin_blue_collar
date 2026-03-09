@@ -105,8 +105,8 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         className={cn(
           'flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer transition-colors',
           isDragging
-            ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-            : 'border-gray-300 bg-gray-50 hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:hover:bg-gray-700',
+            ? 'border-primary-500 bg-primary-50 bg-bg-primary-900/20'
+            : 'border-gray-300 bg-gray-50 hover:bg-gray-100 bg-border-gray-600 bg-bg-gray-800 bg-hover:bg-gray-700',
           isUploading && 'opacity-50 cursor-not-allowed'
         )}
         onDragEnter={handleDrag}
@@ -118,17 +118,17 @@ export const FileUpload: React.FC<FileUploadProps> = ({
           {isUploading ? (
             <>
               <Spinner size="md" />
-              <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+              <p className="mt-2 text-sm text-gray-500 bg-text-gray-400">
                 Uploading...
               </p>
             </>
           ) : (
             <>
-              <CloudArrowUpIcon className="w-8 h-8 mb-2 text-gray-500 dark:text-gray-400" />
-              <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">
+              <CloudArrowUpIcon className="w-8 h-8 mb-2 text-gray-500 bg-text-gray-400" />
+              <p className="mb-2 text-sm text-gray-500 bg-text-gray-400">
                 <span className="font-semibold">{label}</span> or drag and drop
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
+              <p className="text-xs text-gray-500 bg-text-gray-400">
                 {accept} (Max: {maxSize}MB)
               </p>
             </>
@@ -145,7 +145,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
       </label>
       
       {error && (
-        <p className="mt-2 text-sm text-red-600 dark:text-red-400">
+        <p className="mt-2 text-sm text-red-600 bg-text-red-400">
           {error}
         </p>
       )}

@@ -14,6 +14,9 @@ import {
   TrashIcon,
   PhotoIcon
 } from '@heroicons/react/24/outline';
+import { useQuery } from '@tanstack/react-query';
+import { useCreateJob } from '@hooks/useEmployerJobs';
+import { skillService } from '@services/job.service';
 
 // Steps Configuration
 const steps = [
@@ -458,6 +461,11 @@ const PostJob = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<any>({});
+  const createJobMutation = useCreateJob();
+  const { data: skills = [] } = useQuery({
+    queryKey: ['skillsForPostJob'],
+    queryFn: () => skillService.getSkills(),
+  });
   
   const [formData, setFormData] = useState({
     title: '',
@@ -528,10 +536,26 @@ const PostJob = () => {
     if (!validateStep(currentStep)) return;
     
     setIsSubmitting(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    setIsSubmitting(false);
-    navigate('/employer/jobs');
+    const selectedSkill = skills.find((skill) => skill.name.toLowerCase() === formData.category.toLowerCase());
+
+    try {
+      await createJobMutation.mutateAsync({
+        title: formData.title,
+        description: formData.description,
+        required_skill_id: selectedSkill?.id || skills[0]?.id || 1,
+        address: `${formData.city}, ${formData.state} ${formData.zip}`.trim(),
+        pay_min: Number(formData.payMin || 0),
+        pay_max: Number(formData.payMax || 0),
+        pay_type: formData.payPeriod.toLowerCase().includes('hour')
+          ? 'hourly'
+          : formData.payPeriod.toLowerCase().includes('week')
+            ? 'daily'
+            : 'fixed',
+      } as any);
+      navigate('/employer/jobs');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -615,7 +639,13 @@ const PostJob = () => {
           <div className="solid-card p-5">
             <h4 className="font-semibold text-charcoal mb-3">Need Help?</h4>
             <p className="text-sm text-muted mb-3">Our team can help you create an effective job listing.</p>
-            <button className="btn-secondary w-full text-sm">Contact Support</button>
+            <button
+              type="button"
+              onClick={() => window.open('mailto:support@workforge.app?subject=Help%20with%20job%20listing', '_self')}
+              className="btn-secondary w-full text-sm"
+            >
+              Contact Support
+            </button>
           </div>
         </div>
       </div>

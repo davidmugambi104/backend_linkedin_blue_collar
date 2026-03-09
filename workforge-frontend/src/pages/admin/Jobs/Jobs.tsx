@@ -93,10 +93,10 @@ const Jobs: React.FC = () => {
     <AdminLayout>
       {/* Header */}
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+        <h1 className="text-3xl font-bold text-gray-900 text-[#1A1A1A]">
           Jobs Moderation
         </h1>
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className="text-gray-600 ">
           Review and approve job postings
         </p>
       </div>
@@ -128,7 +128,7 @@ const Jobs: React.FC = () => {
       </div>
 
       {/* Search & Filter */}
-      <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 dark:border-gray-800/50 p-6">
+      <div className="bg-white/80 bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 border-gray-800/50 p-6">
         <div className="max-w-md">
           <Input
             placeholder="Search jobs..."
@@ -146,12 +146,12 @@ const Jobs: React.FC = () => {
         loading={isLoading}
         sortConfig={sortConfig}
         onSort={(config) => setSortConfig(config)}
-        emptyState={<div className="text-center py-8 text-gray-500">No jobs to moderate</div>}
+        emptyState={<div className="text-center py-8 text-slate-500">No jobs to moderate</div>}
       />
 
       {error && (
-        <div className="bg-rose-100/50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 rounded-2xl p-6">
-          <p className="text-rose-600 dark:text-rose-400">
+        <div className="bg-rose-100/50 bg-rose-900/20 border border-rose-200 border-rose-800 rounded-2xl p-6">
+          <p className="text-rose-600 text-rose-400">
             Error loading jobs: {error instanceof Error ? error.message : 'Unknown error'}
           </p>
         </div>

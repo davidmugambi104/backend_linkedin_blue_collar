@@ -8,6 +8,8 @@ import {
   PlusIcon,
   ChevronRightIcon
 } from '@heroicons/react/24/outline';
+import { useEmployerStats, useEmployerApplications } from '@hooks/useEmployer';
+import { useEmployerJobs } from '@hooks/useEmployerJobs';
 
 // Stat Card Component
 interface StatCardProps {
@@ -97,9 +99,9 @@ const JobRow: React.FC<{ job: JobRow }> = ({ job }) => {
       <td className="text-charcoal">{job.views}</td>
       <td className="text-muted">{job.posted}</td>
       <td>
-        <button className="icon-btn">
+        <Link to={`/employer/jobs/${job.id}`} className="icon-btn inline-flex">
           <ChevronRightIcon className="w-5 h-5" />
-        </button>
+        </Link>
       </td>
     </tr>
   );
@@ -146,30 +148,37 @@ const ApplicantCard: React.FC<{ applicant: Applicant }> = ({ applicant }) => (
   </div>
 );
 
-// Mock Data
-const mockStats = {
-  activeJobs: 12,
-  totalApplicants: 74,
-  totalViews: 2408,
-  hires: 15,
-};
-
-const mockJobs: JobRow[] = [
-  { id: 1, title: 'Commercial Electrician', status: 'open', applicants: 18, views: 432, posted: '2 days ago' },
-  { id: 2, title: 'HVAC Technician', status: 'open', applicants: 9, views: 284, posted: '3 days ago' },
-  { id: 3, title: 'Plumbing Crew Lead', status: 'open', applicants: 17, views: 512, posted: '5 days ago' },
-  { id: 4, title: 'General Labor Supervisor', status: 'draft', applicants: 0, views: 11, posted: '1 week ago' },
-  { id: 5, title: 'Senior Carpenter', status: 'closed', applicants: 24, views: 890, posted: '2 weeks ago' },
-];
-
-const mockApplicants: Applicant[] = [
-  { id: 1, name: 'James Wilson', role: 'Electrician', applied: '2 hours ago' },
-  { id: 2, name: 'Sarah Chen', role: 'HVAC Tech', applied: '5 hours ago' },
-  { id: 3, name: 'Michael Brown', role: 'Plumber', applied: '1 day ago' },
-  { id: 4, name: 'Emily Davis', role: 'Carpenter', applied: '2 days ago' },
-];
-
 const Dashboard = () => {
+  const { data: stats } = useEmployerStats();
+  const { data: jobs = [], isLoading: jobsLoading } = useEmployerJobs();
+  const { data: applications = [], isLoading: applicationsLoading } = useEmployerApplications();
+
+  const dashboardStats = {
+    activeJobs: stats?.job_status_counts?.open || jobs.filter((job) => String(job.status).toLowerCase() === 'open').length,
+    totalApplicants: stats?.total_applications || applications.length,
+    totalViews: jobs.reduce((sum, job) => {
+      const dynamicJob = job as any;
+      return sum + Number(dynamicJob.views || dynamicJob.view_count || 0);
+    }, 0),
+    hires: stats?.application_status_counts?.accepted || 0,
+  };
+
+  const recentJobs: JobRow[] = jobs.slice(0, 5).map((job) => ({
+    id: job.id,
+    title: job.title,
+    status: (String(job.status).toLowerCase() as JobRow['status']) || 'open',
+    applicants: job.application_count || 0,
+    views: Number((job as any).views || (job as any).view_count || 0),
+    posted: job.created_at ? new Date(job.created_at).toLocaleDateString() : '—',
+  }));
+
+  const recentApplicants: Applicant[] = applications.slice(0, 6).map((application) => ({
+    id: application.id,
+    name: application.worker?.full_name || `Applicant #${application.worker_id || application.id}`,
+    role: application.job?.title || 'Worker',
+    applied: application.created_at ? new Date(application.created_at).toLocaleDateString() : '—',
+  }));
+
   return (
     <div className="animate-fade-in-up">
       {/* Page Header */}
@@ -190,26 +199,26 @@ const Dashboard = () => {
       <div className="employer-grid employer-grid-4 mb-8">
         <StatCard 
           label="Active Jobs" 
-          value={mockStats.activeJobs} 
+          value={dashboardStats.activeJobs} 
           icon={<BriefcaseIcon className="w-6 h-6" />}
           trend={8.3}
           variant="gradient"
         />
         <StatCard 
           label="Total Applicants" 
-          value={mockStats.totalApplicants} 
+          value={dashboardStats.totalApplicants} 
           icon={<UserGroupIcon className="w-6 h-6" />}
           trend={12.1}
         />
         <StatCard 
           label="Profile Views" 
-          value={mockStats.totalViews.toLocaleString()} 
+          value={dashboardStats.totalViews.toLocaleString()} 
           icon={<EyeIcon className="w-6 h-6" />}
           trend={6.8}
         />
         <StatCard 
           label="Successful Hires" 
-          value={mockStats.hires} 
+          value={dashboardStats.hires} 
           icon={<ClipboardDocumentCheckIcon className="w-6 h-6" />}
           trend={4.5}
         />
@@ -239,9 +248,14 @@ const Dashboard = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {mockJobs.slice(0, 5).map((job) => (
+                  {recentJobs.map((job) => (
                     <JobRow key={job.id} job={job} />
                   ))}
+                  {jobsLoading && (
+                    <tr>
+                      <td className="text-muted" colSpan={6}>Loading jobs...</td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -257,9 +271,10 @@ const Dashboard = () => {
             </Link>
           </div>
           <div className="card-body space-y-1">
-            {mockApplicants.map((applicant) => (
+            {recentApplicants.map((applicant) => (
               <ApplicantCard key={applicant.id} applicant={applicant} />
             ))}
+            {applicationsLoading && <p className="text-sm text-muted">Loading applicants...</p>}
           </div>
         </div>
       </div>

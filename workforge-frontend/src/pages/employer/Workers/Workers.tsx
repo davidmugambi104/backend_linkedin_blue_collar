@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { 
   UsersIcon,
   MagnifyingGlassIcon,
@@ -8,11 +8,13 @@ import {
   StarIcon,
   BriefcaseIcon,
   EnvelopeIcon,
-  PhoneIcon,
   EllipsisHorizontalIcon,
   CheckBadgeIcon,
   ArrowTopRightOnSquareIcon
 } from '@heroicons/react/24/outline';
+import { useQuery } from '@tanstack/react-query';
+import { employerService } from '@services/employer.service';
+import { toast } from 'react-toastify';
 
 // Search Input
 const SearchInput: React.FC<{ 
@@ -68,7 +70,10 @@ const SkillBadge: React.FC<{ skill: string }> = ({ skill }) => (
 // Worker Card
 interface Worker {
   id: number;
+  userId?: number;
   name: string;
+  email?: string;
+  phone?: string;
   location: string;
   bio: string;
   skills: string[];
@@ -80,7 +85,11 @@ interface Worker {
   verified: boolean;
 }
 
-const WorkerCard: React.FC<{ worker: Worker }> = ({ worker }) => (
+const WorkerCard: React.FC<{
+  worker: Worker;
+  onContact: (worker: Worker) => void;
+  onViewProfile: (worker: Worker) => void;
+}> = ({ worker, onContact, onViewProfile }) => (
   <div className="solid-card p-5 group hover:border-navy/30">
     <div className="flex items-start gap-4">
       <div className="relative">
@@ -102,7 +111,11 @@ const WorkerCard: React.FC<{ worker: Worker }> = ({ worker }) => (
               {worker.location}
             </p>
           </div>
-          <button className="icon-btn opacity-0 group-hover:opacity-100 transition-opacity">
+          <button
+            type="button"
+            onClick={() => onViewProfile(worker)}
+            className="icon-btn opacity-0 group-hover:opacity-100 transition-opacity"
+          >
             <EllipsisHorizontalIcon className="w-5 h-5" />
           </button>
         </div>
@@ -138,11 +151,11 @@ const WorkerCard: React.FC<{ worker: Worker }> = ({ worker }) => (
     </div>
 
     <div className="flex items-center gap-2 mt-4">
-      <button className="btn-primary flex-1 text-sm">
+      <button type="button" onClick={() => onContact(worker)} className="btn-primary flex-1 text-sm">
         <EnvelopeIcon className="w-4 h-4" />
         Contact
       </button>
-      <button className="btn-secondary flex-1 text-sm">
+      <button type="button" onClick={() => onViewProfile(worker)} className="btn-secondary flex-1 text-sm">
         <ArrowTopRightOnSquareIcon className="w-4 h-4" />
         Profile
       </button>
@@ -154,7 +167,8 @@ const WorkerCard: React.FC<{ worker: Worker }> = ({ worker }) => (
 const FilterSidebar: React.FC<{
   selectedSkills: string[];
   onSkillToggle: (skill: string) => void;
-}> = ({ selectedSkills, onSkillToggle }) => {
+  onClearFilters: () => void;
+}> = ({ selectedSkills, onSkillToggle, onClearFilters }) => {
   const skillOptions = [
     'Electrical', 'HVAC', 'Plumbing', 'Carpentry', 'Welding', 
     'Masonry', 'Painting', 'Roofing', 'Flooring', 'Landscaping'
@@ -199,7 +213,8 @@ const FilterSidebar: React.FC<{
       </div>
 
       <button 
-        onClick={() => {}}
+        type="button"
+        onClick={onClearFilters}
         className="w-full btn-ghost text-sm text-navy"
       >
         Clear all filters
@@ -208,90 +223,41 @@ const FilterSidebar: React.FC<{
   );
 };
 
-// Mock Data
-const mockWorkers: Worker[] = [
-  { 
-    id: 1, 
-    name: 'Adrian Cole', 
-    location: 'Dallas, TX', 
-    bio: 'Licensed electrician with 7 years field experience. Specializing in commercial and industrial installations.',
-    skills: ['Electrical', 'Troubleshooting', 'Panel Installation', 'Code Compliance'],
-    rating: 4.8,
-    reviews: 124,
-    jobsCompleted: 89,
-    hourlyRate: '$45/hr',
-    verified: true
-  },
-  { 
-    id: 2, 
-    name: 'Maya Ortiz', 
-    location: 'Austin, TX', 
-    bio: 'Commercial HVAC specialist focused on safety-first installs and energy-efficient solutions.',
-    skills: ['HVAC', 'Maintenance', 'Refrigeration', 'Ductwork'],
-    rating: 4.9,
-    reviews: 98,
-    jobsCompleted: 67,
-    hourlyRate: '$52/hr',
-    verified: true
-  },
-  { 
-    id: 3, 
-    name: 'Leo Kim', 
-    location: 'Houston, TX', 
-    bio: 'Certified welder for industrial and municipal projects. AWS certified with experience in structural welding.',
-    skills: ['Welding', 'Fabrication', 'Metalwork', 'Blueprint Reading'],
-    rating: 4.7,
-    reviews: 76,
-    jobsCompleted: 54,
-    hourlyRate: '$48/hr',
-    verified: true
-  },
-  { 
-    id: 4, 
-    name: 'Sarah Johnson', 
-    location: 'San Antonio, TX', 
-    bio: 'Master plumber with expertise in residential and commercial systems. Fast and reliable service.',
-    skills: ['Plumbing', 'Pipe Fitting', 'Water Heaters', 'Drain Cleaning'],
-    rating: 4.6,
-    reviews: 142,
-    jobsCompleted: 112,
-    hourlyRate: '$50/hr',
-    verified: true
-  },
-  { 
-    id: 5, 
-    name: 'Marcus Thompson', 
-    location: 'Fort Worth, TX', 
-    bio: 'Experienced carpenter specializing in custom builds, renovations, and finish work.',
-    skills: ['Carpentry', 'Cabinetry', 'Framing', 'Finish Work'],
-    rating: 4.5,
-    reviews: 63,
-    jobsCompleted: 41,
-    hourlyRate: '$42/hr',
-    verified: false
-  },
-  { 
-    id: 6, 
-    name: 'Emily Chen', 
-    location: 'Austin, TX', 
-    bio: 'Professional painter with an eye for detail. Interior and exterior painting services.',
-    skills: ['Painting', 'Drywall', 'Surface Prep', 'Color Consultation'],
-    rating: 4.8,
-    reviews: 89,
-    jobsCompleted: 78,
-    hourlyRate: '$38/hr',
-    verified: true
-  },
-];
-
 const Workers = () => {
+  const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [view, setView] = useState<'grid' | 'list'>('grid');
+  const { data: workerResults = [], isLoading } = useQuery({
+    queryKey: ['employerWorkersSearch'],
+    queryFn: () => employerService.searchWorkers({}),
+  });
+
+  const workers = useMemo<Worker[]>(() => workerResults.map((worker) => {
+    const workerSkills = Array.isArray(worker.skills)
+      ? worker.skills.map((skill: any) => skill?.name || skill?.skill_name || String(skill)).filter(Boolean)
+      : [];
+
+    return {
+      id: worker.id,
+      userId: worker.user_id,
+      name: worker.full_name || `Worker #${worker.id}`,
+      email: worker.user?.email,
+      phone: worker.phone,
+      location: worker.address || 'Location not specified',
+      bio: worker.bio || 'No bio provided',
+      skills: workerSkills,
+      rating: Number(worker.average_rating || 0),
+      reviews: Number(worker.total_ratings || 0),
+      jobsCompleted: Number(worker.completed_jobs || 0),
+      hourlyRate: worker.hourly_rate ? `$${worker.hourly_rate}/hr` : 'N/A',
+      verified: Boolean(worker.is_verified),
+    };
+  }), [workerResults]);
 
   // Filter workers
   const filtered = useMemo(() => {
-    return mockWorkers.filter((worker) => {
+    return workers.filter((worker) => {
       const matchesQuery = 
         worker.name.toLowerCase().includes(query.toLowerCase()) ||
         worker.skills.some(s => s.toLowerCase().includes(query.toLowerCase()));
@@ -299,7 +265,7 @@ const Workers = () => {
         worker.skills.some(s => selectedSkills.includes(s));
       return matchesQuery && matchesSkills;
     });
-  }, [query, selectedSkills]);
+  }, [workers, query, selectedSkills]);
 
   const handleSkillToggle = (skill: string) => {
     setSelectedSkills(prev => 
@@ -307,6 +273,29 @@ const Workers = () => {
         ? prev.filter(s => s !== skill)
         : [...prev, skill]
     );
+  };
+
+  const handleClearFilters = () => {
+    setSelectedSkills([]);
+    setQuery('');
+  };
+
+  const handleContact = (worker: Worker) => {
+    if (worker.email) {
+      window.open(`mailto:${worker.email}`, '_self');
+      return;
+    }
+
+    if (worker.userId) {
+      navigate('/messages');
+      return;
+    }
+
+    toast.info('Contact details are not available for this worker yet.');
+  };
+
+  const handleViewProfile = (worker: Worker) => {
+    navigate(`/workers/${worker.id}`);
   };
 
   return (
@@ -350,6 +339,7 @@ const Workers = () => {
         <FilterSidebar 
           selectedSkills={selectedSkills}
           onSkillToggle={handleSkillToggle}
+          onClearFilters={handleClearFilters}
         />
 
         {filtered.length === 0 ? (
@@ -359,11 +349,17 @@ const Workers = () => {
             </div>
             <h3 className="text-lg font-semibold text-charcoal mb-2">No workers found</h3>
             <p className="text-muted">Try adjusting your search or filters.</p>
+            {isLoading && <p className="text-sm text-muted mt-2">Loading workers...</p>}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {filtered.map((worker) => (
-              <WorkerCard key={worker.id} worker={worker} />
+              <WorkerCard
+                key={worker.id}
+                worker={worker}
+                onContact={handleContact}
+                onViewProfile={handleViewProfile}
+              />
             ))}
           </div>
         )}

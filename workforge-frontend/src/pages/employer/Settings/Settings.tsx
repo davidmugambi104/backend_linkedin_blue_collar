@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { ChangeEvent, useEffect, useState } from 'react';
 import { 
   UserCircleIcon,
   BellIcon,
@@ -9,6 +9,10 @@ import {
   CheckIcon,
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
+import { useEmployerProfile, useUpdateEmployerProfile } from '@hooks/useEmployer';
+import { userService } from '@services/user.service';
+import { uploadService } from '@services/upload.service';
+import { toast } from 'react-toastify';
 
 // Tab Navigation
 const Tabs: React.FC<{
@@ -84,7 +88,51 @@ const SectionCard: React.FC<{
 );
 
 // Profile Tab
-const ProfileTab: React.FC = () => (
+const ProfileTab: React.FC = () => {
+  const { data: profile } = useEmployerProfile();
+  const updateProfileMutation = useUpdateEmployerProfile();
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [formState, setFormState] = useState({
+    company_name: profile?.company_name || '',
+    phone: profile?.phone || '',
+    website: profile?.website || '',
+    address: profile?.address || '',
+    description: profile?.description || '',
+  });
+
+  useEffect(() => {
+    if (!profile) return;
+    setFormState({
+      company_name: profile.company_name || '',
+      phone: profile.phone || '',
+      website: profile.website || '',
+      address: profile.address || '',
+      description: profile.description || '',
+    });
+  }, [profile]);
+
+  const handleSave = async () => {
+    await updateProfileMutation.mutateAsync(formState);
+  };
+
+  const handleLogoUpload = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsUploadingLogo(true);
+      const logoUrl = await uploadService.uploadFile(file);
+      await updateProfileMutation.mutateAsync({ logo: logoUrl });
+      toast.success('Logo uploaded successfully');
+    } catch {
+      toast.error('Failed to upload logo');
+    } finally {
+      setIsUploadingLogo(false);
+      event.target.value = '';
+    }
+  };
+
+  return (
   <div className="animate-fade-in-up">
     <SectionCard 
       title="Company Information"
@@ -92,7 +140,12 @@ const ProfileTab: React.FC = () => (
     >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <FormField label="Company Name">
-          <input type="text" className="input-field" defaultValue="WorkForge Builders" />
+          <input
+            type="text"
+            className="input-field"
+            value={formState.company_name}
+            onChange={(e) => setFormState((prev) => ({ ...prev, company_name: e.target.value }))}
+          />
         </FormField>
         <FormField label="Industry">
           <select className="input-field">
@@ -105,7 +158,12 @@ const ProfileTab: React.FC = () => (
           <input type="email" className="input-field" defaultValue="contact@workforge.com" />
         </FormField>
         <FormField label="Phone Number">
-          <input type="tel" className="input-field" defaultValue="+1 (555) 123-4567" />
+          <input
+            type="tel"
+            className="input-field"
+            value={formState.phone}
+            onChange={(e) => setFormState((prev) => ({ ...prev, phone: e.target.value }))}
+          />
         </FormField>
         <FormField label="Company Size">
           <select className="input-field">
@@ -116,19 +174,25 @@ const ProfileTab: React.FC = () => (
           </select>
         </FormField>
         <FormField label="Website">
-          <input type="url" className="input-field" defaultValue="https://workforge.com" />
+          <input
+            type="url"
+            className="input-field"
+            value={formState.website}
+            onChange={(e) => setFormState((prev) => ({ ...prev, website: e.target.value }))}
+          />
         </FormField>
       </div>
       <div className="mt-5">
         <FormField label="Company Description">
           <textarea 
-            className="input-field min-h-[120px] resize-none" 
-            defaultValue="WorkForge Builders is a leading construction company specializing in commercial and residential projects across Texas."
+            className="input-field min-h-[120px] resize-none"
+            value={formState.description}
+            onChange={(e) => setFormState((prev) => ({ ...prev, description: e.target.value }))}
           />
         </FormField>
       </div>
       <div className="flex justify-end mt-5">
-        <button className="btn-primary">Save Changes</button>
+        <button onClick={handleSave} className="btn-primary">Save Changes</button>
       </div>
     </SectionCard>
 
@@ -138,13 +202,28 @@ const ProfileTab: React.FC = () => (
           WF
         </div>
         <div>
-          <button className="btn-secondary text-sm mb-2">Upload New Logo</button>
+          <input
+            id="employer-logo-upload"
+            type="file"
+            accept="image/png,image/jpeg,image/jpg,image/webp"
+            className="hidden"
+            onChange={handleLogoUpload}
+          />
+          <button
+            type="button"
+            onClick={() => document.getElementById('employer-logo-upload')?.click()}
+            className="btn-secondary text-sm mb-2"
+            disabled={isUploadingLogo}
+          >
+            {isUploadingLogo ? 'Uploading...' : 'Upload New Logo'}
+          </button>
           <p className="text-xs text-muted">PNG, JPG up to 2MB. Recommended: 200x200px</p>
         </div>
       </div>
     </SectionCard>
   </div>
-);
+  );
+};
 
 // Notifications Tab
 const NotificationsTab: React.FC = () => {
@@ -159,6 +238,11 @@ const NotificationsTab: React.FC = () => {
 
   const updateSetting = (key: string, value: boolean) => {
     setSettings(prev => ({ ...prev, [key]: value }));
+  };
+
+  const savePreferences = () => {
+    localStorage.setItem('employerNotificationSettings', JSON.stringify(settings));
+    toast.success('Notification preferences saved');
   };
 
   return (
@@ -237,72 +321,136 @@ const NotificationsTab: React.FC = () => {
             />
           </div>
         </div>
+        <div className="flex justify-end mt-5">
+          <button type="button" onClick={savePreferences} className="btn-primary text-sm">Save Preferences</button>
+        </div>
       </SectionCard>
     </div>
   );
 };
 
 // Security Tab
-const SecurityTab: React.FC = () => (
-  <div className="animate-fade-in-up">
-    <SectionCard 
-      title="Password"
-      description="Update your password to keep your account secure"
-    >
-      <div className="space-y-4 max-w-md">
-        <FormField label="Current Password">
-          <input type="password" className="input-field" placeholder="Enter current password" />
-        </FormField>
-        <FormField label="New Password">
-          <input type="password" className="input-field" placeholder="Enter new password" />
-        </FormField>
-        <FormField label="Confirm New Password">
-          <input type="password" className="input-field" placeholder="Confirm new password" />
-        </FormField>
-        <button className="btn-primary">Update Password</button>
-      </div>
-    </SectionCard>
+const SecurityTab: React.FC = () => {
+  const [passwords, setPasswords] = useState({
+    current: '',
+    next: '',
+    confirm: '',
+  });
+  const [sessions, setSessions] = useState([
+    {
+      id: 'current',
+      title: 'MacBook Pro - Chrome',
+      detail: 'Current session',
+      active: true,
+      icon: '💻',
+    },
+    {
+      id: 'mobile',
+      title: 'iPhone 14 - Safari',
+      detail: 'Last active 2 hours ago',
+      active: false,
+      icon: '📱',
+    },
+  ]);
 
-    <SectionCard title="Two-Factor Authentication">
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="font-medium text-charcoal">Add an extra layer of security</p>
-          <p className="text-sm text-muted mt-1">Require a verification code in addition to your password</p>
-        </div>
-        <button className="btn-secondary">Enable 2FA</button>
-      </div>
-    </SectionCard>
+  const updatePassword = async () => {
+    if (!passwords.current || !passwords.next || !passwords.confirm) {
+      toast.error('Please fill out all password fields');
+      return;
+    }
 
-    <SectionCard title="Active Sessions">
-      <div className="space-y-4">
-        <div className="flex items-center justify-between p-4 bg-charcoal-50 rounded-lg">
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-lg bg-navy flex items-center justify-center text-white">
-              💻
-            </div>
-            <div>
-              <p className="font-medium text-charcoal">MacBook Pro - Chrome</p>
-              <p className="text-sm text-muted">Dallas, TX • Current session</p>
-            </div>
-          </div>
-          <span className="badge-success">Active</span>
+    if (passwords.next !== passwords.confirm) {
+      toast.error('New password and confirmation do not match');
+      return;
+    }
+
+    await userService.changePassword({
+      current_password: passwords.current,
+      new_password: passwords.next,
+    });
+
+    setPasswords({ current: '', next: '', confirm: '' });
+    toast.success('Password updated successfully');
+  };
+
+  const revokeSession = (sessionId: string) => {
+    setSessions((prev) => prev.filter((session) => session.id !== sessionId));
+    toast.success('Session revoked');
+  };
+
+  return (
+    <div className="animate-fade-in-up">
+      <SectionCard 
+        title="Password"
+        description="Update your password to keep your account secure"
+      >
+        <div className="space-y-4 max-w-md">
+          <FormField label="Current Password">
+            <input
+              type="password"
+              className="input-field"
+              placeholder="Enter current password"
+              value={passwords.current}
+              onChange={(e) => setPasswords((prev) => ({ ...prev, current: e.target.value }))}
+            />
+          </FormField>
+          <FormField label="New Password">
+            <input
+              type="password"
+              className="input-field"
+              placeholder="Enter new password"
+              value={passwords.next}
+              onChange={(e) => setPasswords((prev) => ({ ...prev, next: e.target.value }))}
+            />
+          </FormField>
+          <FormField label="Confirm New Password">
+            <input
+              type="password"
+              className="input-field"
+              placeholder="Confirm new password"
+              value={passwords.confirm}
+              onChange={(e) => setPasswords((prev) => ({ ...prev, confirm: e.target.value }))}
+            />
+          </FormField>
+          <button type="button" onClick={updatePassword} className="btn-primary">Update Password</button>
         </div>
-        <div className="flex items-center justify-between p-4 border border-charcoal-200 rounded-lg">
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-lg bg-charcoal-100 flex items-center justify-center">
-              📱
-            </div>
-            <div>
-              <p className="font-medium text-charcoal">iPhone 14 - Safari</p>
-              <p className="text-sm text-muted">Dallas, TX • Last active 2 hours ago</p>
-            </div>
+      </SectionCard>
+
+      <SectionCard title="Two-Factor Authentication">
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="font-medium text-charcoal">Add an extra layer of security</p>
+            <p className="text-sm text-muted mt-1">Require a verification code in addition to your password</p>
           </div>
-          <button className="text-sm text-red-600 hover:underline">Revoke</button>
+          <button type="button" onClick={() => toast.info('2FA enrollment flow starts in verification settings.')} className="btn-secondary">Enable 2FA</button>
         </div>
-      </div>
-    </SectionCard>
-  </div>
-);
+      </SectionCard>
+
+      <SectionCard title="Active Sessions">
+        <div className="space-y-4">
+          {sessions.map((session) => (
+            <div key={session.id} className={`flex items-center justify-between p-4 rounded-lg ${session.active ? 'bg-charcoal-50' : 'border border-charcoal-200'}`}>
+              <div className="flex items-center gap-4">
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${session.active ? 'bg-navy text-white' : 'bg-charcoal-100'}`}>
+                  {session.icon}
+                </div>
+                <div>
+                  <p className="font-medium text-charcoal">{session.title}</p>
+                  <p className="text-sm text-muted">{session.detail}</p>
+                </div>
+              </div>
+              {session.active ? (
+                <span className="badge-success">Active</span>
+              ) : (
+                <button type="button" onClick={() => revokeSession(session.id)} className="text-sm text-red-600 hover:underline">Revoke</button>
+              )}
+            </div>
+          ))}
+        </div>
+      </SectionCard>
+    </div>
+  );
+};
 
 // Billing Tab
 const BillingTab: React.FC = () => (
@@ -317,7 +465,7 @@ const BillingTab: React.FC = () => (
           <h4 className="text-xl font-bold mt-1">Professional</h4>
           <p className="text-sm text-white/70 mt-1">$49/month • Billed monthly</p>
         </div>
-        <button className="btn bg-white text-navy hover:bg-white/90">Upgrade Plan</button>
+        <button type="button" onClick={() => window.location.assign('/payments')} className="btn bg-white text-navy hover:bg-white/90">Upgrade Plan</button>
       </div>
     </SectionCard>
 
@@ -332,7 +480,7 @@ const BillingTab: React.FC = () => (
             <p className="text-sm text-muted">Expires 12/2027</p>
           </div>
         </div>
-        <button className="btn-ghost text-sm">Edit</button>
+        <button type="button" onClick={() => window.location.assign('/payments/create')} className="btn-ghost text-sm">Edit</button>
       </div>
     </SectionCard>
 

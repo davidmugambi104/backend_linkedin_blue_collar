@@ -21,6 +21,8 @@ from .bulk import bulk_bp
 from .disputes import disputes_bp
 from .location import location_bp
 from .docs import docs_bp
+from .ai_assistant import ai_bp
+from .uploads import uploads_bp
 
 
 def register_blueprints(app):
@@ -46,3 +48,5 @@ def register_blueprints(app):
     app.register_blueprint(disputes_bp, url_prefix="/api/disputes")
     app.register_blueprint(location_bp, url_prefix="/api/location")
     app.register_blueprint(docs_bp, url_prefix="/api/docs")
+    app.register_blueprint(ai_bp, url_prefix="/api/ai")
+    app.register_blueprint(uploads_bp, url_prefix="/api/uploads")

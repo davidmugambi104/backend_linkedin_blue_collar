@@ -1,0 +1,1 @@
+const a=["Construction","Manufacturing","Transportation","Warehousing","Maintenance","Food Service","Cleaning","Landscaping","Security","Retail","Other"],e=["Full-time","Part-time","Contract","Temporary","Seasonal"],n={PENDING:"pending",ACCEPTED:"accepted",REJECTED:"rejected"};export{n as A,a as J,e as a};

@@ -99,7 +99,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
             label="Hourly Rate ($)"
             placeholder="25.00"
             error={errors.hourly_rate?.message}
-            leftIcon={<span className="text-gray-500">$</span>}
+            leftIcon={<span className="text-slate-500">$</span>}
           />
 
           <Input

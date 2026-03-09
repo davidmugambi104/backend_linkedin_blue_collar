@@ -46,13 +46,13 @@ export const WorkerApplications: React.FC = () => {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px]">
-        <div className="w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mb-4">
+        <div className="w-16 h-16 rounded-full bg-red-100 bg-red-900/30 flex items-center justify-center mb-4">
           <ClipboardDocumentCheckIcon className="h-8 w-8 text-red-500" />
         </div>
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+        <h2 className="text-xl font-semibold text-gray-900 text-[#1A1A1A] mb-2">
           Failed to load applications
         </h2>
-        <p className="text-gray-500 dark:text-gray-400 mb-6">
+        <p className="text-slate-500  mb-6">
           {error?.message || 'Please try again'}
         </p>
         <Button onClick={() => window.location.reload()}>Try Again</Button>
@@ -65,16 +65,16 @@ export const WorkerApplications: React.FC = () => {
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 text-[#1A1A1A]">
             My Applications
           </h1>
-          <p className="mt-1 text-gray-500 dark:text-gray-400">
+          <p className="mt-1 text-slate-500 ">
             Track and manage your job applications
           </p>
         </div>
         {totalCount > 0 && (
-          <div className="text-sm text-gray-500 dark:text-gray-400">
-            <span className="font-medium text-gray-900 dark:text-white">{totalCount}</span> total applications
+          <div className="text-sm text-slate-500 ">
+            <span className="font-medium text-gray-900 text-[#1A1A1A]">{totalCount}</span> total applications
           </div>
         )}
       </div>
@@ -104,7 +104,7 @@ export const WorkerApplications: React.FC = () => {
               h-10 w-full rounded-xl border px-4 py-2 text-sm
               bg-gradient-to-br from-white/30 to-white/10
               border-slate-300/50 text-slate-700
-              dark:from-black/30 dark:to-black/10 dark:border-slate-600/50 dark:text-slate-200
+              from-black/30 to-black/10 border-slate-600/50 text-slate-200
               focus:ring-2 focus:ring-blue-500/70 focus:border-transparent
             "
           >
@@ -136,13 +136,13 @@ export const WorkerApplications: React.FC = () => {
         </div>
       ) : applications.length === 0 ? (
         <Card className="p-8 lg:p-12 text-center">
-          <div className="w-20 h-20 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mx-auto mb-4">
-            <ClipboardDocumentCheckIcon className="h-10 w-10 text-gray-400" />
+          <div className="w-20 h-20 rounded-full bg-slate-100 bg-gray-800 flex items-center justify-center mx-auto mb-4">
+            <ClipboardDocumentCheckIcon className="h-10 w-10 text-slate-400" />
           </div>
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+          <h2 className="text-xl font-semibold text-gray-900 text-[#1A1A1A] mb-2">
             No applications yet
           </h2>
-          <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-md mx-auto">
+          <p className="text-slate-500  mb-6 max-w-md mx-auto">
             Start by browsing and applying to jobs that match your skills
           </p>
           <Link to="/worker/jobs">
@@ -162,21 +162,21 @@ export const WorkerApplications: React.FC = () => {
                 className="block"
               >
                 <Card 
-                  className="p-4 lg:p-6 hover:shadow-lg transition-all duration-200 hover:border-primary-300 dark:hover:border-primary-700"
+                  className="p-4 lg:p-6 hover:shadow-lg transition-all duration-200 hover:border-primary-300 hover:border-primary-700"
                   hoverable
                 >
                   <div className="flex flex-col lg:flex-row lg:items-start gap-4 lg:gap-6">
                     {/* Left: Job Info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start gap-3 lg:gap-4">
-                        <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                          <ClipboardDocumentCheckIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                        <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-blue-100 bg-blue-900/30 flex items-center justify-center">
+                          <ClipboardDocumentCheckIcon className="h-6 w-6 text-blue-600 text-blue-400" />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white truncate">
+                          <h3 className="text-lg font-semibold text-gray-900 text-[#1A1A1A] truncate">
                             {application.job?.title || 'Job Title'}
                           </h3>
-                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                          <p className="text-sm text-slate-500  mt-0.5">
                             {application.job?.employer?.company_name || 'Company'}
                           </p>
                         </div>
@@ -185,19 +185,19 @@ export const WorkerApplications: React.FC = () => {
                       {/* Job Meta */}
                       <div className="mt-4 flex flex-wrap items-center gap-3 lg:gap-4 text-sm">
                         {application.job?.address && (
-                          <div className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400">
+                          <div className="flex items-center gap-1.5 text-slate-500 ">
                             <MapPinIcon className="h-4 w-4 flex-shrink-0" />
                             <span className="truncate">{application.job.address}</span>
                           </div>
                         )}
                         {application.job?.pay_min && application.job?.pay_max && (
-                          <div className="flex items-center gap-1.5 font-medium text-gray-900 dark:text-white">
+                          <div className="flex items-center gap-1.5 font-medium text-gray-900 text-[#1A1A1A]">
                             <CurrencyDollarIcon className="h-4 w-4 flex-shrink-0" />
                             {formatCurrency(application.job.pay_min)} - {formatCurrency(application.job.pay_max)}
                           </div>
                         )}
                         {application.created_at && (
-                          <div className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400">
+                          <div className="flex items-center gap-1.5 text-slate-500 ">
                             <CalendarIcon className="h-4 w-4 flex-shrink-0" />
                             Applied {formatDate(application.created_at)}
                           </div>
@@ -221,10 +221,10 @@ export const WorkerApplications: React.FC = () => {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-gray-200 dark:border-gray-700">
-              <div className="text-sm text-gray-500 dark:text-gray-400">
-                Page <span className="font-medium text-gray-900 dark:text-white">{pageIndex + 1}</span> of{' '}
-                <span className="font-medium text-gray-900 dark:text-white">{totalPages}</span>
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-gray-200 border-gray-700">
+              <div className="text-sm text-slate-500 ">
+                Page <span className="font-medium text-gray-900 text-[#1A1A1A]">{pageIndex + 1}</span> of{' '}
+                <span className="font-medium text-gray-900 text-[#1A1A1A]">{totalPages}</span>
               </div>
               <div className="flex gap-2">
                 <Button

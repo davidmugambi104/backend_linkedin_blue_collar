@@ -2,7 +2,6 @@ import React from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@lib/utils/cn';
 import { Avatar } from '@components/ui/Avatar';
-import { Badge } from '@components/ui/Badge';
 import { Conversation } from '@types';
 import { useAuth } from '@context/AuthContext';
 
@@ -19,54 +18,61 @@ export const ConversationItem: React.FC<ConversationItemProps> = ({
 }) => {
   const { user } = useAuth();
   const { other_user, last_message, unread_count } = conversation;
+  const otherUserRole = other_user?.role ?? 'unknown';
+  const displayName = otherUserRole === 'worker'
+    ? other_user?.profile?.full_name || other_user?.username || 'Unknown user'
+    : other_user?.profile?.company_name || other_user?.username || 'Unknown user';
   
   const isLastMessageFromMe = last_message?.sender_id === user?.id;
-  const isOnline = other_user.profile?.is_online;
+  const isOnline = other_user?.profile?.is_online;
+  const lastMessageDate = last_message?.created_at ? new Date(last_message.created_at) : null;
+  const lastMessageTimeLabel =
+    lastMessageDate && !Number.isNaN(lastMessageDate.getTime())
+      ? formatDistanceToNow(lastMessageDate, { addSuffix: true })
+      : null;
 
   return (
     <button
       onClick={onClick}
       className={cn(
-        'w-full p-4 flex items-start space-x-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors',
-        isActive && 'bg-primary-50 dark:bg-primary-900/20',
-        unread_count > 0 && 'bg-blue-50/50 dark:bg-blue-900/10'
+        'w-full p-4 flex items-start gap-3 transition-all duration-200 hover:bg-navy-50',
+        isActive && 'bg-navy-50',
+        unread_count > 0 && 'bg-navy-50/50'
       )}
     >
-      <div className="relative">
+      <div className="relative flex-shrink-0">
         <Avatar
           src={
-            other_user.role === 'worker'
-              ? other_user.profile?.profile_picture
-              : other_user.profile?.logo
+            otherUserRole === 'worker'
+              ? other_user?.profile?.profile_picture
+              : other_user?.profile?.logo
           }
           name={
-            other_user.role === 'worker'
-              ? other_user.profile?.full_name
-              : other_user.profile?.company_name
+            otherUserRole === 'worker'
+              ? other_user?.profile?.full_name
+              : other_user?.profile?.company_name
           }
           size="md"
         />
         {isOnline && (
-          <span className="absolute bottom-0 right-0 block w-2.5 h-2.5 bg-green-500 rounded-full ring-2 ring-white dark:ring-gray-900" />
+          <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full ring-2 ring-white" />
         )}
       </div>
 
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 min-w-0 text-left">
         <div className="flex items-center justify-between">
-          <h4 className="text-sm font-semibold text-gray-900 dark:text-white truncate">
-            {other_user.role === 'worker'
-              ? other_user.profile?.full_name || other_user.username
-              : other_user.profile?.company_name || other_user.username}
+          <h4 className="text-sm font-semibold text-charcoal truncate">
+            {displayName}
           </h4>
-          {last_message && (
-            <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap ml-2">
-              {formatDistanceToNow(new Date(last_message.created_at), { addSuffix: true })}
+          {lastMessageTimeLabel && (
+            <span className="text-xs text-muted whitespace-nowrap ml-2">
+              {lastMessageTimeLabel}
             </span>
           )}
         </div>
 
-        <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-          {other_user.role}
+        <p className="text-xs text-muted mb-1">
+          {otherUserRole}
         </p>
 
         {last_message && (
@@ -74,16 +80,16 @@ export const ConversationItem: React.FC<ConversationItemProps> = ({
             <p className={cn(
               'text-sm truncate',
               unread_count > 0
-                ? 'font-semibold text-gray-900 dark:text-white'
-                : 'text-gray-600 dark:text-gray-400'
+                ? 'font-semibold text-charcoal'
+                : 'text-charcoal-500'
             )}>
               {isLastMessageFromMe && <span className="mr-1">You:</span>}
               {last_message.content}
             </p>
             {unread_count > 0 && (
-              <Badge variant="info" size="sm" className="ml-2">
+              <span className="ml-2 px-2 py-0.5 text-xs font-semibold bg-navy text-white rounded-full">
                 {unread_count}
-              </Badge>
+              </span>
             )}
           </div>
         )}

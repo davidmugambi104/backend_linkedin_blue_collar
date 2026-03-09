@@ -102,6 +102,76 @@ def get_job(job_id):
     return jsonify(job_dict), 200
 
 
+@jobs_bp.route("/context/<int:user_id>", methods=["GET"])
+@jwt_required()
+def get_messaging_job_context(user_id):
+    """Return profile URL and shared recent job context for messaging header."""
+    current_user_id = get_current_user_id()
+
+    if current_user_id == user_id:
+        return jsonify({"profile_url": "/messages", "job_context": None}), 200
+
+    current_user = User.query.get_or_404(current_user_id)
+    other_user = User.query.get_or_404(user_id)
+
+    other_worker = Worker.query.filter_by(user_id=user_id).first()
+    other_employer = Employer.query.filter_by(user_id=user_id).first()
+
+    profile_url = "/messages"
+    if other_user.role.value == "worker" and other_worker:
+        profile_url = f"/workers/{other_worker.id}"
+    elif other_user.role.value == "employer" and other_employer:
+        profile_url = f"/jobs?employer_id={other_employer.id}"
+    elif other_user.role.value == "admin":
+        profile_url = f"/admin/users/{other_user.id}"
+
+    related_application = None
+    worker_record = None
+
+    if current_user.role.value == "employer" and other_worker:
+        employer = Employer.query.filter_by(user_id=current_user_id).first()
+        if employer:
+            related_application = (
+                Application.query.join(Job, Application.job_id == Job.id)
+                .filter(Job.employer_id == employer.id, Application.worker_id == other_worker.id)
+                .order_by(desc(Application.created_at))
+                .first()
+            )
+            worker_record = other_worker
+    elif current_user.role.value == "worker" and other_employer:
+        worker_record = Worker.query.filter_by(user_id=current_user_id).first()
+        if worker_record:
+            related_application = (
+                Application.query.join(Job, Application.job_id == Job.id)
+                .filter(Job.employer_id == other_employer.id, Application.worker_id == worker_record.id)
+                .order_by(desc(Application.created_at))
+                .first()
+            )
+
+    if not related_application:
+        return jsonify({"profile_url": profile_url, "job_context": None}), 200
+
+    job = Job.query.get(related_application.job_id)
+    if not job:
+        return jsonify({"profile_url": profile_url, "job_context": None}), 200
+
+    match_percentage = 0
+    if worker_record:
+        recommendations = MatchingService.get_worker_recommendations_for_job(job.id, limit=50)
+        worker_match = next((item for item in recommendations if item.get("id") == worker_record.id), None)
+        if worker_match:
+            match_percentage = int(round(float(worker_match.get("match_score", 0)) * 100))
+
+    return jsonify({
+        "profile_url": profile_url,
+        "job_context": {
+            "id": job.id,
+            "title": job.title,
+            "match_percentage": match_percentage,
+        },
+    }), 200
+
+
 @jobs_bp.route("/<int:job_id>/apply", methods=["POST"])
 @jwt_required()
 @worker_required

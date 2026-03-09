@@ -40,7 +40,7 @@ class TestRegistration:
     
     def test_register_duplicate_email(self, client, db_session, sample_user):
         """Test registration with duplicate email fails"""
-        response = client.post('/api/auth/register', {
+        response = client.post('/api/auth/register', json={
             'username': 'otheruser',
             'email': sample_user.email,  # Already exists
             'password': 'password123',
@@ -51,7 +51,7 @@ class TestRegistration:
     
     def test_register_invalid_role(self, client, db_session):
         """Test registration with invalid role fails"""
-        response = client.post('/api/auth/register', {
+        response = client.post('/api/auth/register', json={
             'username': 'testuser',
             'email': 'test@example.com',
             'password': 'password123',
@@ -62,7 +62,7 @@ class TestRegistration:
     
     def test_register_missing_fields(self, client, db_session):
         """Test registration with missing required fields"""
-        response = client.post('/api/auth/register', {
+        response = client.post('/api/auth/register', json={
             'username': 'testuser'
             # Missing email, password, role
         })

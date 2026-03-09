@@ -15,8 +15,8 @@ export default function PaymentList() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Payments</h1>
-        <p className="mt-2 text-gray-600 dark:text-gray-400">Manage your transactions and payments</p>
+        <h1 className="text-3xl font-bold text-gray-900 text-[#1A1A1A]">Payments</h1>
+        <p className="mt-2 text-gray-600 ">Manage your transactions and payments</p>
       </div>
 
       <Card>

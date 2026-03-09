@@ -21,14 +21,14 @@ export const NotFoundPage: React.FC = () => {
             404
           </h1>
           <p className="text-3xl md:text-4xl font-bold text-white mb-2">Page Not Found</p>
-          <p className="text-lg text-gray-400 mb-8">
+          <p className="text-lg text-slate-400 mb-8">
             Oops! The page you're looking for doesn't exist.
           </p>
         </div>
 
         {/* Description */}
         <div className="mb-12 max-w-md">
-          <p className="text-gray-300 mb-6">
+          <p className="text-slate-300 mb-6">
             It might have been removed, renamed, or you might have mistyped the URL. 
             Let's get you back on track!
           </p>
@@ -45,14 +45,14 @@ export const NotFoundPage: React.FC = () => {
           <Button
             onClick={() => navigate(-1)}
             variant="outline"
-            className="px-8 py-3 border-2 border-gray-400 text-gray-300 font-semibold rounded-lg hover:border-gray-200 hover:text-white transition-all"
+            className="px-8 py-3 border-2 border-gray-400 text-slate-300 font-semibold rounded-lg hover:border-gray-200 hover:text-white transition-all"
           >
             Go Back
           </Button>
         </div>
 
         {/* Additional Help */}
-        <div className="mt-12 text-sm text-gray-400">
+        <div className="mt-12 text-sm text-slate-400">
           <p>Need help? <a href="/" className="text-blue-400 hover:text-blue-300 underline">Contact support</a></p>
         </div>
       </div>

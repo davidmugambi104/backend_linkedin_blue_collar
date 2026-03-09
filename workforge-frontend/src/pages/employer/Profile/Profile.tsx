@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
   UserCircleIcon,
   PencilIcon,
@@ -17,6 +17,9 @@ import {
   EyeIcon,
   LinkIcon
 } from '@heroicons/react/24/outline';
+import { useEmployerProfile, useEmployerStats } from '@hooks/useEmployer';
+import { useEmployerJobs } from '@hooks/useEmployerJobs';
+import { toast } from 'react-toastify';
 
 // Section Title
 const SectionTitle: React.FC<{ children: React.ReactNode }> = ({ children }) => (
@@ -76,7 +79,7 @@ interface JobPreview {
 }
 
 const JobPreviewCard: React.FC<{ job: JobPreview }> = ({ job }) => (
-  <div className="flex items-center justify-between p-3 border border-charcoal-100 rounded-lg hover:border-navy/30 hover:bg-navy-50/30 transition-all cursor-pointer">
+  <Link to={`/employer/jobs/${job.id}`} className="flex items-center justify-between p-3 border border-charcoal-100 rounded-lg hover:border-navy/30 hover:bg-navy-50/30 transition-all cursor-pointer">
     <div>
       <p className="font-medium text-charcoal">{job.title}</p>
       <p className="text-xs text-muted">{job.applicants} applicants</p>
@@ -84,27 +87,31 @@ const JobPreviewCard: React.FC<{ job: JobPreview }> = ({ job }) => (
     <span className={`badge ${job.status === 'Open' ? 'badge-success' : 'badge-neutral'}`}>
       {job.status}
     </span>
-  </div>
+  </Link>
 );
 
 // Profile Page
 const Profile = () => {
+  const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
+  const { data: profile } = useEmployerProfile();
+  const { data: stats } = useEmployerStats();
+  const { data: jobs = [] } = useEmployerJobs();
 
   const companyInfo = {
-    name: 'WorkForge Builders',
-    tagline: 'Building Quality, One Project at a Time',
+    name: profile?.company_name || 'Company',
+    tagline: 'Employer profile',
     industry: 'Construction & Engineering',
-    size: '51-200 employees',
-    location: 'Dallas, TX',
-    founded: '2018',
-    website: 'https://workforge.com',
-    email: 'contact@workforge.com',
-    phone: '+1 (555) 123-4567',
-    description: 'WorkForge Builders is a leading construction company specializing in commercial and residential projects across Texas. With over 8 years of experience, we pride ourselves on delivering quality work on time and within budget.',
-    rating: 4.8,
-    reviews: 156,
-    verified: true,
+    size: '—',
+    location: profile?.address || 'Location not set',
+    founded: profile?.created_at ? new Date(profile.created_at).getFullYear().toString() : '—',
+    website: profile?.website || 'Not set',
+    email: 'Use account email',
+    phone: profile?.phone || 'Not set',
+    description: profile?.description || 'No company description provided.',
+    rating: 0,
+    reviews: stats?.reviews_given || 0,
+    verified: Boolean(profile?.verification_score && profile.verification_score > 70),
   };
 
   const teamMembers: TeamMember[] = [
@@ -114,11 +121,33 @@ const Profile = () => {
     { id: 4, name: 'Emily Davis', role: 'HR Manager' },
   ];
 
-  const activeJobs: JobPreview[] = [
-    { id: 1, title: 'Commercial Electrician', applicants: 18, status: 'Open' },
-    { id: 2, title: 'HVAC Technician', applicants: 9, status: 'Open' },
-    { id: 3, title: 'Plumbing Crew Lead', applicants: 17, status: 'Open' },
-  ];
+  const activeJobs: JobPreview[] = jobs.slice(0, 3).map((job) => ({
+    id: job.id,
+    title: job.title,
+    applicants: job.application_count || 0,
+    status: String(job.status || 'Open'),
+  }));
+
+  const openSettingsProfile = () => {
+    setIsEditing(false);
+    navigate('/employer/settings');
+  };
+
+  const handleShareProfile = async () => {
+    const profileUrl = `${window.location.origin}/employer/profile`;
+    await navigator.clipboard.writeText(profileUrl);
+    toast.success('Profile link copied to clipboard');
+  };
+
+  const handleSocialMedia = () => {
+    if (companyInfo.website && companyInfo.website !== 'Not set') {
+      const url = companyInfo.website.startsWith('http') ? companyInfo.website : `https://${companyInfo.website}`;
+      window.open(url, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
+    toast.info('Add a website in Settings to enable this link.');
+  };
 
   return (
     <div className="animate-fade-in-up">
@@ -129,7 +158,7 @@ const Profile = () => {
           <p className="page-subtitle">Manage your public profile and company information</p>
         </div>
         <div className="flex items-center gap-3">
-          <button className="btn-secondary">
+          <button type="button" onClick={handleShareProfile} className="btn-secondary">
             <EyeIcon className="w-5 h-5" />
             Preview
           </button>
@@ -194,7 +223,7 @@ const Profile = () => {
           <div className="solid-card p-6">
             <div className="flex items-center justify-between mb-4">
               <SectionTitle>Contact Information</SectionTitle>
-              <button className="text-sm text-navy font-medium hover:underline">Edit</button>
+              <button type="button" onClick={openSettingsProfile} className="text-sm text-navy font-medium hover:underline">Edit</button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <InfoItem 
@@ -254,12 +283,12 @@ const Profile = () => {
               />
               <StatBox 
                 label="Active Jobs"
-                value="12"
+                value={String(stats?.job_status_counts?.open || 0)}
                 icon={<BriefcaseIcon className="w-6 h-6" />}
               />
               <StatBox 
                 label="Hires"
-                value="89"
+                value={String(stats?.application_status_counts?.accepted || 0)}
                 icon={<CheckBadgeIcon className="w-6 h-6" />}
               />
             </div>
@@ -269,7 +298,7 @@ const Profile = () => {
           <div className="solid-card p-6">
             <div className="flex items-center justify-between mb-4">
               <SectionTitle>Team</SectionTitle>
-              <button className="text-sm text-navy font-medium hover:underline">Add</button>
+              <button type="button" onClick={openSettingsProfile} className="text-sm text-navy font-medium hover:underline">Add</button>
             </div>
             <div className="space-y-1">
               {teamMembers.map((member) => (
@@ -282,14 +311,14 @@ const Profile = () => {
           <div className="solid-card p-6">
             <SectionTitle>Quick Links</SectionTitle>
             <div className="space-y-3">
-              <button className="w-full flex items-center justify-between p-3 rounded-lg border border-charcoal-200 hover:border-navy hover:bg-navy-50/30 transition-all">
+              <button type="button" onClick={handleShareProfile} className="w-full flex items-center justify-between p-3 rounded-lg border border-charcoal-200 hover:border-navy hover:bg-navy-50/30 transition-all">
                 <span className="flex items-center gap-3 text-sm font-medium text-charcoal">
                   <LinkIcon className="w-5 h-5 text-muted" />
                   Share Profile Link
                 </span>
                 <ArrowTopRightOnSquareIcon className="w-4 h-4 text-muted" />
               </button>
-              <button className="w-full flex items-center justify-between p-3 rounded-lg border border-charcoal-200 hover:border-navy hover:bg-navy-50/30 transition-all">
+              <button type="button" onClick={handleSocialMedia} className="w-full flex items-center justify-between p-3 rounded-lg border border-charcoal-200 hover:border-navy hover:bg-navy-50/30 transition-all">
                 <span className="flex items-center gap-3 text-sm font-medium text-charcoal">
                   <LinkIcon className="w-5 h-5 text-muted" />
                   Social Media

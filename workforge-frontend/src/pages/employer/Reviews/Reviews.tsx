@@ -10,6 +10,10 @@ import {
   XMarkIcon
 } from '@heroicons/react/24/outline';
 import { StarIcon as StarSolid } from '@heroicons/react/24/solid';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEmployerProfile } from '@hooks/useEmployer';
+import { reviewService } from '@services/review.service';
+import { toast } from 'react-toastify';
 
 // Filter Chip
 interface FilterChipProps {
@@ -69,9 +73,16 @@ interface Review {
   notHelpful: number;
 }
 
-const ReviewCard: React.FC<{ review: Review; onRespond?: (id: number) => void }> = ({ review, onRespond }) => {
+const ReviewCard: React.FC<{
+  review: Review;
+  onRespond: (reviewId: number, content: string) => Promise<void>;
+  onHelpful: (reviewId: number) => Promise<void>;
+  onNotHelpful: (reviewId: number) => Promise<void>;
+  onReport: (reviewId: number) => Promise<void>;
+}> = ({ review, onRespond, onHelpful, onNotHelpful, onReport }) => {
   const [showRespond, setShowRespond] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const [responseText, setResponseText] = useState('');
 
   return (
     <div className="solid-card p-6">
@@ -94,7 +105,7 @@ const ReviewCard: React.FC<{ review: Review; onRespond?: (id: number) => void }>
         </div>
         <div className="flex items-center gap-2">
           <RatingStars rating={review.rating} />
-          <button className="icon-btn ml-2">
+          <button type="button" onClick={() => onReport(review.id)} className="icon-btn ml-2">
             <EllipsisHorizontalIcon className="w-5 h-5" />
           </button>
         </div>
@@ -133,10 +144,36 @@ const ReviewCard: React.FC<{ review: Review; onRespond?: (id: number) => void }>
                 placeholder="Write your response..."
                 className="input-field min-h-[100px] resize-none"
                 rows={3}
+                value={responseText}
+                onChange={(e) => setResponseText(e.target.value)}
               />
               <div className="flex items-center justify-end gap-2 mt-3">
-                <button className="btn-ghost text-sm">Cancel</button>
-                <button className="btn-primary text-sm">Post Response</button>
+                <button
+                  type="button"
+                  className="btn-ghost text-sm"
+                  onClick={() => {
+                    setShowRespond(false);
+                    setResponseText('');
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn-primary text-sm"
+                  onClick={async () => {
+                    if (!responseText.trim()) {
+                      toast.info('Please enter a response before posting.');
+                      return;
+                    }
+
+                    await onRespond(review.id, responseText.trim());
+                    setShowRespond(false);
+                    setResponseText('');
+                  }}
+                >
+                  Post Response
+                </button>
               </div>
             </div>
           )}
@@ -146,16 +183,28 @@ const ReviewCard: React.FC<{ review: Review; onRespond?: (id: number) => void }>
       {/* Actions */}
       <div className="flex items-center justify-between mt-5 pt-4 border-t border-charcoal-100">
         <div className="flex items-center gap-4">
-          <button className="flex items-center gap-1.5 text-sm text-muted hover:text-navy transition-colors">
+          <button
+            type="button"
+            onClick={() => onHelpful(review.id)}
+            className="flex items-center gap-1.5 text-sm text-muted hover:text-navy transition-colors"
+          >
             <HandThumbUpIcon className="w-4 h-4" />
             <span>Helpful ({review.helpful})</span>
           </button>
-          <button className="flex items-center gap-1.5 text-sm text-muted hover:text-navy transition-colors">
+          <button
+            type="button"
+            onClick={() => onNotHelpful(review.id)}
+            className="flex items-center gap-1.5 text-sm text-muted hover:text-navy transition-colors"
+          >
             <HandThumbDownIcon className="w-4 h-4" />
             <span>Not helpful ({review.notHelpful})</span>
           </button>
         </div>
-        <button className="flex items-center gap-1.5 text-sm text-muted hover:text-red-600 transition-colors">
+        <button
+          type="button"
+          onClick={() => onReport(review.id)}
+          className="flex items-center gap-1.5 text-sm text-muted hover:text-red-600 transition-colors"
+        >
           <FlagIcon className="w-4 h-4" />
           <span>Report</span>
         </button>
@@ -165,11 +214,15 @@ const ReviewCard: React.FC<{ review: Review; onRespond?: (id: number) => void }>
 };
 
 // Stats Overview
-const ReviewStats: React.FC = () => {
+const ReviewStats: React.FC<{ reviews: Review[] }> = ({ reviews }) => {
+  const averageRating = reviews.length
+    ? (reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length).toFixed(1)
+    : '0.0';
+
   const stats = [
-    { label: 'Average Rating', value: '4.7', icon: <StarSolidIcon className="w-6 h-6" />, suffix: '/5' },
-    { label: 'Total Reviews', value: '128', icon: null },
-    { label: 'This Month', value: '+24', icon: null, trend: '+12%' },
+    { label: 'Average Rating', value: averageRating, icon: <StarSolidIcon className="w-6 h-6" />, suffix: '/5' },
+    { label: 'Total Reviews', value: String(reviews.length), icon: null },
+    { label: 'This Month', value: String(reviews.filter((review) => new Date(review.date).getMonth() === new Date().getMonth()).length), icon: null, trend: '+12%' },
   ];
 
   return (
@@ -197,79 +250,84 @@ const ReviewStats: React.FC = () => {
   );
 };
 
-// Mock Data
-const mockReviews: Review[] = [
-  { 
-    id: 1, 
-    workerName: 'Ariana Flores', 
-    employerName: 'WorkForge Builders',
-    date: 'Mar 2, 2026', 
-    rating: 5, 
-    comment: 'Clear requirements and excellent communication throughout the entire project. The employer was very professional and paid on time. Would definitely work with them again!',
-    jobTitle: 'Electrician',
-    verified: true,
-    helpful: 12,
-    notHelpful: 0,
-    response: 'Thank you for the kind words, Ariana! It was a pleasure working with you. Looking forward to our next project together.'
-  },
-  { 
-    id: 2, 
-    workerName: 'Leo Kim', 
-    employerName: 'Austin Construction',
-    date: 'Feb 20, 2026', 
-    rating: 4, 
-    comment: 'Project scope was well organized and timeline was realistic. Slight communication delays but overall a good experience.',
-    jobTitle: 'Welder',
-    verified: true,
-    helpful: 8,
-    notHelpful: 1,
-  },
-  { 
-    id: 3, 
-    workerName: 'Nina Patel', 
-    employerName: 'Texas Renovations',
-    date: 'Feb 15, 2026', 
-    rating: 3, 
-    comment: 'Great team to work with overall. The only issue was that onboarding details could have been clearer at the start, which caused some confusion.',
-    jobTitle: 'Project Coordinator',
-    verified: false,
-    helpful: 5,
-    notHelpful: 2,
-    response: 'We appreciate the feedback, Nina. We will work on improving our onboarding process for future projects.'
-  },
-  { 
-    id: 4, 
-    workerName: 'James Wilson', 
-    employerName: 'Premier Services',
-    date: 'Feb 10, 2026', 
-    rating: 5, 
-    comment: 'Outstanding experience! The employer provided all necessary tools and materials, had clear instructions, and was very approachable throughout.',
-    jobTitle: 'HVAC Technician',
-    verified: true,
-    helpful: 15,
-    notHelpful: 0,
-  },
-  { 
-    id: 5, 
-    workerName: 'Maria Garcia', 
-    employerName: 'BuildRight Inc',
-    date: 'Feb 5, 2026', 
-    rating: 2, 
-    comment: 'The job site safety protocols were not clearly communicated. Would have appreciated more transparency about the work environment before starting.',
-    jobTitle: 'Carpenter',
-    verified: true,
-    helpful: 3,
-    notHelpful: 7,
-  },
-];
-
 const Reviews = () => {
+  const queryClient = useQueryClient();
   const [ratingFilter, setRatingFilter] = useState('all');
   const [sortBy, setSortBy] = useState('recent');
+  const { data: profile } = useEmployerProfile();
+  const { data: reviewsResponse } = useQuery({
+    queryKey: ['employerReviews', profile?.id],
+    enabled: !!profile?.id,
+    queryFn: () => reviewService.getReviews({ employer_id: profile!.id }),
+  });
+
+  const refreshReviews = () => {
+    queryClient.invalidateQueries({ queryKey: ['employerReviews', profile?.id] });
+  };
+
+  const addResponseMutation = useMutation({
+    mutationFn: ({ reviewId, content }: { reviewId: number; content: string }) => reviewService.addResponse(reviewId, content),
+    onSuccess: () => {
+      refreshReviews();
+      toast.success('Response posted successfully');
+    },
+    onError: () => {
+      toast.error('Failed to post response');
+    },
+  });
+
+  const helpfulMutation = useMutation({
+    mutationFn: (reviewId: number) => reviewService.markHelpful(reviewId),
+    onSuccess: () => {
+      refreshReviews();
+      toast.success('Marked as helpful');
+    },
+    onError: () => {
+      toast.error('Failed to update helpful vote');
+    },
+  });
+
+  const notHelpfulMutation = useMutation({
+    mutationFn: (reviewId: number) => reviewService.unmarkHelpful(reviewId),
+    onSuccess: () => {
+      refreshReviews();
+      toast.success('Removed helpful vote');
+    },
+    onError: () => {
+      toast.error('Failed to update not helpful vote');
+    },
+  });
+
+  const reportMutation = useMutation({
+    mutationFn: (reviewId: number) => reviewService.reportReview(reviewId, 'Inappropriate or inaccurate content'),
+    onSuccess: () => {
+      toast.success('Review reported');
+    },
+    onError: () => {
+      toast.error('Failed to report review');
+    },
+  });
+
+  const reviews = useMemo<Review[]>(() => {
+    const list = reviewsResponse?.reviews || [];
+    return list.map((review) => ({
+      id: review.id,
+      workerName: review.worker?.full_name || `Worker #${review.worker_id}`,
+      employerName: review.employer?.company_name || profile?.company_name || 'Employer',
+      date: review.created_at ? new Date(review.created_at).toLocaleDateString() : '—',
+      rating: review.rating,
+      comment: review.comment || review.pros || 'No comment provided',
+      response: review.responses?.[0]?.content,
+      jobTitle: review.job?.title || `Job #${review.job_id}`,
+      verified: Boolean(review.worker?.is_verified),
+      helpful: review.helpful_count || 0,
+      notHelpful: review.reported_count || 0,
+    }));
+  }, [reviewsResponse, profile]);
 
   // Filter & sort reviews
   const filtered = useMemo(() => {
-    let result = [...mockReviews];
+    let result = [...reviews];
     
     if (ratingFilter !== 'all') {
       result = result.filter(r => r.rating === Number(ratingFilter));
@@ -286,15 +344,15 @@ const Reviews = () => {
     }
     
     return result;
-  }, [ratingFilter, sortBy]);
+  }, [ratingFilter, reviews, sortBy]);
 
   // Stats
   const counts = useMemo(() => ({
-    all: mockReviews.length,
-    five: mockReviews.filter(r => r.rating === 5).length,
-    four: mockReviews.filter(r => r.rating === 4).length,
-    three: mockReviews.filter(r => r.rating === 3).length,
-  }), []);
+    all: reviews.length,
+    five: reviews.filter(r => r.rating === 5).length,
+    four: reviews.filter(r => r.rating === 4).length,
+    three: reviews.filter(r => r.rating === 3).length,
+  }), [reviews]);
 
   return (
     <div className="animate-fade-in-up">
@@ -307,7 +365,7 @@ const Reviews = () => {
       </div>
 
       {/* Stats */}
-      <ReviewStats />
+      <ReviewStats reviews={reviews} />
 
       {/* Filters */}
       <div className="solid-card p-4 mb-6">
@@ -354,7 +412,18 @@ const Reviews = () => {
       {/* Reviews List */}
       <div className="space-y-4">
         {filtered.map((review) => (
-          <ReviewCard key={review.id} review={review} />
+          <ReviewCard
+            key={review.id}
+            review={review}
+            onRespond={async (reviewId, content) => {
+              await addResponseMutation.mutateAsync({ reviewId, content });
+            }}
+            onHelpful={(reviewId) => helpfulMutation.mutateAsync(reviewId)}
+            onNotHelpful={(reviewId) => notHelpfulMutation.mutateAsync(reviewId)}
+            onReport={async (reviewId) => {
+              await reportMutation.mutateAsync(reviewId);
+            }}
+          />
         ))}
       </div>
 

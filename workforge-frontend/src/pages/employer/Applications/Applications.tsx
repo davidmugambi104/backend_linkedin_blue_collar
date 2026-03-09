@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
   UsersIcon,
   MagnifyingGlassIcon,
@@ -14,6 +14,8 @@ import {
   StarIcon,
   ArrowTopRightOnSquareIcon
 } from '@heroicons/react/24/outline';
+import { useEmployerApplications } from '@hooks/useEmployer';
+import { toast } from 'react-toastify';
 
 // Search Input
 const SearchInput: React.FC<{ 
@@ -87,6 +89,8 @@ const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
 // Applicant Row for Table
 interface Applicant {
   id: number;
+  workerId?: number;
+  workerUserId?: number;
   name: string;
   email: string;
   phone: string;
@@ -97,7 +101,11 @@ interface Applicant {
   avatar?: string;
 }
 
-const ApplicantTableRow: React.FC<{ applicant: Applicant }> = ({ applicant }) => (
+const ApplicantTableRow: React.FC<{
+  applicant: Applicant;
+  onContact: (applicant: Applicant) => void;
+  onViewProfile: (applicant: Applicant) => void;
+}> = ({ applicant, onContact, onViewProfile }) => (
   <tr className="interactive-row group">
     <td>
       <div className="flex items-center gap-3">
@@ -125,13 +133,13 @@ const ApplicantTableRow: React.FC<{ applicant: Applicant }> = ({ applicant }) =>
     </td>
     <td>
       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        <button className="icon-btn" title="Send Email">
+        <button type="button" onClick={() => onContact(applicant)} className="icon-btn" title="Send Email">
           <EnvelopeIcon className="w-4 h-4" />
         </button>
-        <button className="icon-btn" title="View Profile">
+        <button type="button" onClick={() => onViewProfile(applicant)} className="icon-btn" title="View Profile">
           <ArrowTopRightOnSquareIcon className="w-4 h-4" />
         </button>
-        <button className="icon-btn">
+        <button type="button" onClick={() => onViewProfile(applicant)} className="icon-btn" title="More details">
           <EllipsisHorizontalIcon className="w-4 h-4" />
         </button>
       </div>
@@ -140,12 +148,12 @@ const ApplicantTableRow: React.FC<{ applicant: Applicant }> = ({ applicant }) =>
 );
 
 // Stats Overview Cards
-const OverviewCards: React.FC = () => {
+const OverviewCards: React.FC<{ counts: { all: number; shortlisted: number; pending: number; rejected: number } }> = ({ counts }) => {
   const stats = [
-    { label: 'Total Applications', value: '47', icon: <UsersIcon className="w-6 h-6" />, color: 'navy' },
-    { label: 'Shortlisted', value: '12', icon: <CheckCircleIcon className="w-6 h-6" />, color: 'emerald' },
-    { label: 'Pending Review', value: '8', icon: <ClockIcon className="w-6 h-6" />, color: 'amber' },
-    { label: 'Rejected', value: '27', icon: <XCircleIcon className="w-6 h-6" />, color: 'red' },
+    { label: 'Total Applications', value: String(counts.all), icon: <UsersIcon className="w-6 h-6" />, color: 'navy' },
+    { label: 'Shortlisted', value: String(counts.shortlisted), icon: <CheckCircleIcon className="w-6 h-6" />, color: 'emerald' },
+    { label: 'Pending Review', value: String(counts.pending), icon: <ClockIcon className="w-6 h-6" />, color: 'amber' },
+    { label: 'Rejected', value: String(counts.rejected), icon: <XCircleIcon className="w-6 h-6" />, color: 'red' },
   ];
 
   return (
@@ -170,39 +178,72 @@ const OverviewCards: React.FC = () => {
   );
 };
 
-// Mock Data
-const mockApplicants: Applicant[] = [
-  { id: 1, name: 'Ariana Flores', email: 'ariana@example.com', phone: '+1 555-0123', job: 'Electrician', status: 'Shortlisted', applied: '2 hours ago', rating: 4 },
-  { id: 2, name: 'Samuel Reed', email: 'samuel.r@example.com', phone: '+1 555-0124', job: 'HVAC Technician', status: 'Pending', applied: '5 hours ago', rating: 3 },
-  { id: 3, name: 'Nina Patel', email: 'nina.p@example.com', phone: '+1 555-0125', job: 'Project Coordinator', status: 'Rejected', applied: '1 day ago', rating: 2 },
-  { id: 4, name: 'James Wilson', email: 'james.w@example.com', phone: '+1 555-0126', job: 'Electrician', status: 'Shortlisted', applied: '1 day ago', rating: 5 },
-  { id: 5, name: 'Maria Garcia', email: 'maria.g@example.com', phone: '+1 555-0127', job: 'Carpenter', status: 'Pending', applied: '2 days ago', rating: 4 },
-  { id: 6, name: 'David Chen', email: 'david.c@example.com', phone: '+1 555-0128', job: 'Plumber', status: 'Hired', applied: '3 days ago', rating: 5 },
-];
-
 const Applications = () => {
+  const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState('all');
   const [page, setPage] = useState(1);
+  const { data: applications = [], isLoading } = useEmployerApplications();
+
+  const applicants = useMemo<Applicant[]>(() => applications.map((app) => {
+    const normalizedStatus = String(app.status || 'pending').toLowerCase();
+    const uiStatus = normalizedStatus === 'accepted' ? 'shortlisted' : normalizedStatus;
+
+    return {
+      id: app.id,
+      workerId: app.worker_id,
+      workerUserId: app.worker?.user_id,
+      name: app.worker?.full_name || `Applicant #${app.worker_id || app.id}`,
+      email: app.worker?.user?.email || '—',
+      phone: app.worker?.phone || '—',
+      job: app.job?.title || `Job #${app.job_id}`,
+      status: uiStatus,
+      applied: app.created_at ? new Date(app.created_at).toLocaleDateString() : '—',
+      rating: Number(app.worker?.average_rating || 0),
+    };
+  }), [applications]);
 
   // Filter applicants
   const filtered = useMemo(() => {
-    return mockApplicants.filter((app) => {
+    return applicants.filter((app) => {
       const matchesQuery = 
         app.name.toLowerCase().includes(query.toLowerCase()) || 
         app.job.toLowerCase().includes(query.toLowerCase());
       const matchesStatus = status === 'all' || app.status.toLowerCase() === status;
       return matchesQuery && matchesStatus;
     });
-  }, [query, status]);
+  }, [applicants, query, status]);
 
   // Stats counts
   const counts = useMemo(() => ({
-    all: mockApplicants.length,
-    shortlisted: mockApplicants.filter(a => a.status.toLowerCase() === 'shortlisted').length,
-    pending: mockApplicants.filter(a => a.status.toLowerCase() === 'pending').length,
-    rejected: mockApplicants.filter(a => a.status.toLowerCase() === 'rejected').length,
-  }), []);
+    all: applicants.length,
+    shortlisted: applicants.filter(a => a.status.toLowerCase() === 'shortlisted').length,
+    pending: applicants.filter(a => a.status.toLowerCase() === 'pending').length,
+    rejected: applicants.filter(a => a.status.toLowerCase() === 'rejected').length,
+  }), [applicants]);
+
+  const handleContact = (applicant: Applicant) => {
+    if (applicant.email && applicant.email !== '—') {
+      window.open(`mailto:${applicant.email}`, '_self');
+      return;
+    }
+
+    if (applicant.workerUserId) {
+      navigate('/messages');
+      return;
+    }
+
+    toast.info('Contact details are not available for this applicant yet.');
+  };
+
+  const handleViewProfile = (applicant: Applicant) => {
+    if (applicant.workerId) {
+      navigate(`/workers/${applicant.workerId}`);
+      return;
+    }
+
+    navigate('/employer/applications');
+  };
 
   return (
     <div className="animate-fade-in-up">
@@ -221,7 +262,7 @@ const Applications = () => {
       </div>
 
       {/* Overview Stats */}
-      <OverviewCards />
+      <OverviewCards counts={counts} />
 
       {/* Search & Filter */}
       <div className="solid-card p-4 mb-6">
@@ -273,6 +314,7 @@ const Applications = () => {
           </div>
           <h3 className="text-lg font-semibold text-charcoal mb-2">No applications found</h3>
           <p className="text-muted">Try adjusting your filters or search terms.</p>
+          {isLoading && <p className="text-sm text-muted mt-2">Loading applications...</p>}
         </div>
       ) : (
         <div className="solid-card overflow-hidden">
@@ -290,7 +332,12 @@ const Applications = () => {
               </thead>
               <tbody>
                 {filtered.map((applicant) => (
-                  <ApplicantTableRow key={applicant.id} applicant={applicant} />
+                  <ApplicantTableRow
+                    key={applicant.id}
+                    applicant={applicant}
+                    onContact={handleContact}
+                    onViewProfile={handleViewProfile}
+                  />
                 ))}
               </tbody>
             </table>
@@ -302,7 +349,7 @@ const Applications = () => {
       {filtered.length > 0 && (
         <div className="flex items-center justify-between mt-6">
           <p className="text-sm text-muted">
-            Showing {filtered.length} of {mockApplicants.length} applications
+            Showing {filtered.length} of {applicants.length} applications
           </p>
           <div className="flex items-center gap-2">
             <button 

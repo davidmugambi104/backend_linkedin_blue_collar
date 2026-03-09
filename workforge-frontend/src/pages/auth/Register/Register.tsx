@@ -88,10 +88,10 @@ export const RegisterPage: React.FC = () => {
   return (
     <Card className="w-full max-w-2xl">
       <div className="text-center mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+        <h1 className="text-2xl font-bold text-gray-900 text-[#1A1A1A]">
           Create Your Account
         </h1>
-        <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+        <p className="mt-2 text-sm text-gray-600 ">
           Join WorkForge and start your journey
         </p>
       </div>
@@ -107,7 +107,7 @@ export const RegisterPage: React.FC = () => {
                     w-8 h-8 mx-auto rounded-full flex items-center justify-center
                     ${index <= currentStep 
                       ? 'bg-primary-600 text-white' 
-                      : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                      : 'bg-gray-200 bg-gray-700 text-gray-600 '
                     }
                   `}
                 >
@@ -117,7 +117,7 @@ export const RegisterPage: React.FC = () => {
                     <span>{index + 1}</span>
                   )}
                 </div>
-                <span className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs whitespace-nowrap text-gray-600 dark:text-gray-400">
+                <span className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs whitespace-nowrap text-gray-600 ">
                   {step.title}
                 </span>
               </div>
@@ -180,16 +180,16 @@ export const RegisterPage: React.FC = () => {
                 className={`
                   p-6 border-2 rounded-lg text-center transition-all
                   ${selectedRole === UserRole.WORKER
-                    ? 'border-primary-600 bg-primary-50 dark:bg-primary-900/20'
-                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                    ? 'border-primary-600 bg-primary-50 bg-primary-900/20'
+                    : 'border-gray-200 border-gray-700 hover:border-gray-300 hover:border-gray-600'
                   }
                 `}
               >
-                <BriefcaseIcon className="h-12 w-12 mx-auto mb-3 text-gray-700 dark:text-gray-300" />
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                <BriefcaseIcon className="h-12 w-12 mx-auto mb-3 text-slate-700 " />
+                <h3 className="text-lg font-semibold text-gray-900 text-[#1A1A1A] mb-2">
                   I'm a Worker
                 </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-sm text-gray-600 ">
                   Find jobs, earn money, and grow your skills
                 </p>
               </button>
@@ -200,22 +200,22 @@ export const RegisterPage: React.FC = () => {
                 className={`
                   p-6 border-2 rounded-lg text-center transition-all
                   ${selectedRole === UserRole.EMPLOYER
-                    ? 'border-primary-600 bg-primary-50 dark:bg-primary-900/20'
-                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                    ? 'border-primary-600 bg-primary-50 bg-primary-900/20'
+                    : 'border-gray-200 border-gray-700 hover:border-gray-300 hover:border-gray-600'
                   }
                 `}
               >
-                <BuildingOfficeIcon className="h-12 w-12 mx-auto mb-3 text-gray-700 dark:text-gray-300" />
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                <BuildingOfficeIcon className="h-12 w-12 mx-auto mb-3 text-slate-700 " />
+                <h3 className="text-lg font-semibold text-gray-900 text-[#1A1A1A] mb-2">
                   I'm an Employer
                 </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-sm text-gray-600 ">
                   Post jobs, find talent, and grow your business
                 </p>
               </button>
             </div>
             {errors.role && (
-              <p className="text-sm text-red-600 dark:text-red-400 text-center">
+              <p className="text-sm text-red-600 text-red-400 text-center">
                 {errors.role.message}
               </p>
             )}
@@ -225,27 +225,27 @@ export const RegisterPage: React.FC = () => {
         {/* Step 3: Complete */}
         {currentStep === 2 && (
           <div className="space-y-6 animate-in">
-            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            <div className="bg-gray-50 bg-gray-800 rounded-lg p-6">
+              <h3 className="text-lg font-semibold text-gray-900 text-[#1A1A1A] mb-4">
                 Review Your Information
               </h3>
               
               <dl className="space-y-3">
                 <div className="flex justify-between">
-                  <dt className="text-sm text-gray-600 dark:text-gray-400">Username:</dt>
-                  <dd className="text-sm font-medium text-gray-900 dark:text-white">
+                  <dt className="text-sm text-gray-600 ">Username:</dt>
+                  <dd className="text-sm font-medium text-gray-900 text-[#1A1A1A]">
                     {watch('username')}
                   </dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-sm text-gray-600 dark:text-gray-400">Email:</dt>
-                  <dd className="text-sm font-medium text-gray-900 dark:text-white">
+                  <dt className="text-sm text-gray-600 ">Email:</dt>
+                  <dd className="text-sm font-medium text-gray-900 text-[#1A1A1A]">
                     {watch('email')}
                   </dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-sm text-gray-600 dark:text-gray-400">Role:</dt>
-                  <dd className="text-sm font-medium capitalize text-gray-900 dark:text-white">
+                  <dt className="text-sm text-gray-600 ">Role:</dt>
+                  <dd className="text-sm font-medium capitalize text-gray-900 text-[#1A1A1A]">
                     {watch('role')}
                   </dd>
                 </div>
@@ -256,9 +256,9 @@ export const RegisterPage: React.FC = () => {
               <input
                 {...register('terms')}
                 type="checkbox"
-                className="mt-1 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-800"
+                className="mt-1 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 border-gray-600 bg-gray-800"
               />
-              <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">
+              <span className="ml-2 text-sm text-gray-600 ">
                 I agree to the{' '}
                 <Link to="/terms" className="font-medium text-primary-600 hover:text-primary-500">
                   Terms of Service
@@ -270,7 +270,7 @@ export const RegisterPage: React.FC = () => {
               </span>
             </label>
             {errors.terms && (
-              <p className="text-sm text-red-600 dark:text-red-400">
+              <p className="text-sm text-red-600 text-red-400">
                 {errors.terms.message}
               </p>
             )}
@@ -304,7 +304,7 @@ export const RegisterPage: React.FC = () => {
         </div>
       </form>
 
-      <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
+      <p className="mt-6 text-center text-sm text-gray-600 ">
         Already have an account?{' '}
         <Link to="/auth/login" className="font-medium text-primary-600 hover:text-primary-500">
           Sign in

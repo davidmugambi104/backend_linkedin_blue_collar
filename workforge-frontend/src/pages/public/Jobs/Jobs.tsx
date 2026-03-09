@@ -236,7 +236,7 @@ const SearchBar: React.FC<SearchBarProps> = React.memo(({
       <style>{searchAnimationStyle}</style>
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="flex-1 relative">
-          <MagnifyingGlassIcon className="absolute left-4 top-1/2 -mt-2.5 h-5 w-5 text-gray-400" />
+          <MagnifyingGlassIcon className="absolute left-4 top-1/2 -mt-2.5 h-5 w-5 text-slate-400" />
           {isTyping && (
             <MagnifyingGlassIcon className={`absolute right-4 top-1/2 -mt-2.5 h-5 w-5 search-icon-rotating`} />
           )}
@@ -321,7 +321,7 @@ const FilterPanel: React.FC<FilterPanelProps> = React.memo(({
     <Card className="mt-6 p-6 border border-gray-100 shadow-md rounded-xl" aria-label="Filter panel">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div>
-          <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="category" className="block text-sm font-medium text-slate-700 mb-2">
             Category
           </label>
           <Select
@@ -340,7 +340,7 @@ const FilterPanel: React.FC<FilterPanelProps> = React.memo(({
         </div>
 
         <div>
-          <label htmlFor="jobType" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="jobType" className="block text-sm font-medium text-slate-700 mb-2">
             Job Type
           </label>
           <Select
@@ -359,7 +359,7 @@ const FilterPanel: React.FC<FilterPanelProps> = React.memo(({
         </div>
 
         <div>
-          <label htmlFor="minPay" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="minPay" className="block text-sm font-medium text-slate-700 mb-2">
             Min Pay ($)
           </label>
           <Input
@@ -375,7 +375,7 @@ const FilterPanel: React.FC<FilterPanelProps> = React.memo(({
         </div>
 
         <div>
-          <label htmlFor="maxPay" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="maxPay" className="block text-sm font-medium text-slate-700 mb-2">
             Max Pay ($)
           </label>
           <Input
@@ -449,33 +449,33 @@ const JobCard: React.FC<JobCardProps> = React.memo(({ job }) => {
               {companyName}
             </p>
 
-            <div className="flex flex-wrap items-center gap-4 mt-3 text-sm text-gray-500">
+            <div className="flex flex-wrap items-center gap-4 mt-3 text-sm text-slate-500">
               {job.address && (
                 <span className="flex items-center">
-                  <MapPinIcon className="h-4 w-4 mr-1 text-gray-400" />
+                  <MapPinIcon className="h-4 w-4 mr-1 text-slate-400" />
                   {job.address}
                 </span>
               )}
               {payRange && (
                 <span className="flex items-center font-medium text-gray-900">
-                  <CurrencyDollarIcon className="h-4 w-4 mr-1 text-gray-400" />
+                  <CurrencyDollarIcon className="h-4 w-4 mr-1 text-slate-400" />
                   {payRange}
                   {job.pay_type && ` / ${job.pay_type}`}
                 </span>
               )}
               {job.required_skill?.name && (
                 <span className="flex items-center">
-                  <BriefcaseIcon className="h-4 w-4 mr-1 text-gray-400" />
+                  <BriefcaseIcon className="h-4 w-4 mr-1 text-slate-400" />
                   {job.required_skill.name}
                 </span>
               )}
             </div>
 
-            <p className="mt-4 text-gray-700 line-clamp-2">
+            <p className="mt-4 text-slate-700 line-clamp-2">
               {job.description}
             </p>
 
-            <div className="flex items-center gap-4 mt-4 text-xs text-gray-500">
+            <div className="flex items-center gap-4 mt-4 text-xs text-slate-500">
               <span>Posted {formatDate(job.created_at)}</span>
               {job.application_count !== undefined && (
                 <span>{job.application_count} applicants</span>
@@ -521,7 +521,7 @@ interface EmptyStateProps {
 const EmptyState: React.FC<EmptyStateProps> = React.memo(({ onClearFilters }) => (
   <Card className="p-12 border border-gray-100 shadow-sm rounded-xl">
     <div className="text-center">
-      <BriefcaseIcon className="h-16 w-16 mx-auto text-gray-300 mb-4" />
+      <BriefcaseIcon className="h-16 w-16 mx-auto text-slate-300 mb-4" />
       <h3 className="text-lg font-semibold text-gray-900 mb-2">
         No jobs found
       </h3>

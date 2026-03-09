@@ -5,18 +5,55 @@ import {
   Message, 
   MessageCreateRequest,
   UnreadCount,
+  ChatUser,
   MessageAttachment,
   MessageReaction
 } from '@types';
 
 class MessageService {
+  private normalizeDate(value?: string | null): string {
+    if (!value) {
+      return '';
+    }
+
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? '' : parsed.toISOString();
+  }
+
+  private normalizeMessage(message: Message): Message {
+    return {
+      ...message,
+      created_at: this.normalizeDate(message.created_at),
+      updated_at: this.normalizeDate(message.updated_at),
+      reactions: message.reactions?.map((reaction) => ({
+        ...reaction,
+        created_at: this.normalizeDate(reaction.created_at),
+      })),
+    };
+  }
+
+  private normalizeConversation(conversation: Conversation): Conversation {
+    const hasStructuredLastMessage =
+      conversation.last_message && typeof conversation.last_message === 'object';
+
+    return {
+      ...conversation,
+      last_message: hasStructuredLastMessage
+        ? this.normalizeMessage(conversation.last_message)
+        : undefined,
+      last_message_time: this.normalizeDate(conversation.last_message_time),
+    };
+  }
+
   // Conversations
   async getConversations(): Promise<Conversation[]> {
-    return axiosClient.get<Conversation[]>(ENDPOINTS.MESSAGES.CONVERSATIONS);
+    const conversations = await axiosClient.get<Conversation[]>(ENDPOINTS.MESSAGES.CONVERSATIONS);
+    return conversations.map((conversation) => this.normalizeConversation(conversation));
   }
 
   async getConversation(otherUserId: number): Promise<Message[]> {
-    return axiosClient.get<Message[]>(ENDPOINTS.MESSAGES.CONVERSATION(otherUserId));
+    const messages = await axiosClient.get<Message[]>(ENDPOINTS.MESSAGES.CONVERSATION(otherUserId));
+    return messages.map((message) => this.normalizeMessage(message));
   }
 
   // Messages
@@ -31,11 +68,13 @@ class MessageService {
       });
     }
 
-    return axiosClient.post<Message>(ENDPOINTS.MESSAGES.SEND, formData, {
+    const sentMessage = await axiosClient.post<Message>(ENDPOINTS.MESSAGES.SEND, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     });
+
+    return this.normalizeMessage(sentMessage);
   }
 
   async markAsRead(otherUserId: number): Promise<void> {
@@ -43,7 +82,15 @@ class MessageService {
   }
 
   async getUnreadCount(): Promise<UnreadCount> {
-    return axiosClient.get<UnreadCount>(ENDPOINTS.MESSAGES.UNREAD_COUNT);
+    return axiosClient.get<UnreadCount>(ENDPOINTS.MESSAGES.UNREAD_COUNT, {
+      timeout: 8000,
+    });
+  }
+
+  async getMessageableUsers(): Promise<ChatUser[]> {
+    return axiosClient.get<ChatUser[]>(ENDPOINTS.MESSAGES.USERS, {
+      timeout: 8000,
+    });
   }
 
   // Attachments

@@ -2,6 +2,9 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Message, Conversation, TypingIndicator, MessageReaction } from '@types';
 
+const EMPTY_MESSAGES: Message[] = [];
+const EMPTY_TYPING_USERS: TypingIndicator[] = [];
+
 interface MessageState {
   conversations: Map<number, Conversation>;
   messages: Map<number, Message[]>;
@@ -295,3 +298,22 @@ export const messageStore = create<MessageState>()(
     }
   )
 );
+
+export const useConversationMessages = (conversationId: number) =>
+  messageStore((state) => state.messages.get(conversationId) ?? EMPTY_MESSAGES);
+
+export const useConversationTypingUsers = (conversationId: number) =>
+  messageStore((state) => state.typingUsers.get(conversationId) ?? EMPTY_TYPING_USERS);
+
+export const useConversationUnreadCount = (conversationId?: number) =>
+  messageStore((state) => {
+    if (typeof conversationId === 'number') {
+      return state.unreadCounts.get(conversationId) ?? 0;
+    }
+
+    let total = 0;
+    state.unreadCounts.forEach((count) => {
+      total += count;
+    });
+    return total;
+  });

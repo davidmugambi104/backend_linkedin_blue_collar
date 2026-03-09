@@ -53,11 +53,11 @@ export const VerificationStatus: React.FC<VerificationStatusProps> = ({
       <CardBody>
         <div className="space-y-4">
           {/* Verification Score */}
-          <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-            <div className="text-3xl font-bold text-primary-600 dark:text-primary-400">
+          <div className="text-center p-4 bg-gray-50 bg-gray-800 rounded-lg">
+            <div className="text-3xl font-bold text-primary-600 text-primary-400">
               {worker?.verification_score || 0}%
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+            <p className="text-sm text-gray-600  mt-1">
               Verification Score
             </p>
           </div>
@@ -67,8 +67,8 @@ export const VerificationStatus: React.FC<VerificationStatusProps> = ({
             {verificationItems.map((item) => (
               <div key={item.id} className="flex items-center justify-between">
                 <div className="flex items-center">
-                  <item.icon className="w-5 h-5 text-gray-400 dark:text-gray-500 mr-3" />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">
+                  <item.icon className="w-5 h-5 text-slate-400 text-slate-500 mr-3" />
+                  <span className="text-sm text-slate-700 ">
                     {item.label}
                   </span>
                 </div>
@@ -77,7 +77,7 @@ export const VerificationStatus: React.FC<VerificationStatusProps> = ({
                     Verified
                   </Badge>
                 ) : (
-                  <div className="flex items-center text-yellow-600 dark:text-yellow-500">
+                  <div className="flex items-center text-yellow-600 text-yellow-500">
                     <ClockIcon className="w-4 h-4 mr-1" />
                     <span className="text-xs">Pending</span>
                   </div>

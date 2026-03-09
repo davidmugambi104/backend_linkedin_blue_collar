@@ -213,8 +213,8 @@ const Settings: React.FC = () => {
   if (error) {
     return (
       <AdminLayout>
-        <div className="bg-rose-100/50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 rounded-2xl p-6">
-          <p className="text-rose-600 dark:text-rose-400">
+        <div className="bg-rose-100/50 bg-rose-900/20 border border-rose-200 border-rose-800 rounded-2xl p-6">
+          <p className="text-rose-600 text-rose-400">
             Error loading settings: {error instanceof Error ? error.message : 'Unknown error'}
           </p>
         </div>
@@ -225,18 +225,18 @@ const Settings: React.FC = () => {
   return (
     <AdminLayout>
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Admin Settings</h1>
-        <p className="text-gray-600 dark:text-gray-400">Manage platform configuration and email templates</p>
+        <h1 className="text-3xl font-bold text-gray-900 text-[#1A1A1A]">Admin Settings</h1>
+        <p className="text-gray-600 ">Manage platform configuration and email templates</p>
       </div>
 
-      <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 dark:border-gray-800/50 p-6 space-y-6">
+      <div className="bg-white/80 bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 border-gray-800/50 p-6 space-y-6">
         <div className="flex items-center gap-3">
-          <Cog6ToothIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Platform Settings</h2>
+          <Cog6ToothIcon className="h-6 w-6 text-blue-600 text-blue-400" />
+          <h2 className="text-xl font-semibold text-gray-900 text-[#1A1A1A]">Platform Settings</h2>
         </div>
 
         {isLoading || !draft ? (
-          <p className="text-gray-500 dark:text-gray-400">Loading settings...</p>
+          <p className="text-slate-500 ">Loading settings...</p>
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -329,11 +329,11 @@ const Settings: React.FC = () => {
                 hint="Minimum: 1"
               />
               <div>
-                <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Payout Schedule</label>
+                <label className="block text-sm font-medium mb-1 text-slate-700 ">Payout Schedule</label>
                 <select
                   value={draft.payout_schedule}
                   onChange={(event) => handleStringChange('payout_schedule', event.target.value)}
-                  className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2"
+                  className="w-full rounded-xl border border-gray-300 border-gray-700 bg-white bg-gray-800 text-gray-900 text-gray-100 px-3 py-2"
                 >
                   <option value="daily">Daily</option>
                   <option value="weekly">Weekly</option>
@@ -345,19 +345,19 @@ const Settings: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               <button
                 onClick={() => handleBooleanChange('job_approval_required')}
-                className={`rounded-xl px-4 py-3 text-sm font-medium border ${draft.job_approval_required ? 'bg-blue-600 text-white border-blue-600' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700'}`}
+                className={`rounded-xl px-4 py-3 text-sm font-medium border ${draft.job_approval_required ? 'bg-blue-600 text-white border-blue-600' : 'bg-white bg-gray-800 text-slate-700  border-gray-300 border-gray-700'}`}
               >
                 Job Approval Required: {draft.job_approval_required ? 'On' : 'Off'}
               </button>
               <button
                 onClick={() => handleBooleanChange('verification_required')}
-                className={`rounded-xl px-4 py-3 text-sm font-medium border ${draft.verification_required ? 'bg-blue-600 text-white border-blue-600' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700'}`}
+                className={`rounded-xl px-4 py-3 text-sm font-medium border ${draft.verification_required ? 'bg-blue-600 text-white border-blue-600' : 'bg-white bg-gray-800 text-slate-700  border-gray-300 border-gray-700'}`}
               >
                 Verification Required: {draft.verification_required ? 'On' : 'Off'}
               </button>
               <button
                 onClick={() => handleBooleanChange('two_factor_required')}
-                className={`rounded-xl px-4 py-3 text-sm font-medium border ${draft.two_factor_required ? 'bg-blue-600 text-white border-blue-600' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700'}`}
+                className={`rounded-xl px-4 py-3 text-sm font-medium border ${draft.two_factor_required ? 'bg-blue-600 text-white border-blue-600' : 'bg-white bg-gray-800 text-slate-700  border-gray-300 border-gray-700'}`}
               >
                 Two-Factor Required: {draft.two_factor_required ? 'On' : 'Off'}
               </button>
@@ -398,24 +398,24 @@ const Settings: React.FC = () => {
         )}
       </div>
 
-      <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 dark:border-gray-800/50 p-6 space-y-6">
+      <div className="bg-white/80 bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 border-gray-800/50 p-6 space-y-6">
         <div className="flex items-center gap-3">
-          <EnvelopeIcon className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Email Templates</h2>
+          <EnvelopeIcon className="h-6 w-6 text-indigo-600 text-indigo-400" />
+          <h2 className="text-xl font-semibold text-gray-900 text-[#1A1A1A]">Email Templates</h2>
         </div>
 
         {templatesLoading ? (
-          <p className="text-gray-500 dark:text-gray-400">Loading templates...</p>
+          <p className="text-slate-500 ">Loading templates...</p>
         ) : emailTemplates.length === 0 ? (
-          <p className="text-gray-500 dark:text-gray-400">No templates returned by API.</p>
+          <p className="text-slate-500 ">No templates returned by API.</p>
         ) : (
           <>
             <div>
-              <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Template</label>
+              <label className="block text-sm font-medium mb-1 text-slate-700 ">Template</label>
               <select
                 value={selectedTemplateId}
                 onChange={(event) => setSelectedTemplateId(event.target.value)}
-                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2"
+                className="w-full rounded-xl border border-gray-300 border-gray-700 bg-white bg-gray-800 text-gray-900 text-gray-100 px-3 py-2"
               >
                 {emailTemplates.map((template) => (
                   <option key={template.id} value={template.id}>

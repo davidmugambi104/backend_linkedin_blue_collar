@@ -60,9 +60,9 @@ export const UserGrowthChart: React.FC = () => {
                 <XAxis
                   dataKey="date"
                   tickFormatter={(date) => new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                  className="text-xs text-gray-600 dark:text-gray-400"
+                  className="text-xs text-gray-600 "
                 />
-                <YAxis className="text-xs text-gray-600 dark:text-gray-400" />
+                <YAxis className="text-xs text-gray-600 " />
                 <Tooltip
                   labelFormatter={(label) => new Date(label).toLocaleDateString('en-US', {
                     weekday: 'long',
@@ -109,11 +109,11 @@ export const UserGrowthChart: React.FC = () => {
                 <XAxis
                   dataKey="date"
                   tickFormatter={(date) => `${date} days`}
-                  className="text-xs text-gray-600 dark:text-gray-400"
+                  className="text-xs text-gray-600 "
                 />
                 <YAxis
                   tickFormatter={(value) => `${value}%`}
-                  className="text-xs text-gray-600 dark:text-gray-400"
+                  className="text-xs text-gray-600 "
                 />
                 <Tooltip
                   formatter={(value: number) => [`${value}%`, 'Retention Rate']}

@@ -12,21 +12,21 @@ export const Tabs: React.FC<TabsProps> = ({
 }) => {
   const variants = {
     default: {
-      container: 'border-b border-gray-200 dark:border-gray-800',
-      tab: 'px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100',
-      active: 'border-b-2 border-primary-600 text-primary-600 dark:border-primary-500 dark:text-primary-500',
+      container: 'border-b border-slate-200',
+      tab: 'px-4 py-3 text-sm font-medium text-slate-500 hover:text-slate-700',
+      active: 'border-b-2 border-[#0A2540] text-[#0A2540]',
       disabled: 'opacity-50 cursor-not-allowed',
     },
     pills: {
       container: 'space-x-2',
-      tab: 'px-4 py-2 text-sm font-medium rounded-lg text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800',
-      active: 'bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300',
+      tab: 'px-4 py-2 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-100',
+      active: 'bg-[#0A2540] text-white',
       disabled: 'opacity-50 cursor-not-allowed',
     },
     underline: {
       container: '',
-      tab: 'px-1 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100',
-      active: 'border-b-2 border-primary-600 text-primary-600 dark:border-primary-500 dark:text-primary-500',
+      tab: 'px-1 py-2 text-sm font-medium text-slate-500 hover:text-slate-700',
+      active: 'border-b-2 border-[#0A2540] text-[#0A2540]',
       disabled: 'opacity-50 cursor-not-allowed',
     },
   };

@@ -18,6 +18,8 @@ from ..services.sms_service import sms_service
 from datetime import datetime, timedelta
 import random
 import string
+from marshmallow import ValidationError
+from sqlalchemy.exc import IntegrityError
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -109,7 +111,12 @@ def register():
         description: Validation error
     """
     schema = UserSchema()
-    data = schema.load(_request_json())
+    try:
+      data = schema.load(_request_json())
+    except ValidationError as exc:
+      return jsonify({"error": "Validation error", "details": exc.messages}), 400
+    except ValueError as exc:
+      return jsonify({"error": str(exc)}), 400
 
     # Create user
     user = User(
@@ -121,7 +128,11 @@ def register():
     user.set_password(data["password"])
 
     db.session.add(user)
-    db.session.commit()
+    try:
+      db.session.commit()
+    except IntegrityError:
+      db.session.rollback()
+      return jsonify({"error": "User with this email or username already exists"}), 400
 
     # Audit log
     log_audit(user.id, "user_registered", "user", user.id, {"email": user.email, "role": user.role.value})
@@ -134,7 +145,11 @@ def register():
         employer = Employer(user_id=user.id, company_name=user.username)
         db.session.add(employer)
 
-    db.session.commit()
+    try:
+      db.session.commit()
+    except IntegrityError:
+      db.session.rollback()
+      return jsonify({"error": "Failed to create profile"}), 400
 
     return (
         jsonify({"message": "User created successfully", "user": user.to_dict()}),

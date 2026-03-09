@@ -32,12 +32,14 @@ def get_conversations():
         conv_id = msg.conversation_id
         if (
             conv_id not in conversations
-            or msg.created_at > conversations[conv_id]["last_message_time"]
+            or msg.created_at > conversations[conv_id]["_last_message_time_dt"]
         ):
             other_user_id = (
                 msg.receiver_id if msg.sender_id == current_user_id else msg.sender_id
             )
             other_user = User.query.get(other_user_id)
+            if not other_user:
+                continue
 
             other_user_profile = None
             if other_user.role.value == "worker":
@@ -60,6 +62,7 @@ def get_conversations():
                     }
 
             conversations[conv_id] = {
+                "id": other_user_id,
                 "conversation_id": conv_id,
                 "other_user": {
                     "id": other_user_id,
@@ -68,8 +71,9 @@ def get_conversations():
                     "role": other_user.role.value,
                     "profile": other_user_profile,
                 },
-                "last_message": msg.content,
-                "last_message_time": msg.created_at,
+                "last_message": msg.to_dict(),
+                "last_message_time": msg.created_at.isoformat() if msg.created_at else None,
+                "_last_message_time_dt": msg.created_at,
                 "unread_count": Message.query.filter(
                     Message.conversation_id == conv_id,
                     Message.receiver_id == current_user_id,
@@ -77,8 +81,15 @@ def get_conversations():
                 ).count(),
             }
 
+    conversations_list = []
+    for conversation in conversations.values():
+        conversation.pop("_last_message_time_dt", None)
+        conversations_list.append(conversation)
+
     conversations_list = sorted(
-        conversations.values(), key=lambda x: x["last_message_time"], reverse=True
+        conversations_list,
+        key=lambda x: x["last_message_time"] or "",
+        reverse=True,
     )
     return jsonify(conversations_list), 200
 
@@ -159,6 +170,49 @@ def get_unread_count():
     current_user_id = get_current_user_id()
     count = Message.query.filter_by(receiver_id=current_user_id, is_read=False).count()
     return jsonify({"unread_count": count}), 200
+
+
+@messages_bp.route("/users", methods=["GET"])
+@jwt_required()
+def get_messageable_users():
+    """Get all active users that the current user can message."""
+    current_user_id = get_current_user_id()
+
+    users = (
+        User.query.filter(User.id != current_user_id, User.is_active == True)
+        .order_by(User.username.asc())
+        .all()
+    )
+
+    result = []
+    for user in users:
+        profile = None
+        if user.role.value == "worker":
+            worker = Worker.query.filter_by(user_id=user.id).first()
+            if worker:
+                profile = {
+                    "full_name": worker.full_name,
+                    "profile_picture": worker.profile_picture,
+                }
+        elif user.role.value == "employer":
+            employer = Employer.query.filter_by(user_id=user.id).first()
+            if employer:
+                profile = {
+                    "company_name": employer.company_name,
+                    "logo": employer.logo,
+                }
+
+        result.append(
+            {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email,
+                "role": user.role.value,
+                "profile": profile,
+            }
+        )
+
+    return jsonify(result), 200
 
 
 # ----- END FILE -----

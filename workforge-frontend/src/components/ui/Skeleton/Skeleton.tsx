@@ -31,7 +31,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
   return (
     <div
       className={cn(
-        'bg-slate-200 dark:bg-slate-700',
+        'bg-slate-200 bg-bg-slate-700',
         variantClasses[variant],
         animationClasses[animation],
         className

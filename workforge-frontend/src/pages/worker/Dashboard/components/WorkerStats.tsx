@@ -23,8 +23,8 @@ const StatCard: React.FC<{
     <Card className="p-6 bg-white/80 backdrop-blur-md border border-blue-100 shadow-soft hover:shadow-lg transition-all duration-300">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium text-slate-600 dark:text-slate-400">{title}</p>
-          <p className="mt-2 text-3xl font-bold text-slate-900 dark:text-white">{value}</p>
+          <p className="text-sm font-medium text-slate-600 text-slate-400">{title}</p>
+          <p className="mt-2 text-3xl font-bold text-slate-900 text-[#1A1A1A]">{value}</p>
           {trend !== undefined && (
             <p className={`mt-2 text-sm ${trend >= 0 ? 'text-success-600' : 'text-error-600'}`}>
               {trend >= 0 ? '↑' : '↓'} {Math.abs(trend)}% from last month

@@ -26,7 +26,7 @@ export const FeaturedWorkers: React.FC = () => {
             {star <= rating ? (
               <StarSolidIcon className="h-4 w-4 text-yellow-400" />
             ) : (
-              <StarIcon className="h-4 w-4 text-gray-300" />
+              <StarIcon className="h-4 w-4 text-slate-300" />
             )}
           </span>
         ))}
@@ -35,14 +35,14 @@ export const FeaturedWorkers: React.FC = () => {
   };
 
   return (
-    <section className="py-16 md:py-20 bg-gray-50 dark:bg-gray-800">
+    <section className="py-16 md:py-20 bg-gray-50 bg-gray-800">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 text-[#1A1A1A] mb-4">
             Featured Skilled Workers
           </h2>
-          <p className="text-lg text-gray-600 dark:text-gray-400">
+          <p className="text-lg text-gray-600 ">
             Connect with verified professionals ready to bring your projects to life
           </p>
         </div>
@@ -61,7 +61,7 @@ export const FeaturedWorkers: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
               {workers.slice(0, 6).map((worker: any) => (
                 <Link key={worker.id} to={`/workers/${worker.id}`}>
-                  <Card className="p-6 hover:shadow-xl transition-all duration-300 cursor-pointer h-full border border-gray-200 dark:border-gray-700 hover:border-primary-500 dark:hover:border-primary-500">
+                  <Card className="p-6 hover:shadow-xl transition-all duration-300 cursor-pointer h-full border border-gray-200 border-gray-700 hover:border-primary-500 hover:border-primary-500">
                     <div className="flex flex-col h-full">
                       {/* Profile Header */}
                       <div className="flex items-start gap-3 mb-4">
@@ -72,19 +72,19 @@ export const FeaturedWorkers: React.FC = () => {
                             className="h-14 w-14 rounded-full object-cover"
                           />
                         ) : (
-                          <div className="h-14 w-14 rounded-full bg-gradient-to-br from-primary-100 to-primary-200 dark:from-primary-900 dark:to-primary-800 flex items-center justify-center">
-                            <UserCircleIcon className="h-8 w-8 text-primary-600 dark:text-primary-400" />
+                          <div className="h-14 w-14 rounded-full bg-gradient-to-br from-primary-100 to-primary-200 from-primary-900 to-primary-800 flex items-center justify-center">
+                            <UserCircleIcon className="h-8 w-8 text-primary-600 text-primary-400" />
                           </div>
                         )}
                         <div className="flex-1 min-w-0">
-                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2 mb-1">
+                          <h3 className="text-lg font-semibold text-gray-900 text-[#1A1A1A] flex items-center gap-2 mb-1">
                             <span className="truncate">{worker.full_name}</span>
                             {worker.is_verified && (
                               <CheckBadgeIcon className="h-5 w-5 text-primary-600 flex-shrink-0" />
                             )}
                           </h3>
                           {worker.title && (
-                            <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
+                            <p className="text-sm text-gray-600  truncate">
                               {worker.title}
                             </p>
                           )}
@@ -95,11 +95,11 @@ export const FeaturedWorkers: React.FC = () => {
                       {worker.average_rating > 0 && (
                         <div className="flex items-center gap-2 mb-3">
                           {renderStars(Math.round(worker.average_rating))}
-                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          <span className="text-sm font-medium text-slate-700 ">
                             {worker.average_rating.toFixed(1)}
                           </span>
                           {worker.total_ratings > 0 && (
-                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                            <span className="text-xs text-slate-500 ">
                               ({worker.total_ratings})
                             </span>
                           )}
@@ -108,7 +108,7 @@ export const FeaturedWorkers: React.FC = () => {
 
                       {/* Bio */}
                       {worker.bio && (
-                        <p className="text-sm text-gray-700 dark:text-gray-300 mb-4 line-clamp-2">
+                        <p className="text-sm text-slate-700  mb-4 line-clamp-2">
                           {worker.bio}
                         </p>
                       )}
@@ -116,13 +116,13 @@ export const FeaturedWorkers: React.FC = () => {
                       {/* Details */}
                       <div className="mt-auto space-y-2">
                         {worker.address && (
-                          <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                          <div className="flex items-center text-sm text-gray-600 ">
                             <MapPinIcon className="h-4 w-4 mr-2 flex-shrink-0" />
                             <span className="truncate">{worker.address}</span>
                           </div>
                         )}
                         {worker.hourly_rate && (
-                          <div className="flex items-center text-sm font-semibold text-primary-600 dark:text-primary-400">
+                          <div className="flex items-center text-sm font-semibold text-primary-600 text-primary-400">
                             <CurrencyDollarIcon className="h-4 w-4 mr-2 flex-shrink-0" />
                             <span>${worker.hourly_rate}/hour</span>
                           </div>
@@ -131,7 +131,7 @@ export const FeaturedWorkers: React.FC = () => {
 
                       {/* Skills */}
                       {worker.skills && worker.skills.length > 0 && (
-                        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                        <div className="mt-4 pt-4 border-t border-gray-200 border-gray-700">
                           <div className="flex flex-wrap gap-1">
                             {worker.skills.slice(0, 3).map((skill: any) => (
                               <Badge key={skill.id} variant="info" className="text-xs">
@@ -164,8 +164,8 @@ export const FeaturedWorkers: React.FC = () => {
           </>
         ) : (
           <div className="text-center py-12">
-            <UserCircleIcon className="h-16 w-16 mx-auto text-gray-400 mb-4" />
-            <p className="text-gray-600 dark:text-gray-400">No workers available at the moment</p>
+            <UserCircleIcon className="h-16 w-16 mx-auto text-slate-400 mb-4" />
+            <p className="text-gray-600 ">No workers available at the moment</p>
           </div>
         )}
       </div>

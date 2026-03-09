@@ -12,12 +12,12 @@ interface AdminLayoutProps {
 
 export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, className }) => {
   return (
-    <div className="admin-corporate min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900">
+    <div className="admin-corporate min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 bg-from-gray-950 bg-to-gray-900">
       <div className="flex h-screen overflow-hidden">
         {/* Sidebar - Fixed width, glass effect */}
         <aside className="hidden lg:flex lg:flex-shrink-0">
           <div className="flex w-72 flex-col">
-            <div className="flex flex-col flex-1 min-h-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-r border-gray-200/50 dark:border-gray-800/50">
+            <div className="flex flex-col flex-1 min-h-0 bg-white/80 bg-bg-gray-900/80 backdrop-blur-xl border-r border-gray-200/50 bg-border-gray-800/50">
               <Sidebar />
             </div>
           </div>

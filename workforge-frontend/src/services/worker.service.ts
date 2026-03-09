@@ -60,6 +60,11 @@ class WorkerService {
   async getReviews(): Promise<Review[]> {
     return axiosClient.get<Review[]>(ENDPOINTS.WORKERS.REVIEWS);
   }
+
+  // Get reviews for a specific worker (public profile)
+  async getWorkerReviews(workerId: number): Promise<Review[]> {
+    return axiosClient.get<Review[]>(`/api/reviews/worker/${workerId}`);
+  }
 }
 
 export const workerService = new WorkerService();

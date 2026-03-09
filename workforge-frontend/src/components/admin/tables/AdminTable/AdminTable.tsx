@@ -47,10 +47,10 @@ export const AdminTable = <T extends Record<string, any>>({
 
   if (loading) {
     return (
-      <div className="bg-white dark:bg-[#151922] rounded-2xl border border-[#E6E9F0] dark:border-[#2A3140] p-8 shadow-[0_4px_16px_rgba(10,37,64,0.06)]">
+      <div className="bg-white bg-bg-[#151922] rounded-2xl border border-[#E6E9F0] bg-border-[#2A3140] p-8 shadow-[0_4px_16px_rgba(10,37,64,0.06)]">
         <div className="space-y-4">
           {[...Array(5)].map((_, i) => (
-            <div key={i} className="h-12 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse" />
+            <div key={i} className="h-12 bg-gray-100 bg-bg-gray-800 rounded-xl animate-pulse" />
           ))}
         </div>
       </div>
@@ -58,10 +58,10 @@ export const AdminTable = <T extends Record<string, any>>({
   }
 
   return (
-    <div className={cn("bg-white dark:bg-[#151922] rounded-2xl border border-[#E6E9F0] dark:border-[#2A3140] overflow-hidden shadow-[0_4px_16px_rgba(10,37,64,0.06)]", className)}>
+    <div className={cn("bg-white bg-bg-[#151922] rounded-2xl border border-[#E6E9F0] bg-border-[#2A3140] overflow-hidden shadow-[0_4px_16px_rgba(10,37,64,0.06)]", className)}>
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-[#DDEBFF] dark:divide-[#2A3140]">
-          <thead className="bg-[#DDEBFF] dark:bg-[#1A2740]">
+        <table className="min-w-full divide-y divide-[#DDEBFF] bg-divide-[#2A3140]">
+          <thead className="bg-[#DDEBFF] bg-bg-[#1A2740]">
             <tr>
               {columns.map((column) => (
                 <th
@@ -87,18 +87,18 @@ export const AdminTable = <T extends Record<string, any>>({
               ))}
             </tr>
           </thead>
-          <tbody className="bg-white dark:bg-[#151922] divide-y divide-[#DDEBFF] dark:divide-[#2A3140]">
+          <tbody className="bg-white bg-bg-[#151922] divide-y divide-[#DDEBFF] bg-divide-[#2A3140]">
             {data.length > 0 ? (
               data.map((row, index) => (
                 <tr
                   key={row.id || index}
-                  className="hover:bg-[#EEF4FF] dark:hover:bg-[#1A2740] transition-colors"
+                  className="hover:bg-[#EEF4FF] bg-hover:bg-[#1A2740] transition-colors"
                 >
                   {columns.map((column) => (
                     <td
                       key={column.key}
                       className={cn(
-                        "px-6 py-4 text-sm text-[#1A1A1A] dark:text-white font-['SF_Pro_Display','Inter',sans-serif]",
+                        "px-6 py-4 text-sm text-[#1A1A1A] bg-text-white font-['SF_Pro_Display','Inter',sans-serif]",
                         column.align === 'right' && "text-right",
                         column.align === 'center' && "text-center"
                       )}
@@ -112,7 +112,7 @@ export const AdminTable = <T extends Record<string, any>>({
               <tr>
                 <td colSpan={columns.length} className="px-6 py-12 text-center">
                   {emptyState || (
-                    <div className="text-gray-500 dark:text-gray-400">
+                    <div className="text-gray-500 bg-text-gray-400">
                       No data available
                     </div>
                   )}

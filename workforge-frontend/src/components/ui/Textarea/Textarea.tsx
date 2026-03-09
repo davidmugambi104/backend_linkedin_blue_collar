@@ -25,7 +25,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
         {label && (
           <label
             htmlFor={textareaId}
-            className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300"
+            className="mb-1 text-sm font-medium text-gray-700 bg-text-gray-300"
           >
             {label}
           </label>
@@ -34,7 +34,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
         <div className="relative">
           {leftIcon && (
             <div className="absolute left-0 top-3 pl-3 flex items-start pointer-events-none">
-              <span className="text-gray-500 dark:text-gray-400 sm:text-sm">{leftIcon}</span>
+              <span className="text-gray-500 bg-text-gray-400 sm:text-sm">{leftIcon}</span>
             </div>
           )}
 
@@ -43,10 +43,10 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
             id={textareaId}
             rows={rows}
             className={cn(
-              'w-full rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm text-slate-900 placeholder:text-slate-400 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500',
+              'w-full rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm text-slate-900 placeholder:text-slate-400 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:cursor-not-allowed disabled:opacity-50 bg-border-slate-600 bg-bg-slate-900 bg-text-white bg-placeholder:text-slate-500',
               leftIcon && 'pl-10',
               rightIcon && 'pr-10',
-              error && 'border-red-500 focus:ring-red-500 dark:border-red-500',
+              error && 'border-red-500 focus:ring-red-500 bg-border-red-500',
               className
             )}
             aria-invalid={!!error}
@@ -56,19 +56,19 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
 
           {rightIcon && (
             <div className="absolute right-0 top-3 pr-3 flex items-start pointer-events-none">
-              <span className="text-gray-500 dark:text-gray-400 sm:text-sm">{rightIcon}</span>
+              <span className="text-gray-500 bg-text-gray-400 sm:text-sm">{rightIcon}</span>
             </div>
           )}
         </div>
 
         {error && (
-          <p id={`${textareaId}-error`} className="mt-1 text-sm text-red-600 dark:text-red-400">
+          <p id={`${textareaId}-error`} className="mt-1 text-sm text-red-600 bg-text-red-400">
             {error}
           </p>
         )}
 
         {hint && !error && (
-          <p id={`${textareaId}-hint`} className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          <p id={`${textareaId}-hint`} className="mt-1 text-sm text-gray-500 bg-text-gray-400">
             {hint}
           </p>
         )}

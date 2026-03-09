@@ -61,16 +61,18 @@ class Worker(db.Model):
     sent_messages = db.relationship(
         "Message",
         primaryjoin="Worker.user_id==Message.sender_id",
-        backref="sender_worker",
+        backref=db.backref("sender_worker", overlaps="sender_employer"),
         cascade="all, delete-orphan",
         foreign_keys="Message.sender_id",
+        overlaps="sender,sender_employer,sent_messages",
     )
     received_messages = db.relationship(
         "Message",
         primaryjoin="Worker.user_id==Message.receiver_id",
-        backref="receiver_worker",
+        backref=db.backref("receiver_worker", overlaps="receiver_employer"),
         cascade="all, delete-orphan",
         foreign_keys="Message.receiver_id",
+        overlaps="receiver,receiver_employer,received_messages",
     )
     verifications = db.relationship(
         "DocumentVerification", backref="worker", cascade="all, delete-orphan"
