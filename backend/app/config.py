@@ -112,6 +112,10 @@ class Config:
     FROM_EMAIL = os.environ.get("FROM_EMAIL", "noreply@workforge.co.ke")  # legacy alias
     FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:5173")
     EXPOSE_AUTH_DEBUG_CODES = os.environ.get("EXPOSE_AUTH_DEBUG_CODES", "false").lower() == "true"
+    EMAIL_PROVIDER = os.environ.get("EMAIL_PROVIDER", "auto")
+    RESEND_API_KEY = os.environ.get("RESEND_API_KEY")
+    RESEND_FROM_EMAIL = os.environ.get("RESEND_FROM_EMAIL")
+    RESEND_API_URL = os.environ.get("RESEND_API_URL", "https://api.resend.com/emails")
     # Gmail SMTP
     MAIL_SERVER = os.environ.get("MAIL_SERVER", "smtp.gmail.com")
     MAIL_PORT = int(os.environ.get("MAIL_PORT", "587"))

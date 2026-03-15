@@ -2,11 +2,58 @@ from flask import current_app
 from typing import Optional
 import smtplib
 import ssl
+import json
+from urllib import request as urllib_request
+from urllib import error as urllib_error
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 
 class EmailService:
+    def _resend_config(self):
+        return {
+            "provider": (current_app.config.get("EMAIL_PROVIDER") or "auto").lower(),
+            "api_key": current_app.config.get("RESEND_API_KEY"),
+            "from_email": current_app.config.get("RESEND_FROM_EMAIL") or current_app.config.get("MAIL_DEFAULT_SENDER"),
+            "api_url": current_app.config.get("RESEND_API_URL", "https://api.resend.com/emails"),
+        }
+
+    def _send_via_resend(self, to_email: str, subject: str, html_content: str,
+                         text_content: Optional[str] = None) -> bool:
+        cfg = self._resend_config()
+        if not cfg["api_key"] or not cfg["from_email"]:
+            return False
+
+        payload = {
+            "from": cfg["from_email"],
+            "to": [to_email],
+            "subject": subject,
+            "html": html_content,
+            "text": text_content or "",
+        }
+
+        body = json.dumps(payload).encode("utf-8")
+        req = urllib_request.Request(
+            cfg["api_url"],
+            data=body,
+            headers={
+                "Authorization": f"Bearer {cfg['api_key']}",
+                "Content-Type": "application/json",
+            },
+            method="POST",
+        )
+
+        try:
+            with urllib_request.urlopen(req, timeout=15) as resp:
+                status = getattr(resp, "status", 0)
+                return 200 <= int(status) < 300
+        except urllib_error.HTTPError as exc:
+            current_app.logger.error(f"Resend HTTP error: {exc.code} {exc.reason}")
+            return False
+        except Exception as exc:
+            current_app.logger.error(f"Resend send failed: {exc}")
+            return False
+
     def _smtp_config(self):
         return {
             "server": current_app.config.get("MAIL_SERVER", "smtp.gmail.com"),
@@ -20,6 +67,15 @@ class EmailService:
     def send_email(self, to_email: str, subject: str, html_content: str,
                    text_content: Optional[str] = None) -> bool:
         try:
+            resend_cfg = self._resend_config()
+
+            # Prefer API-based delivery when configured, since SMTP ports are often blocked on cloud VMs.
+            if resend_cfg["provider"] in ("resend", "auto") and resend_cfg["api_key"]:
+                if self._send_via_resend(to_email, subject, html_content, text_content):
+                    return True
+                if resend_cfg["provider"] == "resend":
+                    return False
+
             cfg = self._smtp_config()
             if not cfg["username"] or not cfg["password"]:
                 current_app.logger.info(f"[DEV EMAIL] To: {to_email}, Subject: {subject}")
