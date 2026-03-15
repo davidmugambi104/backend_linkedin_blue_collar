@@ -1,39 +1,65 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { EnvelopeIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
+import { EnvelopeIcon, ArrowLeftIcon, KeyIcon, LockClosedIcon } from '@heroicons/react/24/outline';
 import { toast } from 'react-toastify';
 
 import { Button } from '@components/ui/Button';
 import { Input } from '@components/ui/Input';
 import { Card } from '@components/ui/Card';
-import { ForgotPasswordFormData, forgotPasswordSchema } from './ForgotPassword.schema';
+import { authService } from '@services/auth.service';
 
 export const ForgotPasswordPage: React.FC = () => {
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [email, setEmail] = useState('');
+  const [code, setCode] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [step, setStep] = useState<'request' | 'reset'>('request');
   const [isLoading, setIsLoading] = useState(false);
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<ForgotPasswordFormData>({
-    resolver: zodResolver(forgotPasswordSchema),
-    defaultValues: {
-      email: '',
-    },
-  });
+  const handleRequestCode = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!email.trim()) {
+      toast.error('Email is required');
+      return;
+    }
 
-  const onSubmit = async (data: ForgotPasswordFormData) => {
     setIsLoading(true);
     try {
-      // API call would go here
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setIsSubmitted(true);
-      toast.success('Password reset email sent!');
-    } catch (error) {
-      toast.error('Failed to send reset email');
+      await authService.requestPasswordReset(email.trim());
+      setStep('reset');
+      toast.success('Password reset code sent to your email');
+    } catch (error: any) {
+      toast.error(error?.response?.data?.error || 'Failed to send reset code');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!email.trim() || !code.trim() || !newPassword || !confirmPassword) {
+      toast.error('All fields are required');
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await authService.verifyPasswordReset(email.trim(), code.trim(), newPassword);
+      toast.success('Password reset successfully. You can now sign in.');
+      setStep('request');
+      setCode('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (error: any) {
+      toast.error(error?.response?.data?.error || 'Failed to reset password');
     } finally {
       setIsLoading(false);
     }
@@ -42,49 +68,103 @@ export const ForgotPasswordPage: React.FC = () => {
   return (
     <Card className="w-full max-w-md">
       <div className="text-center mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 text-[#1A1A1A]">
+        <h1 className="text-2xl font-bold !text-[#1A1A1A]" style={{ color: '#1A1A1A' }}>
           Forgot Password?
         </h1>
-        <p className="mt-2 text-sm text-gray-600 ">
-          {!isSubmitted
-            ? "Enter your email and we'll send you a reset link"
-            : 'Check your email for the reset link'}
+        <p className="mt-2 text-sm !text-[#4B5563]" style={{ color: '#4B5563' }}>
+          {step === 'request'
+            ? "Enter your email and we'll send you a reset code"
+            : 'Enter the code from your email and choose a new password'}
         </p>
       </div>
 
-      {!isSubmitted ? (
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      {step === 'request' ? (
+        <form onSubmit={handleRequestCode} className="space-y-6">
           <Input
-            {...register('email')}
             type="email"
             label="Email Address"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
             placeholder="you@example.com"
-            error={errors.email?.message}
             leftIcon={<EnvelopeIcon className="h-5 w-5" />}
             autoComplete="email"
           />
 
           <Button type="submit" fullWidth isLoading={isLoading}>
-            Send Reset Link
+            Send Reset Code
           </Button>
-        </form>
-      ) : (
-        <div className="text-center space-y-6">
-          <div className="bg-green-50 bg-green-900/20 rounded-lg p-4">
-            <p className="text-sm text-green-800 text-green-300">
-              We've sent a password reset link to your email address.
-              Please check your inbox and follow the instructions.
+
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+            <p className="text-xs text-amber-800">
+              If you do not receive a reset code, contact support for private recovery.
+              Support can issue a short-lived one-time code after identity verification.
             </p>
           </div>
-          
-          <Button
-            variant="outline"
-            fullWidth
-            onClick={() => setIsSubmitted(false)}
-          >
-            Try another email
+        </form>
+      ) : (
+        <form onSubmit={handleResetPassword} className="space-y-6">
+          <div className="rounded-lg bg-green-50 bg-green-900/20 p-4">
+            <p className="text-sm text-green-800 text-green-300">
+              We sent a 6-digit reset code to your email. Enter it below with your new password.
+            </p>
+          </div>
+
+          <Input
+            type="email"
+            label="Email Address"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            placeholder="you@example.com"
+            leftIcon={<EnvelopeIcon className="h-5 w-5" />}
+            autoComplete="email"
+          />
+
+          <Input
+            label="Reset Code"
+            value={code}
+            onChange={(event) => setCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
+            placeholder="123456"
+            leftIcon={<KeyIcon className="h-5 w-5" />}
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            maxLength={6}
+          />
+
+          <Input
+            type="password"
+            label="New Password"
+            value={newPassword}
+            onChange={(event) => setNewPassword(event.target.value)}
+            placeholder="••••••••"
+            leftIcon={<LockClosedIcon className="h-5 w-5" />}
+            autoComplete="new-password"
+          />
+
+          <Input
+            type="password"
+            label="Confirm New Password"
+            value={confirmPassword}
+            onChange={(event) => setConfirmPassword(event.target.value)}
+            placeholder="••••••••"
+            leftIcon={<LockClosedIcon className="h-5 w-5" />}
+            autoComplete="new-password"
+          />
+
+          <Button type="submit" fullWidth isLoading={isLoading}>
+            Reset Password
           </Button>
-        </div>
+
+          <Button type="button" variant="outline" fullWidth onClick={() => setStep('request')}>
+            Use a Different Email
+          </Button>
+
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+            <p className="text-xs text-amber-800">
+              Did not get a code? Contact support for private recovery and request an admin-issued
+              one-time reset code.
+            </p>
+          </div>
+        </form>
       )}
 
       <Link
