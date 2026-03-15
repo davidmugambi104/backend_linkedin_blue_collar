@@ -13,6 +13,8 @@ import { useEmployerProfile, useUpdateEmployerProfile } from '@hooks/useEmployer
 import { userService } from '@services/user.service';
 import { uploadService } from '@services/upload.service';
 import { toast } from 'react-toastify';
+import { Input } from '@components/ui/Input';
+import { Textarea } from '@components/ui/Textarea';
 
 // Tab Navigation
 const Tabs: React.FC<{
@@ -98,6 +100,9 @@ const ProfileTab: React.FC = () => {
     website: profile?.website || '',
     address: profile?.address || '',
     description: profile?.description || '',
+    industry: (profile as any)?.industry || '',
+    company_size: (profile as any)?.company_size || '',
+    contact_email: (profile as any)?.contact_email || '',
   });
 
   useEffect(() => {
@@ -108,6 +113,9 @@ const ProfileTab: React.FC = () => {
       website: profile.website || '',
       address: profile.address || '',
       description: profile.description || '',
+      industry: (profile as any)?.industry || '',
+      company_size: (profile as any)?.company_size || '',
+      contact_email: (profile as any)?.contact_email || '',
     });
   }, [profile]);
 
@@ -138,58 +146,88 @@ const ProfileTab: React.FC = () => {
       title="Company Information"
       description="Update your company details and branding"
     >
+      <div className="mb-6 rounded-2xl border border-slate-200 bg-slate-50/70 p-4 text-sm text-slate-600">
+        Strong employer profiles get better applicants. Add a clear company name, website, contact phone, and a concise business description.
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <FormField label="Company Name">
-          <input
-            type="text"
-            className="input-field"
-            value={formState.company_name}
-            onChange={(e) => setFormState((prev) => ({ ...prev, company_name: e.target.value }))}
-          />
-        </FormField>
+        <Input
+          label="Company Name"
+          value={formState.company_name}
+          onChange={(e) => setFormState((prev) => ({ ...prev, company_name: e.target.value }))}
+          placeholder="e.g. Mugambi Construction Ltd"
+          hint="Use the exact business name applicants will recognize."
+        />
         <FormField label="Industry">
-          <select className="input-field">
-            <option>Construction</option>
-            <option>Manufacturing</option>
-            <option>Infrastructure</option>
+          <select
+            className="input-field"
+            value={formState.industry}
+            onChange={(e) => setFormState((prev) => ({ ...prev, industry: e.target.value }))}
+          >
+            <option value="">Select industry</option>
+            <option value="construction">Construction</option>
+            <option value="manufacturing">Manufacturing</option>
+            <option value="infrastructure">Infrastructure</option>
+            <option value="electrical">Electrical</option>
+            <option value="plumbing">Plumbing</option>
+            <option value="hvac">HVAC / Climate Control</option>
+            <option value="landscaping">Landscaping</option>
+            <option value="cleaning">Cleaning & Janitorial</option>
+            <option value="logistics">Logistics & Warehousing</option>
+            <option value="security">Security Services</option>
+            <option value="hospitality">Hospitality</option>
+            <option value="other">Other</option>
           </select>
         </FormField>
         <FormField label="Contact Email">
-          <input type="email" className="input-field" defaultValue="contact@workforge.com" />
-        </FormField>
-        <FormField label="Phone Number">
-          <input
-            type="tel"
-            className="input-field"
-            value={formState.phone}
-            onChange={(e) => setFormState((prev) => ({ ...prev, phone: e.target.value }))}
+          <Input
+            type="email"
+            value={formState.contact_email}
+            onChange={(e) => setFormState((prev) => ({ ...prev, contact_email: e.target.value }))}
+            placeholder="contact@company.com"
+            hint="This email is shown to applicants."
           />
         </FormField>
+        <Input
+          type="tel"
+          label="Phone Number"
+          value={formState.phone}
+          onChange={(e) => setFormState((prev) => ({ ...prev, phone: e.target.value }))}
+          placeholder="e.g. +254 700 000 000"
+          hint="Applicants may use this for urgent job communication."
+        />
         <FormField label="Company Size">
-          <select className="input-field">
-            <option>1-10 employees</option>
-            <option>11-50 employees</option>
-            <option>51-200 employees</option>
-            <option>200+ employees</option>
+          <select
+            className="input-field"
+            value={formState.company_size}
+            onChange={(e) => setFormState((prev) => ({ ...prev, company_size: e.target.value }))}
+          >
+            <option value="">Select size</option>
+            <option value="1-10">1–10 employees</option>
+            <option value="11-50">11–50 employees</option>
+            <option value="51-200">51–200 employees</option>
+            <option value="201-500">201–500 employees</option>
+            <option value="500+">500+ employees</option>
           </select>
         </FormField>
-        <FormField label="Website">
-          <input
-            type="url"
-            className="input-field"
-            value={formState.website}
-            onChange={(e) => setFormState((prev) => ({ ...prev, website: e.target.value }))}
-          />
-        </FormField>
+        <Input
+          type="url"
+          label="Website"
+          value={formState.website}
+          onChange={(e) => setFormState((prev) => ({ ...prev, website: e.target.value }))}
+          placeholder="https://yourcompany.com"
+          hint="A website improves trust and application quality."
+        />
       </div>
       <div className="mt-5">
-        <FormField label="Company Description">
-          <textarea 
-            className="input-field min-h-[120px] resize-none"
-            value={formState.description}
-            onChange={(e) => setFormState((prev) => ({ ...prev, description: e.target.value }))}
-          />
-        </FormField>
+        <Textarea
+          label="Company Description"
+          className="min-h-[140px] resize-none"
+          value={formState.description}
+          onChange={(e) => setFormState((prev) => ({ ...prev, description: e.target.value }))}
+          placeholder="Tell workers what your company does, what kind of projects you handle, and why they should work with you."
+          hint="A clear description attracts more relevant applicants."
+        />
       </div>
       <div className="flex justify-end mt-5">
         <button onClick={handleSave} className="btn-primary">Save Changes</button>
@@ -413,6 +451,17 @@ const SecurityTab: React.FC = () => {
             />
           </FormField>
           <button type="button" onClick={updatePassword} className="btn-primary">Update Password</button>
+        </div>
+
+        <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4">
+          <p className="font-medium text-amber-900">Password Recovery Support</p>
+          <p className="mt-1 text-sm text-amber-800">
+            If Forgot Password does not deliver your reset code, contact support for private recovery.
+            A support admin can issue a one-time recovery code after identity verification.
+          </p>
+          <p className="mt-2 text-xs text-amber-700">
+            Recovery codes are private, short-lived, and never shown publicly.
+          </p>
         </div>
       </SectionCard>
 
