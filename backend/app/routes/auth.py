@@ -401,53 +401,53 @@ def request_password_reset():
     return jsonify({"message": "If an account exists with this email, a reset code has been sent"}), 200
 
 
-  @auth_bp.route("/email-verification/request", methods=["POST"])
-  @limiter.limit("3 per minute")
-  def request_email_verification():
+@auth_bp.route("/email-verification/request", methods=["POST"])
+@limiter.limit("3 per minute")
+def request_email_verification():
     data = _request_json()
     email = str(data.get("email", "")).strip().lower()
 
     if not email:
-      return jsonify({"error": "Email is required"}), 400
+        return jsonify({"error": "Email is required"}), 400
 
     user = User.query.filter_by(email=email).first()
 
     if not user:
-      return jsonify({"message": "If an account exists with this email, a verification code has been sent"}), 200
+        return jsonify({"message": "If an account exists with this email, a verification code has been sent"}), 200
 
     if user.is_email_verified:
-      return jsonify({"message": "Email is already verified", "verified": True}), 200
+        return jsonify({"message": "Email is already verified", "verified": True}), 200
 
     code = _issue_email_verification_code(user)
     payload = {"message": "Verification code sent", "email": user.email}
     if current_app.config.get("DEBUG"):
-      payload["verification_code"] = code
+        payload["verification_code"] = code
     return jsonify(payload), 200
 
 
-  @auth_bp.route("/email-verification/verify", methods=["POST"])
-  @limiter.limit("5 per minute", key_func=_login_rate_limit_key)
-  def verify_email_verification():
+@auth_bp.route("/email-verification/verify", methods=["POST"])
+@limiter.limit("5 per minute", key_func=_login_rate_limit_key)
+def verify_email_verification():
     data = _request_json()
     email = str(data.get("email", "")).strip().lower()
     code = str(data.get("code", "")).strip()
 
     if not email or not code:
-      return jsonify({"error": "Email and code are required"}), 400
+        return jsonify({"error": "Email and code are required"}), 400
 
     user = User.query.filter_by(email=email).first()
 
     if not user:
-      return jsonify({"error": "Invalid verification request"}), 400
+        return jsonify({"error": "Invalid verification request"}), 400
 
     if user.is_email_verified:
-      return jsonify({"message": "Email already verified", "verified": True, "user": user.to_dict()}), 200
+        return jsonify({"message": "Email already verified", "verified": True, "user": user.to_dict()}), 200
 
     if not user.email_verification_code or user.email_verification_code != code:
-      return jsonify({"error": "Invalid verification code"}), 400
+        return jsonify({"error": "Invalid verification code"}), 400
 
     if not user.email_verification_expires or user.email_verification_expires < datetime.utcnow():
-      return jsonify({"error": "Verification code has expired"}), 400
+        return jsonify({"error": "Verification code has expired"}), 400
 
     user.is_email_verified = True
     user.email_verification_code = None
