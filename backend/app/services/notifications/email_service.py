@@ -11,19 +11,25 @@ class EmailService:
         self.client = None
         self.from_email = None
         self.enabled = False
-        
+
+    def _ensure_client(self):
         try:
             api_key = current_app.config.get('SENDGRID_API_KEY')
+            self.from_email = current_app.config.get('FROM_EMAIL', 'noreply@workforge.co.ke')
             if api_key:
                 self.client = SendGridAPIClient(api_key)
-                self.from_email = current_app.config.get('FROM_EMAIL', 'noreply@workforge.co.ke')
                 self.enabled = True
+            else:
+                self.client = None
+                self.enabled = False
         except Exception:
-            pass
+            self.client = None
+            self.enabled = False
 
     def send_email(self, to_email: str, subject: str, html_content: str, 
                    text_content: Optional[str] = None) -> bool:
         """Send an email."""
+        self._ensure_client()
         if not self.enabled:
             current_app.logger.info(f"[DEV EMAIL] To: {to_email}, Subject: {subject}")
             return True
@@ -46,6 +52,7 @@ class EmailService:
 
     def send_template(self, to_email: str, template_id: str, dynamic_data: dict) -> bool:
         """Send email using SendGrid template."""
+        self._ensure_client()
         if not self.enabled:
             current_app.logger.info(f"[DEV EMAIL] To: {to_email}, Template: {template_id}")
             return True
@@ -167,6 +174,45 @@ class EmailService:
         </html>
         """
         return self.send_email(email, subject, html)
+
+    def send_password_reset_code_email(self, email: str, name: str, code: str) -> bool:
+        """Send password reset code email."""
+        subject = "Your WorkForge Password Reset Code"
+        html = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; padding: 20px; color: #1f2937;">
+            <h2>Password Reset Code</h2>
+            <p>Hello {name},</p>
+            <p>Use the verification code below to reset your password:</p>
+            <div style="margin: 20px 0; font-size: 32px; font-weight: 700; letter-spacing: 8px; color: #0A2540;">
+                {code}
+            </div>
+            <p>This code expires in 10 minutes.</p>
+            <p style="color: #6b7280;">If you did not request this, you can ignore this email.</p>
+        </body>
+        </html>
+        """
+        text = f"Hello {name}, your WorkForge password reset code is {code}. It expires in 10 minutes."
+        return self.send_email(email, subject, html, text)
+
+    def send_email_verification_code(self, email: str, name: str, code: str) -> bool:
+        """Send email verification code."""
+        subject = "Verify Your WorkForge Email"
+        html = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; padding: 20px; color: #1f2937;">
+            <h2>Verify Your Email</h2>
+            <p>Hello {name},</p>
+            <p>Use this code to verify your WorkForge account:</p>
+            <div style="margin: 20px 0; font-size: 32px; font-weight: 700; letter-spacing: 8px; color: #0A2540;">
+                {code}
+            </div>
+            <p>This code expires in 10 minutes.</p>
+        </body>
+        </html>
+        """
+        text = f"Hello {name}, your WorkForge email verification code is {code}. It expires in 10 minutes."
+        return self.send_email(email, subject, html, text)
 
 
 email_service = EmailService()

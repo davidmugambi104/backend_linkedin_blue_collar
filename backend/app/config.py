@@ -108,6 +108,9 @@ class Config:
         os.environ.get("ALLOW_DESTRUCTIVE_OPERATIONS", "false").lower() == "true"
     )
     DB_BACKUP_DIR = os.environ.get("DB_BACKUP_DIR", "instance/backups")
+    SENDGRID_API_KEY = os.environ.get("SENDGRID_API_KEY")
+    FROM_EMAIL = os.environ.get("FROM_EMAIL", "noreply@workforge.co.ke")
+    FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:5173")
 
 
 class DevelopmentConfig(Config):

@@ -15,6 +15,7 @@ from ..models.login_log import LoginLog, AuditLog
 from ..schemas import UserSchema, UserLoginSchema
 from ..utils.permissions import admin_required
 from ..services.sms_service import sms_service
+from ..services.notifications.email_service import email_service
 from datetime import datetime, timedelta
 import random
 import string
@@ -33,6 +34,19 @@ def _login_rate_limit_key():
   if email:
     return f"login:{request.remote_addr}:{email}"
   return f"login:{request.remote_addr}"
+
+
+def _generate_numeric_code(length=6):
+  return "".join(random.choices(string.digits, k=length))
+
+
+def _issue_email_verification_code(user):
+  code = _generate_numeric_code()
+  user.email_verification_code = code
+  user.email_verification_expires = datetime.utcnow() + timedelta(minutes=10)
+  db.session.commit()
+  email_service.send_email_verification_code(user.email, user.username, code)
+  return code
 
 
 def _revoke_token(jwt_payload):
@@ -123,7 +137,8 @@ def register():
         username=data["username"], 
         email=data["email"], 
         role=UserRole(data["role"]),
-        phone=data.get("phone")
+      phone=data.get("phone"),
+      is_email_verified=False,
     )
     user.set_password(data["password"])
 
@@ -151,8 +166,18 @@ def register():
       db.session.rollback()
       return jsonify({"error": "Failed to create profile"}), 400
 
+    verification_code = _issue_email_verification_code(user)
+
     return (
-        jsonify({"message": "User created successfully", "user": user.to_dict()}),
+      jsonify(
+        {
+          "message": "User created successfully. Verify your email to continue.",
+          "user": user.to_dict(),
+          "requires_email_verification": True,
+          "email": user.email,
+          **({"verification_code": verification_code} if current_app.config.get("DEBUG") else {}),
+        }
+      ),
         201,
     )
 
@@ -223,6 +248,15 @@ def login():
         )
         db.session.commit()
         return jsonify({"error": "Account is deactivated"}), 403
+
+      if not user.is_email_verified:
+        return jsonify(
+          {
+            "error": "Please verify your email before signing in",
+            "requires_email_verification": True,
+            "email": user.email,
+          }
+        ), 403
 
     # Log successful login
     log_audit(user.id, "login_success", "user", user.id)
@@ -346,7 +380,7 @@ def request_password_reset():
     # Always return success to prevent email enumeration
     if user:
         # Generate 6-digit code
-        code = "".join(random.choices(string.digits, k=6))
+      code = _generate_numeric_code()
         user.reset_code = code
         user.reset_code_expires = datetime.utcnow() + timedelta(minutes=10)
         db.session.commit()
@@ -357,12 +391,70 @@ def request_password_reset():
                 user.phone, 
                 f"Your WorkForge password reset code is: {code}. Valid for 10 minutes."
             )
+
+        email_service.send_password_reset_code_email(user.email, user.username, code)
         
         # In development, also return the code
         if current_app.config.get("DEBUG"):
             return jsonify({"message": "Password reset code sent", "code": code}), 200
     
     return jsonify({"message": "If an account exists with this email, a reset code has been sent"}), 200
+
+
+  @auth_bp.route("/email-verification/request", methods=["POST"])
+  @limiter.limit("3 per minute")
+  def request_email_verification():
+    data = _request_json()
+    email = str(data.get("email", "")).strip().lower()
+
+    if not email:
+      return jsonify({"error": "Email is required"}), 400
+
+    user = User.query.filter_by(email=email).first()
+
+    if not user:
+      return jsonify({"message": "If an account exists with this email, a verification code has been sent"}), 200
+
+    if user.is_email_verified:
+      return jsonify({"message": "Email is already verified", "verified": True}), 200
+
+    code = _issue_email_verification_code(user)
+    payload = {"message": "Verification code sent", "email": user.email}
+    if current_app.config.get("DEBUG"):
+      payload["verification_code"] = code
+    return jsonify(payload), 200
+
+
+  @auth_bp.route("/email-verification/verify", methods=["POST"])
+  @limiter.limit("5 per minute", key_func=_login_rate_limit_key)
+  def verify_email_verification():
+    data = _request_json()
+    email = str(data.get("email", "")).strip().lower()
+    code = str(data.get("code", "")).strip()
+
+    if not email or not code:
+      return jsonify({"error": "Email and code are required"}), 400
+
+    user = User.query.filter_by(email=email).first()
+
+    if not user:
+      return jsonify({"error": "Invalid verification request"}), 400
+
+    if user.is_email_verified:
+      return jsonify({"message": "Email already verified", "verified": True, "user": user.to_dict()}), 200
+
+    if not user.email_verification_code or user.email_verification_code != code:
+      return jsonify({"error": "Invalid verification code"}), 400
+
+    if not user.email_verification_expires or user.email_verification_expires < datetime.utcnow():
+      return jsonify({"error": "Verification code has expired"}), 400
+
+    user.is_email_verified = True
+    user.email_verification_code = None
+    user.email_verification_expires = None
+    db.session.commit()
+
+    return jsonify({"message": "Email verified successfully", "verified": True, "user": user.to_dict()}), 200
 
 
 # Password Reset - Verify code and reset

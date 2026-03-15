@@ -46,6 +46,18 @@ def _ensure_sqlite_schema_compatibility(app):
                 db.session.execute(
                     text("ALTER TABLE users ADD COLUMN admin_role VARCHAR(20) DEFAULT 'OPS_ADMIN'")
                 )
+            if "is_email_verified" not in column_names:
+                db.session.execute(
+                    text("ALTER TABLE users ADD COLUMN is_email_verified BOOLEAN DEFAULT 1")
+                )
+            if "email_verification_code" not in column_names:
+                db.session.execute(
+                    text("ALTER TABLE users ADD COLUMN email_verification_code VARCHAR(6)")
+                )
+            if "email_verification_expires" not in column_names:
+                db.session.execute(
+                    text("ALTER TABLE users ADD COLUMN email_verification_expires DATETIME")
+                )
 
             db.session.execute(
                 text("UPDATE users SET admin_role='SUPER_ADMIN' WHERE admin_role='super_admin'")
@@ -62,8 +74,11 @@ def _ensure_sqlite_schema_compatibility(app):
             db.session.execute(
                 text("UPDATE users SET admin_role='OPS_ADMIN' WHERE lower(role)='admin' AND (admin_role IS NULL OR admin_role='')")
             )
+            db.session.execute(
+                text("UPDATE users SET is_email_verified=1 WHERE is_email_verified IS NULL")
+            )
             db.session.commit()
-            app.logger.warning("Applied SQLite schema compatibility fix for users.admin_role")
+            app.logger.warning("Applied SQLite schema compatibility fix for users table")
     except Exception as exc:
         app.logger.warning("SQLite schema compatibility check skipped/failed: %s", str(exc))
 

@@ -31,6 +31,7 @@ class User(db.Model):
     
     phone = db.Column(db.String(20), index=True)
     is_phone_verified = db.Column(db.Boolean, default=False)
+    is_email_verified = db.Column(db.Boolean, default=False)
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(
@@ -46,6 +47,8 @@ class User(db.Model):
     # Password reset fields
     reset_code = db.Column(db.String(6))
     reset_code_expires = db.Column(db.DateTime)
+    email_verification_code = db.Column(db.String(6))
+    email_verification_expires = db.Column(db.DateTime)
 
     # Relationships
     worker_profile = db.relationship(
@@ -69,6 +72,8 @@ class User(db.Model):
             "role": self.role.value,
             "phone": self.phone,
             "is_phone_verified": self.is_phone_verified,
+            "is_email_verified": self.is_email_verified,
+            "is_verified": self.is_email_verified,
             "is_active": self.is_active,
             "id_number": self.id_number,
             "county": self.county,

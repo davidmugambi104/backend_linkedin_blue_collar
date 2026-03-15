@@ -104,6 +104,7 @@ def create_users():
         username='admin',
         email='admin@jobmatch.com',
         role=UserRole.ADMIN,
+        is_email_verified=True,
         is_active=True
     )
     admin_user.set_password('admin123')
@@ -119,6 +120,7 @@ def create_users():
             username=username[:80],
             email=email[:120],
             role=UserRole.WORKER,
+            is_email_verified=True,
             is_active=random.random() > 0.1  # 90% active
         )
         user.set_password('worker123')
@@ -133,6 +135,7 @@ def create_users():
             username=username[:80],
             email=email[:120],
             role=UserRole.EMPLOYER,
+            is_email_verified=True,
             is_active=random.random() > 0.1  # 90% active
         )
         user.set_password('employer123')
