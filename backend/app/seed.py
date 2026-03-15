@@ -17,6 +17,7 @@ from app.models import (
 )
 from datetime import datetime, timedelta
 import random
+from sqlalchemy import text
 
 
 import uuid
@@ -491,19 +492,33 @@ def create_payments(workers, employers, jobs, applications):
 def clear_data():
     """Clear all existing data from tables"""
     print("Clearing existing data...")
-    # Delete in order to handle foreign key constraints
-    db.session.execute(db.delete(Payment))
-    db.session.execute(db.delete(Message))
-    db.session.execute(db.delete(Verification))
-    db.session.execute(db.delete(Review))
-    db.session.execute(db.delete(Application))
-    db.session.execute(db.delete(Job))
-    db.session.execute(db.delete(WorkerSkill))
-    db.session.execute(db.delete(Worker))
-    db.session.execute(db.delete(Employer))
-    db.session.execute(db.delete(Skill))
-    db.session.execute(db.delete(User))
-    db.session.commit()
+    # Some environments (notably SQLite) have extra FK-linked tables that are
+    # not part of this seed module; temporarily disable FK checks while clearing.
+    dialect = db.session.bind.dialect.name if db.session.bind is not None else ""
+    sqlite_fk_disabled = False
+    if dialect == "sqlite":
+        db.session.execute(text("PRAGMA foreign_keys = OFF"))
+        sqlite_fk_disabled = True
+
+    try:
+        # Delete in order to handle core foreign key constraints
+        db.session.execute(db.delete(Payment))
+        db.session.execute(db.delete(Message))
+        db.session.execute(db.delete(Verification))
+        db.session.execute(db.delete(Review))
+        db.session.execute(db.delete(Application))
+        db.session.execute(db.delete(Job))
+        db.session.execute(db.delete(WorkerSkill))
+        db.session.execute(db.delete(Worker))
+        db.session.execute(db.delete(Employer))
+        db.session.execute(db.delete(Skill))
+        db.session.execute(db.delete(User))
+        db.session.commit()
+    finally:
+        if sqlite_fk_disabled:
+            db.session.execute(text("PRAGMA foreign_keys = ON"))
+            db.session.commit()
+
     print("Data cleared successfully")
 
 
