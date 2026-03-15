@@ -108,10 +108,18 @@ class Config:
         os.environ.get("ALLOW_DESTRUCTIVE_OPERATIONS", "false").lower() == "true"
     )
     DB_BACKUP_DIR = os.environ.get("DB_BACKUP_DIR", "instance/backups")
-    SENDGRID_API_KEY = os.environ.get("SENDGRID_API_KEY")
-    FROM_EMAIL = os.environ.get("FROM_EMAIL", "noreply@workforge.co.ke")
+    SENDGRID_API_KEY = os.environ.get("SENDGRID_API_KEY")  # unused – kept for compatibility
+    FROM_EMAIL = os.environ.get("FROM_EMAIL", "noreply@workforge.co.ke")  # legacy alias
     FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:5173")
     EXPOSE_AUTH_DEBUG_CODES = os.environ.get("EXPOSE_AUTH_DEBUG_CODES", "false").lower() == "true"
+    # Gmail SMTP
+    MAIL_SERVER = os.environ.get("MAIL_SERVER", "smtp.gmail.com")
+    MAIL_PORT = int(os.environ.get("MAIL_PORT", "587"))
+    MAIL_USE_TLS = os.environ.get("MAIL_USE_TLS", "true").lower() == "true"
+    MAIL_USE_SSL = os.environ.get("MAIL_USE_SSL", "false").lower() == "true"
+    MAIL_USERNAME = os.environ.get("MAIL_USERNAME")
+    MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD")
+    MAIL_DEFAULT_SENDER = os.environ.get("MAIL_DEFAULT_SENDER", os.environ.get("MAIL_USERNAME", "noreply@workforge.co.ke"))
 
 
 class DevelopmentConfig(Config):
