@@ -493,7 +493,7 @@ def clear_data():
     print("Clearing existing data...")
     # SQLite deployments may include extra FK-linked tables not covered by this
     # delete list; reset schema fully to guarantee a clean seed baseline.
-    dialect = db.session.bind.dialect.name if db.session.bind is not None else ""
+    dialect = db.engine.dialect.name
     if dialect == "sqlite":
         db.drop_all()
         db.create_all()
