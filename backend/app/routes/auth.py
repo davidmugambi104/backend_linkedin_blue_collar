@@ -520,11 +520,11 @@ def verify_password_reset():
     return jsonify({"message": "Password reset successfully"}), 200
 
 
-  @auth_bp.route("/password-reset/admin/recovery-code", methods=["POST"])
-  @jwt_required()
-  @admin_required
-  @limiter.limit("10 per hour")
-  def admin_issue_password_reset_code():
+@auth_bp.route("/password-reset/admin/recovery-code", methods=["POST"])
+@jwt_required()
+@admin_required
+@limiter.limit("10 per hour")
+def admin_issue_password_reset_code():
     """Admin-only support fallback for password reset when delivery channels are unavailable.
 
     Requires X-Admin-Confirm header when REQUIRE_ADMIN_CONFIRMATION is enabled.
@@ -538,9 +538,9 @@ def verify_password_reset():
     reason = str(data.get("reason", "")).strip()
 
     if not email:
-      return jsonify({"error": "Email is required"}), 400
+        return jsonify({"error": "Email is required"}), 400
     if not reason:
-      return jsonify({"error": "Reason is required"}), 400
+        return jsonify({"error": "Reason is required"}), 400
 
     user = User.query.filter_by(email=email).first()
     if not user:
@@ -554,29 +554,29 @@ def verify_password_reset():
 
     admin_id = int(get_jwt_identity())
     log_audit(
-      admin_id,
-      "admin_password_reset_code_issued",
-      "user",
-      user.id,
-      {
-        "target_email": user.email,
-        "target_phone_masked": _mask_phone(user.phone),
-        "reason": reason,
-        "expires_at": expires_at.isoformat(),
-      },
+        admin_id,
+        "admin_password_reset_code_issued",
+        "user",
+        user.id,
+        {
+            "target_email": user.email,
+            "target_phone_masked": _mask_phone(user.phone),
+            "reason": reason,
+            "expires_at": expires_at.isoformat(),
+        },
     )
 
     return jsonify(
-      {
-        "message": "Recovery code issued for support handoff",
-        "email": user.email,
-        "code": code,
-        "expires_at": expires_at.isoformat(),
-        "delivery_hint": {
-          "phone_masked": _mask_phone(user.phone),
-          "private_handoff_required": True,
-        },
-      }
+        {
+            "message": "Recovery code issued for support handoff",
+            "email": user.email,
+            "code": code,
+            "expires_at": expires_at.isoformat(),
+            "delivery_hint": {
+                "phone_masked": _mask_phone(user.phone),
+                "private_handoff_required": True,
+            },
+        }
     ), 200
 
 
