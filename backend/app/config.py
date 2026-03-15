@@ -91,6 +91,14 @@ class Config:
     SOCKETIO_MESSAGE_QUEUE = os.environ.get(
         "SOCKETIO_MESSAGE_QUEUE", "redis://localhost:6379/0"
     )
+    AI_ADMIN_AUTO_REPLY_ENABLED = os.environ.get("AI_ADMIN_AUTO_REPLY_ENABLED", "true").lower() == "true"
+    AI_ADMIN_USE_LORA = os.environ.get("AI_ADMIN_USE_LORA", "true").lower() == "true"
+    AI_ADMIN_BASE_MODEL = os.environ.get("AI_ADMIN_BASE_MODEL", "TinyLlama/TinyLlama-1.1B-Chat-v1.0")
+    AI_ADMIN_ADAPTER_DIR = os.environ.get("AI_ADMIN_ADAPTER_DIR", "training/output/customer-support-lora-auto")
+    AI_ADMIN_MAX_NEW_TOKENS = int(os.environ.get("AI_ADMIN_MAX_NEW_TOKENS", "160"))
+    AI_ADMIN_TEMPERATURE = float(os.environ.get("AI_ADMIN_TEMPERATURE", "0.6"))
+    AI_ADMIN_TOP_P = float(os.environ.get("AI_ADMIN_TOP_P", "0.9"))
+    AI_ADMIN_ALWAYS_ONLINE = os.environ.get("AI_ADMIN_ALWAYS_ONLINE", "true").lower() == "true"
     SQLALCHEMY_ENGINE_OPTIONS = {
         "pool_pre_ping": True,
     }

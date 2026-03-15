@@ -7,7 +7,7 @@ Allows ALL users (Admin, Employer, Worker) to message each other
 - Real-time WebSocket delivery
 - Redis Pub/Sub for scalability
 """
-from flask import request
+from flask import request, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from flask_socketio import emit, join_room, leave_room, rooms
 from datetime import datetime
@@ -15,6 +15,8 @@ import json
 import uuid
 from ..extensions import socketio, db, redis_client
 from ..models import User, Message
+from ..models.user import UserRole
+from ..services.admin_ai_responder import get_admin_ai_responder
 
 # Active connections - maps user_id to session_id
 active_connections = {}
@@ -33,7 +35,8 @@ def get_user_display_info(user):
         return {"id": None, "name": "Unknown", "role": "unknown"}
     
     name = getattr(user, 'full_name', None) or getattr(user, 'username', 'Unknown')
-    role = getattr(user, 'role', 'user').lower()
+    user_role = getattr(user, "role", "user")
+    role = user_role.value if hasattr(user_role, "value") else str(user_role).lower()
     
     return {
         "id": user.id,
@@ -41,6 +44,83 @@ def get_user_display_info(user):
         "role": role,
         "email": getattr(user, 'email', '')
     }
+
+
+def _load_conversation_history(conversation_id, admin_user_id):
+    rows = (
+        Message.query.filter_by(conversation_id=conversation_id)
+        .order_by(Message.created_at.asc())
+        .limit(8)
+        .all()
+    )
+    history = []
+    for item in rows:
+        role = "assistant" if item.sender_id == admin_user_id else "user"
+        history.append({"role": role, "content": item.content})
+    return history
+
+
+def _emit_message_to_clients(message):
+    sender = User.query.get(message.sender_id)
+    receiver = User.query.get(message.receiver_id)
+    sender_info = get_user_display_info(sender)
+    receiver_info = get_user_display_info(receiver)
+    payload = {
+        "id": message.id,
+        "conversation_id": message.conversation_id,
+        "sender_id": message.sender_id,
+        "receiver_id": message.receiver_id,
+        "sender_info": sender_info,
+        "receiver_info": receiver_info,
+        "content": message.content,
+        "is_read": message.is_read,
+        "status": "sent",
+        "created_at": message.created_at.isoformat() if message.created_at else None,
+    }
+    emit("receive_message", payload, room=message.conversation_id)
+    emit("new_message", payload, room=f"user_{message.receiver_id}")
+
+
+def _maybe_send_admin_auto_reply(sender, receiver, content):
+    if not current_app.config.get("AI_ADMIN_AUTO_REPLY_ENABLED", True):
+        return None
+    if sender.role == UserRole.ADMIN:
+        return None
+    if receiver.role != UserRole.ADMIN:
+        return None
+
+    conversation_id = generate_conversation_id(sender.id, receiver.id)
+    history = _load_conversation_history(conversation_id=conversation_id, admin_user_id=receiver.id)
+    responder = get_admin_ai_responder()
+    reply_text = responder.generate_reply(user_message=content, history=history)
+    auto_reply = Message(
+        conversation_id=conversation_id,
+        sender_id=receiver.id,
+        receiver_id=sender.id,
+        content=reply_text,
+    )
+    db.session.add(auto_reply)
+    db.session.commit()
+    _emit_message_to_clients(auto_reply)
+
+    unread_count = Message.query.filter_by(receiver_id=sender.id, is_read=False).count()
+    emit("unread_count", {"count": unread_count}, room=f"user_{sender.id}")
+    emit(
+        "unread_update",
+        {
+            "user_id": sender.id,
+            "total": unread_count,
+            "conversation": conversation_id,
+        },
+        room=f"user_{sender.id}",
+    )
+    return auto_reply
+
+
+def _get_ai_admin_users():
+    if not current_app.config.get("AI_ADMIN_ALWAYS_ONLINE", True):
+        return []
+    return User.query.filter_by(role=UserRole.ADMIN, is_active=True).all()
 
 
 # ==================== CONNECTION HANDLERS ====================
@@ -210,6 +290,11 @@ def handle_send_message(data):
     
     print(f"Message: {sender_info['name']} ({sender_info['role']}) -> {receiver_info['name']} ({receiver_info['role']})")
 
+    try:
+        _maybe_send_admin_auto_reply(sender=sender, receiver=receiver, content=content)
+    except Exception as exc:
+        current_app.logger.warning("AI admin auto-reply skipped for socket event: %s", str(exc))
+
 
 # ==================== CONVERSATIONS ====================
 
@@ -369,6 +454,14 @@ def handle_get_presence(data):
             presence_data[uid] = json.loads(cached) if cached else {"status": "offline"}
         else:
             presence_data[uid] = user_presence.get(uid, {"status": "offline"})
+
+    ai_admin_ids = {user.id for user in _get_ai_admin_users()}
+    for uid in user_ids:
+        if uid in ai_admin_ids:
+            presence_data[uid] = {
+                "status": "online",
+                "last_seen": datetime.utcnow().isoformat(),
+            }
     
     emit("presence_data", presence_data)
 
@@ -381,6 +474,11 @@ def handle_get_all_online():
         user = User.query.get(uid)
         if user:
             online_users.append(get_user_display_info(user))
+
+    existing_ids = {item["id"] for item in online_users}
+    for admin_user in _get_ai_admin_users():
+        if admin_user.id not in existing_ids:
+            online_users.append(get_user_display_info(admin_user))
     
     emit("online_users", {"users": online_users})
 
@@ -410,7 +508,7 @@ def handle_leave_conversation(data):
 @socketio.on("admin_broadcast")
 def handle_admin_broadcast(data):
     """Admin broadcast to all users."""
-    sender_id = data.get(" cansender_id")
+    sender_id = data.get("sender_id")
     content = data.get("content")
     
     # Verify sender is admin

@@ -1,11 +1,13 @@
 # ----- FILE: backend/app/routes/messages.py -----
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from sqlalchemy import or_
 from ..extensions import db
 from ..models import User, Message, Worker, Employer
+from ..models.user import UserRole
 from ..schemas import MessageCreateSchema
 from ..utils.helpers import get_current_user_id
+from ..services.admin_ai_responder import get_admin_ai_responder
 
 messages_bp = Blueprint("messages", __name__)
 
@@ -13,6 +15,40 @@ messages_bp = Blueprint("messages", __name__)
 def generate_conversation_id(user1_id, user2_id):
     """Generate a consistent conversation ID for two users."""
     return f"{min(user1_id, user2_id)}-{max(user1_id, user2_id)}"
+
+
+def _load_conversation_history(conversation_id, admin_user_id):
+    rows = (
+        Message.query.filter_by(conversation_id=conversation_id)
+        .order_by(Message.created_at.asc())
+        .limit(8)
+        .all()
+    )
+    history = []
+    for item in rows:
+        role = "assistant" if item.sender_id == admin_user_id else "user"
+        history.append({"role": role, "content": item.content})
+    return history
+
+
+def _maybe_auto_reply_as_admin(sender, receiver, content):
+    if not current_app.config.get("AI_ADMIN_AUTO_REPLY_ENABLED", True):
+        return None
+    if sender.role != UserRole.ADMIN and receiver.role == UserRole.ADMIN:
+        conversation_id = generate_conversation_id(sender.id, receiver.id)
+        history = _load_conversation_history(conversation_id=conversation_id, admin_user_id=receiver.id)
+        responder = get_admin_ai_responder()
+        reply_text = responder.generate_reply(user_message=content, history=history)
+        auto_reply = Message(
+            conversation_id=conversation_id,
+            sender_id=receiver.id,
+            receiver_id=sender.id,
+            content=reply_text,
+        )
+        db.session.add(auto_reply)
+        db.session.commit()
+        return auto_reply
+    return None
 
 
 @messages_bp.route("/conversations", methods=["GET"])
@@ -131,6 +167,7 @@ def send_message():
     if current_user_id == receiver_id:
         return jsonify({"error": "Cannot send message to yourself"}), 400
 
+    sender = User.query.get_or_404(current_user_id)
     receiver = User.query.get_or_404(receiver_id)
     conversation_id = generate_conversation_id(current_user_id, receiver_id)
 
@@ -143,6 +180,12 @@ def send_message():
 
     db.session.add(message)
     db.session.commit()
+
+    try:
+        _maybe_auto_reply_as_admin(sender=sender, receiver=receiver, content=content)
+    except Exception as exc:
+        current_app.logger.warning("AI admin auto-reply skipped: %s", str(exc))
+
     return jsonify(message.to_dict()), 201
 
 

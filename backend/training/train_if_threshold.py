@@ -3,6 +3,7 @@ import argparse
 import hashlib
 import json
 import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -44,6 +45,8 @@ def dedupe_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 
 def main() -> None:
+    backend_root = Path(__file__).resolve().parents[1]
+
     parser = argparse.ArgumentParser(description="Trigger LoRA training when staged disputes exceed threshold.")
     parser.add_argument("--staging", type=Path, default=Path("training/data/dispute_staging.jsonl"))
     parser.add_argument("--base_dataset", type=Path, default=Path("training/data/customer_conversations.jsonl"))
@@ -56,6 +59,15 @@ def main() -> None:
     parser.add_argument("--learning_rate", type=float, default=2e-4)
     args = parser.parse_args()
 
+    if not args.staging.is_absolute():
+        args.staging = backend_root / args.staging
+    if not args.base_dataset.is_absolute():
+        args.base_dataset = backend_root / args.base_dataset
+    if not args.train_script.is_absolute():
+        args.train_script = backend_root / args.train_script
+    if not args.output_dir.is_absolute():
+        args.output_dir = backend_root / args.output_dir
+
     staged_rows = read_jsonl(args.staging)
     if len(staged_rows) < args.threshold:
         print(f"skip_training staged={len(staged_rows)} threshold={args.threshold}")
@@ -66,7 +78,7 @@ def main() -> None:
     write_jsonl(args.base_dataset, merged)
 
     command = [
-        "python",
+        sys.executable,
         str(args.train_script),
         "--dataset",
         str(args.base_dataset),

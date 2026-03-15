@@ -13,6 +13,9 @@ class WorkerSchema(Schema):
     phone = fields.Str(validate=validate.Length(min=10, max=20))
     profile_picture = fields.Str()
     hourly_rate = fields.Float()
+    daily_rate = fields.Float(load_only=True)
+    availability_status = fields.Str()
+    years_experience = fields.Int()
     is_verified = fields.Bool(dump_only=True)
     verification_score = fields.Int(dump_only=True)
     average_rating = fields.Float(dump_only=True)
@@ -30,6 +33,9 @@ class WorkerUpdateSchema(Schema):
     phone = fields.Str(validate=validate.Length(min=10, max=20))
     profile_picture = fields.Str()
     hourly_rate = fields.Float()
+    daily_rate = fields.Float()
+    availability_status = fields.Str()
+    years_experience = fields.Int(validate=validate.Range(min=0, max=80))
 
 
 class WorkerSkillSchema(Schema):

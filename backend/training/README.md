@@ -1,104 +1,276 @@
-# Customer Support Model Training (LoRA)
+# WorkForge AI Training Module
 
-This folder contains a starter pipeline to fine-tune a customer-support assistant model on your data.
+Bidirectional AI training system for WorkForge platform.
+Supports both **Admin Message Responder** and **General AI Assistant** with unified training.
 
-## What this creates
-- `data/customer_conversations.example.jsonl`: training data format example
-- `prepare_dataset.py`: convert a CSV into JSONL pairs
-- `train_lora.py`: LoRA fine-tuning script (Transformers + PEFT)
-- `infer.py`: test responses from your fine-tuned adapter
+## Overview
 
-## 1) Install training dependencies
-Use your backend venv:
+This module provides:
+- **Unified Training Pipeline**: Train models that work for both admin messaging and general assistant queries
+- **Context-Aware Responses**: Automatically selects the best model based on query context
+- **LoRA Fine-Tuning**: Efficient model customization with minimal resources
+- **FAQ Fallback**: Reliable responses when models are unavailable
+- **Auto-Retraining**: Trigger training when new dispute data reaches threshold
 
-```bash
-source /home/davie/Documents/backend_linkedin_blue_collar/.venv/bin/activate
-pip install -U transformers datasets peft accelerate evaluate sentencepiece
-```
+## Quick Start
 
-If you have an NVIDIA GPU and want 4-bit/8-bit:
+### 1. Train All Models
 
 ```bash
-pip install bitsandbytes
+cd backend/training
+./train_models.sh unified 5 4
 ```
 
-## 2) Prepare dataset
-Expected JSONL format per line:
+This trains a unified model with:
+- 5 epochs
+- Batch size of 4
+- Combines admin, assistant, and dispute data
 
-```json
-{"prompt": "Customer message", "response": "Ideal support response"}
-```
-
-You can either:
-- manually create `data/customer_conversations.jsonl`, or
-- convert CSV with:
+### 2. Train Specific Models
 
 ```bash
-python training/prepare_dataset.py \
-  --input training/faq_data.csv \
-  --output training/data/customer_conversations.jsonl
+# Admin responder only
+python training_module.py --mode admin --epochs 3
+
+# General assistant only
+python training_module.py --mode assistant --epochs 3
+
+# Unified (recommended)
+python training_module.py --mode unified --epochs 5
 ```
 
-## 3) Train LoRA adapter
-Default base model is lightweight for easier local testing.
+### 3. Check Available Models
 
 ```bash
-python training/train_lora.py \
-  --dataset training/data/customer_conversations.jsonl \
-  --output_dir training/output/customer-support-lora \
-  --base_model TinyLlama/TinyLlama-1.1B-Chat-v1.0
+python training_module.py --list-models
 ```
 
-## 4) Run inference
+## Training Modes
+
+### Admin Mode (`--mode admin`)
+- Uses: `admin_training_data.jsonl`, `dispute_staging.jsonl`, `resolved_disputes.jsonl`
+- Best for: Admin auto-replies to user messages
+- Context: Professional, empathetic, solution-oriented
+
+### Assistant Mode (`--mode assistant`)
+- Uses: `faq_data.csv`, `customer_conversations.jsonl`
+- Best for: General platform questions
+- Context: Helpful, concise, informative
+
+### Unified Mode (`--mode unified`) ⭐ Recommended
+- Uses: All data sources combined
+- Best for: Both admin and assistant use cases
+- Context: Adaptive based on query type
+
+## Data Sources
+
+### FAQ Data (`faq_data.csv`)
+Platform knowledge base with questions and answers.
+
+### Admin Training Data (`data/admin_training_data.jsonl`)
+Curated admin responses for common support scenarios:
+- Account access issues
+- Payment disputes
+- Verification problems
+- Safety reports
+- Policy violations
+
+### Customer Conversations (`data/customer_conversations.jsonl`)
+Real conversation examples for training.
+
+### Dispute Data (`data/resolved_disputes.jsonl`)
+Resolved dispute cases for learning resolution patterns.
+
+## Model Selection Logic
+
+The system automatically selects the best model:
+
+1. **Admin Keywords Detected** → Admin model (if available)
+2. **Unified Model Available** → Unified model (best coverage)
+3. **Assistant Model Available** → Assistant model
+4. **None Available** → FAQ fallback
+
+### Admin Keywords
+- report, dispute, violation, suspend
+- refund, billing, payment issue
+- fraud, harassment, hack, security
+- verify, verification failed
+
+## API Usage
+
+### Admin Auto-Reply (Messages)
+```python
+from app.services.admin_ai_responder import get_admin_ai_responder
+
+responder = get_admin_ai_responder()
+reply = responder.generate_reply(
+    user_message="I can't access my account",
+    history=[{"role": "user", "content": "Previous message"}]
+)
+```
+
+### General Assistant
+```python
+from app.services.enhanced_ai_service import get_unified_ai_service, AIContext
+
+service = get_unified_ai_service()
+response = service.generate_response(
+    query="How do I verify my identity?",
+    context=AIContext.GENERAL
+)
+print(response.text)
+print(response.suggested_actions)
+```
+
+### API Endpoints
+
+#### Ask Assistant
 ```bash
+POST /api/ai/ask
+{
+  "query": "How do I post a job?",
+  "context": "general"  // optional: general, admin, dispute, onboarding
+}
+```
+
+#### Get Suggestions
+```bash
+POST /api/ai/suggest
+{
+  "history": [{"role": "user", "content": "I have a problem"}],
+  "current_text": "payment"
+}
+```
+
+#### Check Status
+```bash
+GET /api/ai/status
+```
+
+## Configuration
+
+### Environment Variables
+
+```bash
+# Base model for training
+AI_BASE_MODEL=TinyLlama/TinyLlama-1.1B-Chat-v1.0
+
+# Enable/disable features
+AI_ADMIN_USE_LORA=true
+AI_ADMIN_AUTO_REPLY_ENABLED=true
+
+# Model paths (relative to backend root)
+AI_ADMIN_ADAPTER_DIR=training/output/admin-support-lora
+```
+
+### Flask Config
+
+```python
+# config.py
+AI_BASE_MODEL = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
+AI_ADMIN_USE_LORA = True
+AI_ADMIN_AUTO_REPLY_ENABLED = True
+AI_ADMIN_MAX_NEW_TOKENS = 200
+AI_ADMIN_TEMPERATURE = 0.7
+```
+
+## Auto-Retraining
+
+### Manual Trigger
+```bash
+python training/train_if_threshold.py --threshold 25
+```
+
+### Nightly Cron
+```bash
+# Add to crontab
+0 2 * * * /path/to/backend/training/ops/run_dispute_retrain_nightly.sh
+```
+
+### Systemd Timer
+```bash
+sudo cp training/ops/systemd/workforge-dispute-retrain.* /etc/systemd/system/
+sudo systemctl enable --now workforge-dispute-retrain.timer
+```
+
+## File Structure
+
+```
+training/
+├── training_module.py          # Main training orchestrator
+├── train_lora.py                 # LoRA training script
+├── prepare_dataset.py            # CSV to JSONL converter
+├── auto_ingest_dispute.py       # Ingest resolved disputes
+├── train_if_threshold.py         # Threshold-based retraining
+├── quality_gate.py             # Data validation
+├── infer.py                    # Manual inference test
+├── train_models.sh             # Convenience training script
+├── data/
+│   ├── faq_data.csv            # Platform FAQ
+│   ├── admin_training_data.jsonl   # Admin responses
+│   ├── customer_conversations.jsonl
+│   ├── resolved_disputes.jsonl
+│   └── dispute_staging.jsonl
+└── output/
+    ├── admin-support-lora/     # Admin model
+    ├── assistant-lora/         # Assistant model
+    └── unified-lora/           # Combined model
+```
+
+## Testing Inference
+
+```bash
+# Test admin model
 python training/infer.py \
-  --base_model TinyLlama/TinyLlama-1.1B-Chat-v1.0 \
-  --adapter_dir training/output/customer-support-lora \
-  --prompt "A customer says they were charged twice. How do we help?"
+    --base_model TinyLlama/TinyLlama-1.1B-Chat-v1.0 \
+    --adapter_dir training/output/admin-support-lora \
+    --prompt "User: I was charged twice. Help!"
+
+# Test unified model
+python training/infer.py \
+    --base_model TinyLlama/TinyLlama-1.1B-Chat-v1.0 \
+    --adapter_dir training/output/unified-lora \
+    --prompt "How do I verify my account?"
 ```
 
-## Notes
-- Start with RAG + policies first, then fine-tune for tone and workflow consistency.
-- Redact personal data before training.
-- Keep an evaluation split and compare before/after results.
+## Troubleshooting
 
-## 5) Auto-ingest new disputes + retrain threshold
+### Model Not Found
+- Check if training completed: `python training_module.py --list-models`
+- Verify paths in config match actual output directories
 
-New scripts added:
-- `quality_gate.py`: blocks short/vague or sensitive examples
-- `auto_ingest_dispute.py`: ingests resolved cases into staging JSONL
-- `train_if_threshold.py`: triggers training when staged examples reach threshold
+### Low Quality Responses
+- Increase training epochs: `--epochs 5`
+- Add more training data to relevant JSONL files
+- Check data quality with: `python training_module.py --dry-run`
 
-### Resolved dispute input format
+### Out of Memory
+- Reduce batch size: `--batch-size 2`
+- Use smaller base model
+- Enable gradient checkpointing (modify train_lora.py)
 
-Use JSONL or CSV with at least:
-- `dispute_id`
-- `status` (`resolved`)
-- `title`
-- `summary`
-- `resolution`
-- `category`
-
-### Ingest resolved disputes
-
+### Import Errors
 ```bash
-python training/auto_ingest_dispute.py \
-  --input training/data/resolved_disputes.jsonl \
-  --staging training/data/dispute_staging.jsonl \
-  --ledger training/data/dispute_ingest_ledger.json
+# Ensure dependencies are installed
+pip install -r training/requirements.txt
 ```
 
-### Trigger training only when enough new disputes are staged
+## Performance Tips
 
-```bash
-python training/train_if_threshold.py \
-  --staging training/data/dispute_staging.jsonl \
-  --base_dataset training/data/customer_conversations.jsonl \
-  --threshold 25 \
-  --output_dir training/output/customer-support-lora-auto
-```
+1. **Use Unified Model**: Single model handles both use cases efficiently
+2. **Preload Models**: Load at startup to avoid first-request latency
+3. **Cache Responses**: Cache FAQ results for common queries
+4. **Monitor Confidence**: Log confidence scores to identify weak areas
 
-Behavior:
-- If staged rows are below threshold, training is skipped.
-- If threshold is met, staged rows are merged + deduplicated into base dataset.
-- Training runs and staging file is cleared after success.
+## Contributing
+
+To add new training data:
+
+1. **Admin Responses**: Add to `data/admin_training_data.jsonl`
+2. **FAQ Entries**: Add to `faq_data.csv`
+3. **Dispute Cases**: Use `auto_ingest_dispute.py` to ingest resolved cases
+4. **Retrain**: Run `train_models.sh unified` to update models
+
+## License
+
+Internal WorkForge project.

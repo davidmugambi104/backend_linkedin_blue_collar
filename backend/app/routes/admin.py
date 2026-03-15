@@ -1357,6 +1357,51 @@ def get_all_jobs():
         return jsonify({"error": str(e)}), 500
 
 
+@admin_bp.route("/payments", methods=["GET"])
+@jwt_required()
+@admin_required
+def get_all_payments():
+    """Get all platform payments (admin view)."""
+    try:
+        status = request.args.get("status")
+        payment_type = request.args.get("payment_type")
+        page = int(request.args.get("page", 1))
+        limit = int(request.args.get("limit", 20))
+
+        query = Payment.query
+
+        if status:
+            try:
+                query = query.filter_by(status=PaymentStatus(status))
+            except ValueError:
+                return jsonify({"error": "Invalid status"}), 400
+
+        if payment_type:
+            query = query.filter_by(payment_type=payment_type)
+
+        query = query.order_by(Payment.created_at.desc())
+
+        total = query.count()
+        payments = query.offset((page - 1) * limit).limit(limit).all()
+
+        payments_data = []
+        for payment in payments:
+            p = payment.to_dict()
+            user = User.query.get(payment.user_id) if payment.user_id else None
+            p["payer_name"] = user.username if user else None
+            p["description"] = payment.payment_type
+            payments_data.append(p)
+
+        return jsonify({
+            "payments": payments_data,
+            "total": total,
+            "pages": (total + limit - 1) // limit,
+        }), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @admin_bp.route("/jobs/<int:job_id>/moderate", methods=["POST"])
 @jwt_required()
 @admin_required

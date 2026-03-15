@@ -76,6 +76,12 @@ def update_worker_profile():
     schema = WorkerUpdateSchema()
     data = schema.load(request.json, partial=True)
 
+    if "daily_rate" in data and "hourly_rate" not in data:
+        data["hourly_rate"] = data.pop("daily_rate")
+
+    if "availability" in request.json and "availability_status" not in data:
+        data["availability_status"] = request.json.get("availability")
+
     for key, value in data.items():
         setattr(worker, key, value)
 

@@ -1,0 +1,10 @@
+[Unit]
+Description=Workforge nightly dispute ingest and retrain check
+After=network.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/davie/Documents/backend_linkedin_blue_collar/backend
+Environment=VENV_PATH=/home/davie/Documents/backend_linkedin_blue_collar/.venv
+Environment=TRAIN_THRESHOLD=25
+ExecStart=/home/davie/Documents/backend_linkedin_blue_collar/backend/training/ops/run_dispute_retrain_nightly.sh
