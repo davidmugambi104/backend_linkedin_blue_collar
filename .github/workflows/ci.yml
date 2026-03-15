@@ -120,7 +120,7 @@ jobs:
 
             DEPLOY_PATH="${{ secrets.DROPLET_DEPLOY_PATH }}"
             BRANCH="main"
-            REPO="git@github.com:davidmugambi104/backend_linkedin_blue_collar.git"
+            REPO="https://github.com/${{ github.repository }}.git"
 
             if [ -z "$DEPLOY_PATH" ]; then
               echo "DROPLET_DEPLOY_PATH secret is required"
