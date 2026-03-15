@@ -410,20 +410,20 @@ def request_password_reset():
         db.session.commit()
         
         # Send via SMS if phone exists
-      sms_sent = False
+        sms_sent = False
         if user.phone:
-        sms_sent = bool(sms_service.send_sms(
+            sms_sent = bool(sms_service.send_sms(
                 user.phone, 
                 f"Your WorkForge password reset code is: {code}. Valid for 10 minutes."
-        ))
+            ))
 
-      email_sent = bool(email_service.send_password_reset_code_email(user.email, user.username, code))
+        email_sent = bool(email_service.send_password_reset_code_email(user.email, user.username, code))
 
-      if not sms_sent and not email_sent:
-        current_app.logger.warning(
-          "No reset-code delivery channel succeeded for user_id=%s. Use admin support fallback.",
-          user.id,
-        )
+        if not sms_sent and not email_sent:
+            current_app.logger.warning(
+                "No reset-code delivery channel succeeded for user_id=%s. Use admin support fallback.",
+                user.id,
+            )
         
         # In development, also return the code
         if _should_expose_auth_debug_codes():
