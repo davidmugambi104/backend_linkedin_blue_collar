@@ -53,6 +53,35 @@ def _should_expose_auth_debug_codes():
   return bool(current_app.config.get("EXPOSE_AUTH_DEBUG_CODES"))
 
 
+def _require_admin_confirmation(action_name):
+  if not current_app.config.get("REQUIRE_ADMIN_CONFIRMATION", True):
+    return None
+
+  expected = current_app.config.get("ADMIN_ACTION_CONFIRMATION_TOKEN")
+  if not expected:
+    return None
+
+  provided = request.headers.get("X-Admin-Confirm")
+  if provided != expected:
+    return jsonify(
+      {
+        "error": "Admin confirmation required",
+        "message": f"Missing or invalid X-Admin-Confirm for action '{action_name}'",
+      }
+    ), 403
+
+  return None
+
+
+def _mask_phone(phone):
+  if not phone:
+    return None
+  value = str(phone)
+  if len(value) <= 4:
+    return "*" * len(value)
+  return ("*" * (len(value) - 4)) + value[-4:]
+
+
 def _revoke_token(jwt_payload):
   jti = jwt_payload.get("jti")
   exp = jwt_payload.get("exp")
@@ -390,13 +419,20 @@ def request_password_reset():
         db.session.commit()
         
         # Send via SMS if phone exists
+      sms_sent = False
         if user.phone:
-            sms_service.send_sms(
+        sms_sent = bool(sms_service.send_sms(
                 user.phone, 
                 f"Your WorkForge password reset code is: {code}. Valid for 10 minutes."
-            )
+        ))
 
-        email_service.send_password_reset_code_email(user.email, user.username, code)
+      email_sent = bool(email_service.send_password_reset_code_email(user.email, user.username, code))
+
+      if not sms_sent and not email_sent:
+        current_app.logger.warning(
+          "No reset-code delivery channel succeeded for user_id=%s. Use admin support fallback.",
+          user.id,
+        )
         
         # In development, also return the code
         if _should_expose_auth_debug_codes():
@@ -491,6 +527,66 @@ def verify_password_reset():
     db.session.commit()
     
     return jsonify({"message": "Password reset successfully"}), 200
+
+
+  @auth_bp.route("/password-reset/admin/recovery-code", methods=["POST"])
+  @jwt_required()
+  @admin_required
+  @limiter.limit("10 per hour")
+  def admin_issue_password_reset_code():
+    """Admin-only support fallback for password reset when delivery channels are unavailable.
+
+    Requires X-Admin-Confirm header when REQUIRE_ADMIN_CONFIRMATION is enabled.
+    """
+    confirm_error = _require_admin_confirmation("admin_password_reset_recovery_code")
+    if confirm_error:
+      return confirm_error
+
+    data = _request_json()
+    email = str(data.get("email", "")).strip().lower()
+    reason = str(data.get("reason", "")).strip()
+
+    if not email:
+      return jsonify({"error": "Email is required"}), 400
+    if not reason:
+      return jsonify({"error": "Reason is required"}), 400
+
+    user = User.query.filter_by(email=email).first()
+    if not user:
+      return jsonify({"error": "User not found"}), 404
+
+    code = _generate_numeric_code()
+    expires_at = datetime.utcnow() + timedelta(minutes=10)
+    user.reset_code = code
+    user.reset_code_expires = expires_at
+    db.session.commit()
+
+    admin_id = int(get_jwt_identity())
+    log_audit(
+      admin_id,
+      "admin_password_reset_code_issued",
+      "user",
+      user.id,
+      {
+        "target_email": user.email,
+        "target_phone_masked": _mask_phone(user.phone),
+        "reason": reason,
+        "expires_at": expires_at.isoformat(),
+      },
+    )
+
+    return jsonify(
+      {
+        "message": "Recovery code issued for support handoff",
+        "email": user.email,
+        "code": code,
+        "expires_at": expires_at.isoformat(),
+        "delivery_hint": {
+          "phone_masked": _mask_phone(user.phone),
+          "private_handoff_required": True,
+        },
+      }
+    ), 200
 
 
 # Change password (when logged in)
