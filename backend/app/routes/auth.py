@@ -380,7 +380,7 @@ def request_password_reset():
     # Always return success to prevent email enumeration
     if user:
         # Generate 6-digit code
-      code = _generate_numeric_code()
+        code = _generate_numeric_code()
         user.reset_code = code
         user.reset_code_expires = datetime.utcnow() + timedelta(minutes=10)
         db.session.commit()
