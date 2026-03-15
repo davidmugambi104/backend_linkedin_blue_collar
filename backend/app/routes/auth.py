@@ -282,15 +282,6 @@ def login():
         db.session.commit()
         return jsonify({"error": "Account is deactivated"}), 403
 
-    if not user.is_email_verified:
-        return jsonify(
-            {
-                "error": "Please verify your email before signing in",
-                "requires_email_verification": True,
-                "email": user.email,
-            }
-        ), 403
-
     # Log successful login
     log_audit(user.id, "login_success", "user", user.id)
     db.session.add(

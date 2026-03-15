@@ -45,10 +45,10 @@ export const LoginPage: React.FC = () => {
   return (
     <Card className="w-full max-w-md">
       <div className="text-center mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 text-[#1A1A1A]">
+        <h1 className="text-2xl font-bold !text-[#1A1A1A]" style={{ color: '#1A1A1A' }}>
           Welcome Back
         </h1>
-        <p className="mt-2 text-sm text-gray-600 ">
+        <p className="mt-2 text-sm !text-[#4B5563]" style={{ color: '#4B5563' }}>
           Sign in to your WorkForge account
         </p>
       </div>
