@@ -36,7 +36,7 @@ class EmailService:
                 msg.attach(MIMEText(html_content, "html"))
 
             context = ssl.create_default_context()
-            with smtplib.SMTP(cfg["server"], cfg["port"]) as smtp:
+            with smtplib.SMTP(cfg["server"], cfg["port"], timeout=15) as smtp:
                 if cfg["use_tls"]:
                     smtp.starttls(context=context)
                 smtp.login(cfg["username"], cfg["password"])
