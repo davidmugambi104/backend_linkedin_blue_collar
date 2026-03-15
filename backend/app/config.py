@@ -111,6 +111,7 @@ class Config:
     SENDGRID_API_KEY = os.environ.get("SENDGRID_API_KEY")
     FROM_EMAIL = os.environ.get("FROM_EMAIL", "noreply@workforge.co.ke")
     FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:5173")
+    EXPOSE_AUTH_DEBUG_CODES = os.environ.get("EXPOSE_AUTH_DEBUG_CODES", "false").lower() == "true"
 
 
 class DevelopmentConfig(Config):

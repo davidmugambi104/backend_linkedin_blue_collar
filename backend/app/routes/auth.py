@@ -49,6 +49,10 @@ def _issue_email_verification_code(user):
   return code
 
 
+def _should_expose_auth_debug_codes():
+  return bool(current_app.config.get("EXPOSE_AUTH_DEBUG_CODES"))
+
+
 def _revoke_token(jwt_payload):
   jti = jwt_payload.get("jti")
   exp = jwt_payload.get("exp")
@@ -175,7 +179,7 @@ def register():
           "user": user.to_dict(),
           "requires_email_verification": True,
           "email": user.email,
-          **({"verification_code": verification_code} if current_app.config.get("DEBUG") else {}),
+          **({"verification_code": verification_code} if _should_expose_auth_debug_codes() else {}),
         }
       ),
         201,
@@ -395,7 +399,7 @@ def request_password_reset():
         email_service.send_password_reset_code_email(user.email, user.username, code)
         
         # In development, also return the code
-        if current_app.config.get("DEBUG"):
+        if _should_expose_auth_debug_codes():
             return jsonify({"message": "Password reset code sent", "code": code}), 200
     
     return jsonify({"message": "If an account exists with this email, a reset code has been sent"}), 200
@@ -420,7 +424,7 @@ def request_email_verification():
 
     code = _issue_email_verification_code(user)
     payload = {"message": "Verification code sent", "email": user.email}
-    if current_app.config.get("DEBUG"):
+    if _should_expose_auth_debug_codes():
         payload["verification_code"] = code
     return jsonify(payload), 200
 
