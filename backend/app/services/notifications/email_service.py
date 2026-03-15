@@ -75,6 +75,9 @@ class EmailService:
                     return True
                 if resend_cfg["provider"] == "resend":
                     return False
+            elif resend_cfg["provider"] == "resend":
+                current_app.logger.error("Resend is enabled but RESEND_API_KEY is missing")
+                return False
 
             cfg = self._smtp_config()
             if not cfg["username"] or not cfg["password"]:
